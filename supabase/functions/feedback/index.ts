@@ -8,7 +8,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-lite-latest';
 const DAILY_LIMIT = Number(Deno.env.get('DAILY_AI_LIMIT') ?? '25');
 const DAILY_CHAT_LIMIT = Number(Deno.env.get('DAILY_CHAT_LIMIT') ?? '40');
 
@@ -33,7 +33,7 @@ class CoachError extends Error {
 type Turn = { role: 'user' | 'model'; text: string };
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
-const ATTEMPT_TIMEOUT_MS = 20000; // stop waiting for one model after 20 s
+const ATTEMPT_TIMEOUT_MS = 10000; // stop waiting for one model after 10 s
 const TOTAL_BUDGET_MS = 45000; // give up completely after ~45 s
 let fallbackModels: string[] | null = null; // discovered once per function instance
 let thinkingParamOk = true; // turned off if a model rejects thinkingConfig
@@ -48,7 +48,7 @@ async function discoverFallbacks(): Promise<string[]> {
     fallbackModels = (data.models ?? [])
       .filter((m: { name: string; supportedGenerationMethods?: string[] }) => m.supportedGenerationMethods?.includes('generateContent'))
       .map((m: { name: string }) => m.name.replace(/^models\//, ''))
-      .filter((n: string) => /flash/.test(n) && !/(image|tts|audio|live|embed|native|robotics|computer)/.test(n))
+      .filter((n: string) => /flash/.test(n) && !/(image|tts|audio|live|embed|native|robotics|computer|omni)/.test(n))
       // Newest versions first; stable names before previews.
       .sort((a: string, b: string) => Number(/preview|exp/.test(a)) - Number(/preview|exp/.test(b)) || b.localeCompare(a, 'en', { numeric: true }))
       .slice(0, 6);

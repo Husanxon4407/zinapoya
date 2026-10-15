@@ -41,7 +41,7 @@ accounts and progress are stored only in that browser and AI feedback is off.
    - In Supabase → *Edge Functions → Secrets* add `GEMINI_API_KEY` = your key.
    - Set `VITE_AI_ENABLED=true` (in `.env` and in Vercel's environment variables, then redeploy) so the
      AI feedback, model answers and the "Ask the coach" chat appear.
-   - Optional secrets: `GEMINI_MODEL` (default `gemini-3.8-flash`), `DAILY_AI_LIMIT` (feedback/model answers
+   - Optional secrets: `GEMINI_MODEL` (default `gemini-flash-lite-latest`, the fastest on the free key), `DAILY_AI_LIMIT` (feedback/model answers
      per student per 24 h, default 25), `DAILY_CHAT_LIMIT` (coach messages per student per 24 h, default 40).
    - Note: with the free key Google may use the text it receives (student transcripts) to improve its products.
 5. **Login settings:** *Authentication → URL Configuration* → set *Site URL* to your website
