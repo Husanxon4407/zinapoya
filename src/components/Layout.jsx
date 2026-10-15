@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../state.jsx';
-import { api, isLocalMode } from '../lib/api.js';
+import { aiEnabled, api, isLocalMode } from '../lib/api.js';
 import SoundControls from './SoundControls.jsx';
+import CoachChat from './CoachChat.jsx';
 
 const LINKS = [
   ['/', '🏠', 'Home'],
@@ -67,6 +68,8 @@ export default function Layout() {
           </div>
         )}
       </main>
+
+      {aiEnabled && <CoachChat />}
 
       <nav className="bottomnav">
         {LINKS.map(([to, icon, label]) => (

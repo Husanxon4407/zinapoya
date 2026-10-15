@@ -34,18 +34,16 @@ accounts and progress are stored only in that browser and AI feedback is off.
 2. **Database:** open *SQL Editor → New query*, paste all of `supabase/schema.sql`, press **Run**.
 3. **Keys for the website:** *Project Settings → API*. Copy `.env.example` to `.env` and fill in
    `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the *anon public* key).
-4. **AI coach:** get an API key at https://console.anthropic.com, then with the
-   [Supabase CLI](https://supabase.com/docs/guides/cli):
-   ```bash
-   supabase login
-   supabase link --project-ref YOUR-PROJECT-REF
-   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-   supabase functions deploy feedback
-   ```
-   Then set `VITE_AI_ENABLED=true` (in `.env` and in Vercel's environment variables, then
-   redeploy) so the AI buttons appear. Optional secrets: `DAILY_AI_LIMIT` (AI checks per student per 24 h, default 25) and
-   `CLAUDE_MODEL` (default `claude-haiku-5-5`, the cheapest model — roughly a fraction of a
-   cent per feedback).
+4. **AI coach (Google Gemini, free key):**
+   - Get a key at https://aistudio.google.com → *Get API key* → *Create API key*.
+   - Deploy `supabase/functions/feedback/index.ts` as the function `feedback` (dashboard *Edge Functions*
+     editor, or `supabase functions deploy feedback`). Turn **off** "Verify JWT with legacy secret".
+   - In Supabase → *Edge Functions → Secrets* add `GEMINI_API_KEY` = your key.
+   - Set `VITE_AI_ENABLED=true` (in `.env` and in Vercel's environment variables, then redeploy) so the
+     AI feedback, model answers and the "Ask the coach" chat appear.
+   - Optional secrets: `GEMINI_MODEL` (default `gemini-2.5-flash`), `DAILY_AI_LIMIT` (feedback/model answers
+     per student per 24 h, default 25), `DAILY_CHAT_LIMIT` (coach messages per student per 24 h, default 40).
+   - Note: with the free key Google may use the text it receives (student transcripts) to improve its products.
 5. **Login settings:** *Authentication → URL Configuration* → set *Site URL* to your website
    address (e.g. `https://speakup.vercel.app`) and add `http://localhost:5173` to *Redirect URLs*.
    Email confirmation is on by default; you can turn it off under *Authentication → Providers → Email*.

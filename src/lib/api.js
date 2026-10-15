@@ -94,6 +94,11 @@ const remote = {
     if (error) throw new Error(await readFunctionError(error));
     return data;
   },
+  async chat(messages) {
+    const { data, error } = await supabase.functions.invoke('feedback', { body: { mode: 'chat', messages } });
+    if (error) throw new Error(await readFunctionError(error));
+    return data.reply;
+  },
   async getModelAnswer({ question_id, part, question_text }) {
     const { data: cached } = await supabase.from('model_answers').select('answer').eq('question_id', question_id).maybeSingle();
     if (cached) return cached.answer;
@@ -273,6 +278,9 @@ const local = {
   },
   async getModelAnswer() {
     throw new Error('Model answers need the online server. Your teacher can switch it on (see README).');
+  },
+  async chat() {
+    throw new Error('The coach chat needs the online server. Your teacher can switch it on (see README).');
   },
   async listBookmarks() {
     return ls.get(`su_bm_${ls.get('su_session', '')}`, []);
