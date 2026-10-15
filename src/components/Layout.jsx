@@ -12,7 +12,7 @@ const LINKS = [
 ];
 
 export default function Layout() {
-  const { user, stats } = useApp();
+  const { user, stats, attemptsReady, loadError } = useApp();
   const navigate = useNavigate();
 
   return (
@@ -57,7 +57,15 @@ export default function Layout() {
       )}
 
       <main className="main">
-        <Outlet />
+        {loadError && <p className="notice notice--warn">{loadError}</p>}
+        {attemptsReady ? (
+          <Outlet />
+        ) : (
+          <div className="loading-progress">
+            <div className="spinner" />
+            <p className="muted">Loading your progress…</p>
+          </div>
+        )}
       </main>
 
       <nav className="bottomnav">

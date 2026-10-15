@@ -11,6 +11,7 @@ export function AppProvider({ children }) {
   const [attemptsReady, setAttemptsReady] = useState(false);
   const [gameScores, setGameScores] = useState([]);
   const [recovering, setRecovering] = useState(false);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     api.getUser().then((u) => {
@@ -25,18 +26,19 @@ export function AppProvider({ children }) {
 
   const refreshAttempts = useCallback(async () => {
     if (!user) return;
-    try {
-      setAttempts(await api.listAttempts());
-    } finally {
-      setAttemptsReady(true);
-    }
-    api.listGameScores().then(setGameScores).catch(() => setGameScores([]));
+    // Load answers and game scores together so pages never flash empty numbers.
+    const [a, g] = await Promise.allSettled([api.listAttempts(), api.listGameScores()]);
+    if (a.status === 'fulfilled') setAttempts(a.value);
+    else setLoadError('We could not load your progress. Check your internet connection and refresh the page.');
+    if (g.status === 'fulfilled') setGameScores(g.value);
+    setAttemptsReady(true);
   }, [user]);
 
   useEffect(() => {
     setAttempts([]);
     setGameScores([]);
     setAttemptsReady(false);
+    setLoadError('');
     if (user) refreshAttempts();
   }, [user, refreshAttempts]);
 
@@ -61,7 +63,7 @@ export function AppProvider({ children }) {
   const stats = useMemo(() => computeStats(attempts), [attempts]);
   const xp = useMemo(() => computeXp(attempts, gameScores), [attempts, gameScores]);
 
-  const value = { user, authReady, attempts, attemptsReady, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
+  const value = { user, authReady, attempts, attemptsReady, loadError, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

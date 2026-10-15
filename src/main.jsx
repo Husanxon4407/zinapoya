@@ -6,6 +6,13 @@ import App from './App.jsx';
 import './styles.css';
 import './styles-games.css';
 
+// Vercel also serves every version on its own long address (…-abc123-….vercel.app).
+// Logins are stored per address, so always send people to the one main address.
+const MAIN_HOST = 'speakup-multilevel.vercel.app';
+if (window.location.hostname.endsWith('.vercel.app') && window.location.hostname !== MAIN_HOST) {
+  window.location.replace(`https://${MAIN_HOST}${window.location.pathname}${window.location.search}`);
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
