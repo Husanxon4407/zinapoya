@@ -8,7 +8,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
 const DAILY_LIMIT = Number(Deno.env.get('DAILY_AI_LIMIT') ?? '25');
 const DAILY_CHAT_LIMIT = Number(Deno.env.get('DAILY_CHAT_LIMIT') ?? '40');
 
@@ -42,7 +42,7 @@ async function callGemini({ system, turns, schema, temperature = 0.5 }: { system
       contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
       generationConfig: {
         temperature,
-        maxOutputTokens: 8192, // includes Gemini 2.5 "thinking" tokens
+        maxOutputTokens: 8192, // includes Gemini "thinking" tokens
         ...(schema ? { responseMimeType: 'application/json', responseSchema: schema } : {}),
       },
     }),
