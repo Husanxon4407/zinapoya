@@ -1,12 +1,12 @@
-/* ================= Page background (teal) ================= */
+/* ================= Page background ================= */
 body {
-  background: linear-gradient(160deg, #6fc0cf 0%, #5aafc0 55%, #4a9fb2 100%) fixed;
+  background: linear-gradient(180deg, #f8f9fc 0%, #f1f2f7 50%, #eceef5 100%) fixed;
 }
 :root[data-theme='dark'] body {
-  background: linear-gradient(160deg, #083a49 0%, #062a35 55%, #04202a 100%) fixed;
+  background: linear-gradient(180deg, #1a1c24 0%, #16181f 50%, #13151b 100%) fixed;
 }
 
-/* ================= Gentle animated background ================= */
+/* ================= Animated geometric background ================= */
 .app-layer {
   position: relative;
   z-index: 1;
@@ -18,126 +18,140 @@ body {
   overflow: hidden;
   pointer-events: none;
 }
-.prism {
+
+/* Very soft colour washes so the page never looks flat */
+.glow {
   position: absolute;
-  width: 44vmax;
-  height: 44vmax;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.18;
+  filter: blur(90px);
+  opacity: 0.35;
+}
+.glow--1 {
+  width: 38vmax;
+  height: 38vmax;
+  top: -12vmax;
+  left: -8vmax;
+  background: #c7d2fe;
+  animation: glowMove 30s ease-in-out infinite alternate;
+}
+.glow--2 {
+  width: 34vmax;
+  height: 34vmax;
+  bottom: -14vmax;
+  right: -8vmax;
+  background: #fbcfe8;
+  animation: glowMove 36s ease-in-out infinite alternate-reverse;
+}
+.glow--3 {
+  width: 26vmax;
+  height: 26vmax;
+  top: 40%;
+  left: 45%;
+  background: #a7f3d0;
+  opacity: 0.22;
+  animation: glowMove 42s ease-in-out infinite alternate;
+}
+@keyframes glowMove {
+  to {
+    transform: translate(8vw, 6vh) scale(1.1);
+  }
+}
+
+/* The shapes themselves */
+.geo {
+  position: absolute;
+  opacity: 0.55;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
   will-change: transform;
 }
-.prism--1 {
-  background: radial-gradient(circle, #67e8f9 0%, transparent 65%);
-  top: -14vmax;
-  left: -10vmax;
-  animation: prismA 40s ease-in-out infinite alternate;
+.geo svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
-.prism--2 {
-  background: radial-gradient(circle, #67e8f9 0%, transparent 65%);
-  top: 25vh;
-  right: -16vmax;
-  animation: prismB 48s ease-in-out infinite alternate;
-}
-.prism--3 {
-  background: radial-gradient(circle, #a5f3fc 0%, transparent 65%);
-  bottom: -20vmax;
-  left: 18vw;
-  animation: prismC 44s ease-in-out infinite alternate;
-}
-.prism--4 {
-  background: conic-gradient(from 0deg, #22d3ee, #38bdf8, #cffafe, #22d3ee);
-  width: 28vmax;
-  height: 28vmax;
-  top: 35vh;
-  left: 32vw;
-  opacity: 0.08;
-  filter: blur(100px);
-  animation: prismSpin 80s linear infinite;
-}
-@keyframes prismA {
-  to {
-    transform: translate(16vw, 12vh) scale(1.1);
+@keyframes geoFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-26px) rotate(8deg);
   }
 }
-@keyframes prismB {
-  to {
-    transform: translate(-18vw, 8vh) scale(0.92);
+@keyframes geoTilt {
+  0%,
+  100% {
+    transform: rotate(-10deg) scale(1);
+  }
+  50% {
+    transform: rotate(12deg) scale(1.08);
   }
 }
-@keyframes prismC {
-  to {
-    transform: translate(14vw, -16vh) scale(1.12);
+@keyframes geoSpin {
+  from {
+    transform: rotate(0deg);
   }
-}
-@keyframes prismSpin {
   to {
     transform: rotate(360deg);
   }
 }
-.backdrop__grid {
-  position: absolute;
-  inset: 0;
-  background-image: radial-gradient(rgba(14, 116, 144, 0.1) 1px, transparent 1px);
-  background-size: 30px 30px;
-  mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
+.geo[style*='geoSpin'] {
+  animation-timing-function: linear;
 }
-.floater {
-  position: absolute;
-  bottom: -60px;
-  opacity: 0;
-  font-weight: 900;
-  color: #0e7490;
-  filter: grayscale(0.6);
-  animation: floatUpSlow linear infinite;
-}
-@keyframes floatUpSlow {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-    opacity: 0;
-  }
-  12% {
-    opacity: 0.09;
-  }
-  85% {
-    opacity: 0.09;
-  }
+@keyframes geoDrift {
+  0%,
   100% {
-    transform: translate(var(--drift), -115vh) rotate(20deg);
-    opacity: 0;
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(18px, -14px);
+  }
+  66% {
+    transform: translate(-12px, 10px);
   }
 }
-:root[data-theme='dark'] .prism {
-  opacity: 0.14;
+
+/* Dark mode: shapes glow a little more, washes become deep colour */
+:root[data-theme='dark'] .geo {
+  opacity: 0.42;
 }
-:root[data-theme='dark'] .prism--4 {
-  opacity: 0.06;
+:root[data-theme='dark'] .glow {
+  opacity: 0.16;
 }
-:root[data-theme='dark'] .backdrop__grid {
-  background-image: radial-gradient(rgba(103, 232, 249, 0.08) 1px, transparent 1px);
+:root[data-theme='dark'] .glow--1 {
+  background: #6366f1;
 }
-:root[data-theme='dark'] .floater {
-  color: #67e8f9;
+:root[data-theme='dark'] .glow--2 {
+  background: #db2777;
+}
+:root[data-theme='dark'] .glow--3 {
+  background: #0d9488;
+  opacity: 0.1;
+}
+
+/* On phones keep shapes small and out of the way */
+@media (max-width: 820px) {
+  .geo {
+    transform-origin: center;
+    scale: 0.6;
+    opacity: 0.35;
+  }
 }
 
 /* "Moving background" off (or the device asks for reduced motion) */
-:root[data-motion='off'] .prism {
-  animation: none;
-}
-:root[data-motion='off'] .floater {
-  display: none;
+:root[data-motion='off'] .geo,
+:root[data-motion='off'] .glow {
+  animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .prism {
+  .geo,
+  .glow {
     animation: none !important;
-  }
-  .floater {
-    display: none;
   }
 }
 
-/* ================= Clear, solid boxes ================= */
+/* ================= Boxes: clean, flat, clearly outlined ================= */
 .card,
 .q-item,
 .vocab-card,
@@ -154,126 +168,112 @@ body {
 .filter,
 .tab,
 .sort-item,
-.runner-plan li {
+.runner-plan li,
+.feature {
   border: var(--border);
+  box-shadow: none;
 }
 .review {
-  border-top-width: 6px;
+  border-top-width: 5px;
 }
 .vocab-hero {
-  border-left-width: 8px;
-}
-.card,
-.q-item,
-.vocab-card,
-.stat {
-  box-shadow: var(--shadow);
+  border-left-width: 6px;
 }
 .part-card:hover,
 .game-card:hover,
-.quick__card:hover,
 .vocab-card:hover,
 .q-item:hover {
-  box-shadow: 0 4px 10px rgba(8, 51, 68, 0.12);
-}
-.quick__card {
+  border-color: var(--primary);
   box-shadow: none;
 }
-.xp-card {
-  box-shadow: none;
-  background: linear-gradient(135deg, #0e7490, #155e75);
-}
+.quick__card,
+.xp-card,
+.btn,
 .coach-fab {
-  box-shadow: 0 3px 10px rgba(8, 51, 68, 0.25);
-  background: linear-gradient(135deg, #0e7490, #155e75);
+  box-shadow: none;
 }
-.coach__head {
-  background: linear-gradient(135deg, #0e7490, #155e75);
-}
-.btn {
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
-}
-.logo__mark {
-  background: linear-gradient(135deg, #0e7490, #22d3ee);
-}
-.level-badge {
-  background: linear-gradient(135deg, #0e7490, #155e75);
-}
-.btn--ai {
-  background: linear-gradient(135deg, #0e7490, #0e7490, #7c3aed);
+.btn:active {
+  box-shadow: none;
 }
 
-/* Stronger, easier-to-read text */
-.muted,
-.part-card p,
-.feature p,
-.vocab-card p,
-.q-item__text small,
-.flip__front small,
-.stat small {
-  color: var(--muted);
+/* Colourful accents (a calm mix rather than one colour) */
+.logo__mark {
+  background: linear-gradient(135deg, #5561e8, #a855f7 55%, #ec4899);
 }
+.xp-card {
+  background: linear-gradient(120deg, #5561e8, #8b5cf6 55%, #d946ef);
+}
+.quick__card--workout {
+  background: linear-gradient(135deg, #f59e0b, #f43f5e);
+}
+.coach-fab,
+.coach__head,
+.level-badge {
+  background: linear-gradient(135deg, #5561e8, #8b5cf6);
+}
+.btn--ai {
+  background: linear-gradient(135deg, #5561e8, #a855f7, #ec4899);
+}
+.topbar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+/* Coloured boxes: part colour layered over a solid base, so the
+   background shapes never show through the content */
+.part-card,
+.game-card,
+.mini-part,
+.part-hero,
+.suggest {
+  background-color: var(--surface);
+}
+
+/* Easy-to-read text */
 .part-card p,
 .vocab-card p {
   font-weight: 600;
 }
-h1,
-h2,
-h3 {
-  color: var(--text);
-}
 
-/* Part colour blocks: a bit more solid so they read as boxes */
-.part-card,
-.game-card,
-.mini-part {
-  background-blend-mode: normal;
-}
-
-/* ================= Dark mode touch-ups ================= */
+/* ================= Dark-mode touch-ups ================= */
 :root[data-theme='dark'] .topbar {
   border-bottom: 1px solid var(--line);
 }
 :root[data-theme='dark'] .bottomnav {
-  background: #08303c;
+  background: rgba(24, 26, 34, 0.95);
   border-top: 1px solid var(--line);
 }
 :root[data-theme='dark'] .usermenu__panel,
 :root[data-theme='dark'] .soundmenu__panel,
 :root[data-theme='dark'] .coach {
-  background: #0c3a48;
+  background: #1e212b;
   border: var(--border);
 }
 :root[data-theme='dark'] .coach__list {
-  background: #072f3b;
+  background: #181a22;
 }
 :root[data-theme='dark'] .bubble--model {
-  background: #0f4757;
+  background: #262a36;
 }
 :root[data-theme='dark'] .btn--ghost {
-  background: #0c3a48;
+  background: #1e212b;
   border-color: var(--line);
   color: var(--text);
 }
 :root[data-theme='dark'] .part-hero__tips {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.18);
 }
 :root[data-theme='dark'] .mini-part small,
 :root[data-theme='dark'] .part-card p {
   color: var(--text);
 }
 :root[data-theme='dark'] .chart__area {
-  fill: rgba(34, 211, 238, 0.15);
+  fill: rgba(116, 128, 238, 0.15);
 }
 :root[data-theme='dark'] .chart__line {
-  stroke: #22d3ee;
-}
-:root[data-theme='dark'] .calendar__day.lvl-1 {
-  background: rgba(34, 211, 238, 0.3);
-  color: #cffafe;
+  stroke: #8b95f2;
 }
 :root[data-theme='dark'] .quiz-option {
-  background: #0c3a48;
+  background: #1e212b;
 }
 :root[data-theme='dark'] .quiz-option--right {
   background: var(--tint-good);
@@ -286,18 +286,26 @@ h3 {
   color: #fff;
 }
 :root[data-theme='dark'] .demo-banner {
-  background: #3b2f0b;
+  background: #3a3222;
+}
+.calendar__day.lvl-1 {
+  background: #c7d2fe;
+  color: #3730a3;
 }
 .calendar__day.lvl-2 {
-  background: #22d3ee;
-  color: #083344;
-}
-.calendar__day.lvl-3 {
-  background: #0e7490;
+  background: #8b95f2;
   color: #fff;
 }
+.calendar__day.lvl-3 {
+  background: #5561e8;
+  color: #fff;
+}
+:root[data-theme='dark'] .calendar__day.lvl-1 {
+  background: rgba(116, 128, 238, 0.3);
+  color: #e0e7ff;
+}
 
-/* ================= Theme toggle ================= */
+/* ================= Theme toggle & small controls ================= */
 .theme-toggle {
   width: 40px;
   height: 40px;

@@ -44,7 +44,7 @@ export default function PartPage() {
 
   return (
     <div className="part-page">
-      <section className="part-hero" style={{ background: part.soft }}>
+      <section className="part-hero" style={{ backgroundImage: `linear-gradient(${part.soft}, ${part.soft})` }}>
         <div>
           <span className="part-hero__emoji">{part.emoji}</span>
           <h1 style={{ color: part.color }}>

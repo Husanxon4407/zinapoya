@@ -46,7 +46,7 @@ export default function Games() {
           const soft = p ? p.soft : g.soft;
           const b = best(g.id);
           return (
-            <Link key={g.to} to={g.to} className="game-card" style={{ background: soft }} onClick={() => sfx('click')}>
+            <Link key={g.to} to={g.to} className="game-card" style={{ backgroundImage: `linear-gradient(${soft}, ${soft})` }} onClick={() => sfx('click')}>
               {plays(g.id) === 0 && <span className="game-card__new">NEW</span>}
               <span className="game-card__emoji">{g.emoji}</span>
               <span className="game-card__part" style={{ color }}>

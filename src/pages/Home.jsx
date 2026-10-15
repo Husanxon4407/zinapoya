@@ -60,7 +60,7 @@ export default function Home() {
       </section>
 
       {stats.total > 0 && (
-        <Link to={`/part/${weak.key}`} className="suggest" style={{ background: weak.soft, color: weak.color }}>
+        <Link to={`/part/${weak.key}`} className="suggest" style={{ backgroundImage: `linear-gradient(${weak.soft}, ${weak.soft})`, color: weak.color }}>
           💡 Suggestion: practise <strong>{weak.name} — {weak.title}</strong>. It’s your weakest part right now. →
         </Link>
       )}
@@ -71,7 +71,7 @@ export default function Home() {
           const p = PARTS[k];
           const s = stats.parts[k];
           return (
-            <Link key={k} to={`/part/${k}`} className="part-card" style={{ background: p.soft }}>
+            <Link key={k} to={`/part/${k}`} className="part-card" style={{ backgroundImage: `linear-gradient(${p.soft}, ${p.soft})` }}>
               <div className="part-card__top">
                 <span className="part-card__emoji">{p.emoji}</span>
                 <ProgressRing value={s.unique} max={PART_TOTALS[k]} color={p.color} />
