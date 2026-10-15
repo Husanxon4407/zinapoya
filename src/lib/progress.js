@@ -76,6 +76,24 @@ export const BADGES = [
   { id: 'b2', emoji: '⭐', name: 'B2 voice', desc: 'Get an AI score of 70+', test: (s) => s.scoreTrend.some((p) => p.value >= 70) },
 ];
 
+// XP: 10 per spoken answer (+5 bonus for long Part 2/3 talks) and a tenth of game points.
+const LEVEL_NAMES = ['Beginner', 'Explorer', 'Talker', 'Speaker', 'Storyteller', 'Debater', 'Orator', 'Champion', 'Legend'];
+export function computeXp(attempts, gameScores) {
+  const total =
+    attempts.reduce((s, a) => s + 10 + (a.part === '2' || a.part === '3' ? 5 : 0), 0) +
+    Math.round(gameScores.reduce((s, g) => s + (g.score || 0), 0) / 10);
+  // Each level needs a little more XP than the one before.
+  let level = 1;
+  let need = 100;
+  let left = total;
+  while (left >= need) {
+    left -= need;
+    level++;
+    need = Math.round(need * 1.35);
+  }
+  return { total, level, into: left, need, name: LEVEL_NAMES[Math.min(level - 1, LEVEL_NAMES.length - 1)] };
+}
+
 export function levelFromScore(score) {
   if (score === null || score === undefined) return '—';
   if (score >= 85) return 'C1';

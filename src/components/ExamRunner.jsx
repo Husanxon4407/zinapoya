@@ -9,6 +9,7 @@ import { beep, createSpeakingSession, recognitionSupported, speak, stopSpeaking 
 import { analyse, countWords } from '../lib/metrics.js';
 import { api } from '../lib/api.js';
 import { useApp } from '../state.jsx';
+import { duckMusic, sfx } from '../lib/sound.js';
 
 /**
  * Runs answers exactly like the exam: question is read aloud → preparation timer → speaking timer.
@@ -34,8 +35,15 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
       cancelled.current = true;
       stopSpeaking();
       sessionRef.current?.stop();
+      duckMusic(false);
     };
   }, []);
+
+  // Keep the background music quiet while the examiner talks and while recording.
+  useEffect(() => {
+    duckMusic(phase === 'listen' || phase === 'speak' || phase === 'saving');
+    if (phase === 'done') sfx('star');
+  }, [phase]);
 
   async function beginStep(i) {
     setIndex(i);
@@ -124,7 +132,7 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
           </p>
         )}
         <p className="muted">🎧 Find a quiet place. The examiner voice will read each question, then the timer starts.</p>
-        <button className="btn btn--big" style={{ background: part.color }} onClick={() => beginStep(0)}>
+        <button className="btn btn--big" style={{ background: part.color }} onClick={() => { sfx('start'); beginStep(0); }}>
           ▶ Start
         </button>
       </div>

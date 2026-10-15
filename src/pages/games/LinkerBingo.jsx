@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExamRunner from '../../components/ExamRunner.jsx';
+import GameResult from '../../components/GameResult.jsx';
 import { PART1_2 } from '../../data/part1_2.js';
 import { BINGO_LINKERS } from '../../data/phrases.js';
 import { pick, shuffle } from '../../lib/steps.js';
 import { phrasesUsed } from '../../lib/metrics.js';
+import { sfx } from '../../lib/sound.js';
 
 const LINES = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -32,10 +34,23 @@ function newGame() {
   };
 }
 
-function Board({ board, text }) {
+function check(board, text) {
   const used = new Set(phrasesUsed(text, board));
   const hit = board.map((w) => used.has(w));
-  const lines = LINES.filter((l) => l.every((i) => hit[i])).length;
+  return { hit, count: hit.filter(Boolean).length, lines: LINES.filter((l) => l.every((i) => hit[i])).length };
+}
+
+function Board({ board, text, live = false }) {
+  const { hit, count, lines } = check(board, text);
+  const prev = useRef({ count: 0, lines: 0 });
+  useEffect(() => {
+    if (live) {
+      if (lines > prev.current.lines) sfx('win');
+      else if (count > prev.current.count) sfx('pop');
+    }
+    prev.current = { count, lines };
+  }, [count, lines, live]);
+
   return (
     <div>
       <div className="bingo">
@@ -67,16 +82,15 @@ export default function LinkerBingo() {
         mode="game"
         title="Your bingo card"
         intro={<Board board={game.board} text="" />}
-        liveExtra={(text) => <Board board={game.board} text={text} />}
+        liveExtra={(text, phase) => <Board board={game.board} text={text} live={phase === 'speak'} />}
         renderExtra={(results) => {
-          const used = phrasesUsed(results[0].row.transcript || '', game.board);
+          const t = results[0].row.transcript || '';
+          const { count, lines } = check(game.board, t);
+          const stars = lines >= 2 ? 3 : lines === 1 ? 2 : count >= 3 ? 1 : 0;
           return (
-            <div className="card game-result">
-              <Board board={game.board} text={results[0].row.transcript || ''} />
-              <p>
-                You used <strong>{used.length}</strong> of 9 phrases.{' '}
-                {used.length >= 5 ? 'Excellent linking! 🔗' : 'Try to use “whereas”, “while” and “both” next time.'}
-              </p>
+            <GameResult game="bingo" score={count * 100 + lines * 300} stars={stars} title={lines ? `BINGO × ${lines}! 🎉` : `${count} of 9 phrases`} detail={{ set: game.set.id, count, lines }}>
+              <Board board={game.board} text={t} />
+              <p>{count >= 5 ? 'Excellent linking! 🔗' : 'Try to use “whereas”, “while” and “both” next time.'}</p>
               <button
                 className="btn"
                 onClick={() => {
@@ -86,7 +100,7 @@ export default function LinkerBingo() {
               >
                 🎯 New card
               </button>
-            </div>
+            </GameResult>
           );
         }}
       />

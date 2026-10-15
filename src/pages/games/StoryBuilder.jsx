@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExamRunner from '../../components/ExamRunner.jsx';
 import QuestionView from '../../components/QuestionView.jsx';
+import GameResult from '../../components/GameResult.jsx';
 import { PART2 } from '../../data/part2.js';
 import { pick, stepsP2 } from '../../lib/steps.js';
-import { pastTenseWords } from '../../lib/metrics.js';
+import { countWords, pastTenseWords } from '../../lib/metrics.js';
+import { sfx } from '../../lib/sound.js';
 
 const PLAN = [
   ['when', '🕐 When?', 'e.g. two years ago, in summer'],
@@ -24,6 +26,20 @@ function PlanCard({ plan }) {
         </div>
       ))}
     </div>
+  );
+}
+
+function LiveVerbs({ text, live }) {
+  const n = pastTenseWords(text).length;
+  const prev = useRef(0);
+  useEffect(() => {
+    if (live && n > prev.current) sfx('pop');
+    prev.current = n;
+  }, [n, live]);
+  return (
+    <p className="live-counter">
+      ⏳ Past-tense verbs: <strong>{n}</strong>
+    </p>
   );
 }
 
@@ -82,18 +98,19 @@ export default function StoryBuilder() {
           title="Ready to tell your story?"
           hideNotes
           intro={<PlanCard plan={plan} />}
-          liveExtra={(text) => (
+          liveExtra={(text, phase) => (
             <>
               <PlanCard plan={plan} />
-              <p className="muted">Past-tense verbs so far: {pastTenseWords(text).length}</p>
+              <LiveVerbs text={text} live={phase === 'speak'} />
             </>
           )}
           renderExtra={(results) => {
-            const verbs = pastTenseWords(results[0].row.transcript || '');
+            const t = results[0].row.transcript || '';
+            const verbs = pastTenseWords(t);
+            const stars = verbs.length >= 10 ? 3 : verbs.length >= 6 ? 2 : verbs.length >= 3 ? 1 : 0;
             return (
-              <div className="card game-result">
-                <h3>⏳ Past-tense check: {verbs.length} different verbs</h3>
-                <div className="chips">
+              <GameResult game="story" score={verbs.length * 50 + Math.min(countWords(t), 250)} stars={stars} title={`⏳ ${verbs.length} past-tense verbs`} detail={{ card: card.id, verbs: verbs.length }}>
+                <div className="chips chips--center">
                   {verbs.map((v) => (
                     <span key={v} className="chip chip--good">
                       {v}
@@ -104,7 +121,7 @@ export default function StoryBuilder() {
                 <button className="btn" onClick={restart}>
                   📖 New story
                 </button>
-              </div>
+              </GameResult>
             );
           }}
         />

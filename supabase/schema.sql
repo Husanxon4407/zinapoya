@@ -64,6 +64,22 @@ create index if not exists ai_usage_user_created on public.ai_usage (user_id, cr
 alter table public.ai_usage enable row level security;
 -- No policies: students cannot read or change it.
 
+-- 4b. Game scores (quiz, word sprint, …) ------------------------------------
+create table if not exists public.game_scores (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null default auth.uid() references auth.users on delete cascade,
+  game       text not null,
+  score      int  not null default 0,
+  detail     jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists game_scores_user_created on public.game_scores (user_id, created_at desc);
+alter table public.game_scores enable row level security;
+drop policy if exists "own game scores" on public.game_scores;
+create policy "own game scores" on public.game_scores
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+grant select, insert, delete on public.game_scores to authenticated;
+
 -- Table access for logged-in students (row-level security above still limits them to their own rows).
 grant usage on schema public to authenticated, service_role;
 grant select, insert, update, delete on public.attempts, public.bookmarks to authenticated;

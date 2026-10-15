@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExamRunner from '../../components/ExamRunner.jsx';
+import GameResult from '../../components/GameResult.jsx';
+import { sfx } from '../../lib/sound.js';
 import { PART1_1, TOPICS } from '../../data/part1_1.js';
 import { shuffle, stepsP11 } from '../../lib/steps.js';
 import { countWords } from '../../lib/metrics.js';
@@ -17,8 +19,14 @@ function areCheck(text) {
   };
 }
 
-function AreBoard({ text }) {
+function AreBoard({ text, live = false }) {
   const c = areCheck(text);
+  const count = [c.answer, c.reason, c.example].filter(Boolean).length;
+  const prev = useRef(0);
+  useEffect(() => {
+    if (live && count > prev.current) sfx(count === 3 ? 'combo' : 'pop');
+    prev.current = count;
+  }, [count, live]);
   return (
     <div className="are">
       {[
@@ -50,7 +58,11 @@ export default function Roulette() {
     setAngle(base + 360 * 5 + target);
     setSpinning(true);
     setChosen(null);
+    sfx('whoosh');
+    // Ticks that slow down with the wheel.
+    for (let t = 0, gap = 45; t < 3000; t += gap, gap *= 1.11) setTimeout(() => sfx('tick'), t);
     setTimeout(() => {
+      sfx('coin');
       setSpinning(false);
       setChosen(wheel[idx]);
       setRound((r) => r + 1);
@@ -102,19 +114,19 @@ export default function Roulette() {
           mode="game"
           title="Your question is…"
           intro={<p className="roulette__chosen">“{chosen.text}”</p>}
-          liveExtra={(text, phase) => (phase === 'speak' ? <AreBoard text={text} /> : <p className="muted">Remember: Answer · Reason · Example</p>)}
+          liveExtra={(text, phase) => (phase === 'speak' ? <AreBoard text={text} live /> : <p className="muted">Remember: Answer · Reason · Example</p>)}
           renderExtra={(results) => {
-            const c = areCheck(results[0].row.transcript || '');
+            const t = results[0].row.transcript || '';
+            const c = areCheck(t);
             const stars = [c.answer, c.reason, c.example].filter(Boolean).length;
             return (
-              <div className="card game-result">
-                <div className="stars">{'★'.repeat(stars)}{'☆'.repeat(3 - stars)}</div>
-                <AreBoard text={results[0].row.transcript || ''} />
-                <p>{stars === 3 ? 'Perfect A-R-E answer! 🏆' : !c.reason ? 'Add a reason with “because…” next time.' : 'Add an example: “For example, last weekend I…”'}</p>
+              <GameResult game="roulette" score={stars * 100 + Math.min(countWords(t), 80) * 2} stars={stars} title={stars === 3 ? 'Perfect A-R-E answer! 🏆' : 'Nice spin!'} detail={{ question: chosen.id }}>
+                <AreBoard text={t} />
+                <p>{stars === 3 ? 'You answered, gave a reason and an example. That’s exactly what examiners want.' : !c.reason ? 'Add a reason with “because…” next time.' : 'Add an example: “For example, last weekend I…”'}</p>
                 <button className="btn" onClick={() => { setChosen(null); spin(); }}>
                   🎡 Spin again
                 </button>
-              </div>
+              </GameResult>
             );
           }}
         />

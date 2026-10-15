@@ -115,6 +115,16 @@ const remote = {
     const { error } = await supabase.from('bookmarks').delete().eq('id', id);
     if (error) throw error;
   },
+  async saveGameScore(row) {
+    const { data, error } = await supabase.from('game_scores').insert(row).select().single();
+    if (error) throw error;
+    return data;
+  },
+  async listGameScores() {
+    const { data, error } = await supabase.from('game_scores').select('*').order('created_at', { ascending: false }).limit(500);
+    if (error) throw error;
+    return data;
+  },
 };
 
 async function readFunctionError(error) {
@@ -276,6 +286,15 @@ const local = {
   async removeBookmark(id) {
     const k = `su_bm_${ls.get('su_session', '')}`;
     ls.set(k, ls.get(k, []).filter((b) => b.id !== id));
+  },
+  async saveGameScore(row) {
+    const k = `su_games_${ls.get('su_session', '')}`;
+    const saved = { ...row, id: uuid(), created_at: new Date().toISOString() };
+    ls.set(k, [saved, ...ls.get(k, [])].slice(0, 500));
+    return saved;
+  },
+  async listGameScores() {
+    return ls.get(`su_games_${ls.get('su_session', '')}`, []);
   },
 };
 

@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useApp } from '../state.jsx';
 import { api, isLocalMode } from '../lib/api.js';
+import SoundControls from './SoundControls.jsx';
 
 const LINKS = [
   ['/', '🏠', 'Home'],
   ['/games', '🎮', 'Games'],
-  ['/phrases', '💬', 'Phrases'],
+  ['/vocab', '📚', 'Words'],
   ['/progress', '📈', 'Progress'],
   ['/history', '🗂️', 'History'],
 ];
@@ -28,6 +29,7 @@ export default function Layout() {
           ))}
         </nav>
         <div className="topbar__user">
+          <SoundControls />
           <span className="streak" title="Days in a row">🔥 {stats.streak}</span>
           <details className="usermenu">
             <summary aria-label="Account menu">{user.name.slice(0, 1).toUpperCase()}</summary>

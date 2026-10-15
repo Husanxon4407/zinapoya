@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExamRunner from '../../components/ExamRunner.jsx';
+import GameResult from '../../components/GameResult.jsx';
 import { PART3 } from '../../data/part3.js';
 import { DEBATE_LINKERS } from '../../data/phrases.js';
 import { pick, shuffle } from '../../lib/steps.js';
-import { phrasesUsed } from '../../lib/metrics.js';
+import { countWords, phrasesUsed } from '../../lib/metrics.js';
+import { sfx } from '../../lib/sound.js';
 
 function newRound() {
   const topic = pick(PART3);
@@ -12,8 +14,13 @@ function newRound() {
   return { topic, cards, answers: {}, side: null };
 }
 
-function Linkers({ text }) {
+function Linkers({ text, live = false }) {
   const used = new Set(phrasesUsed(text, DEBATE_LINKERS));
+  const prev = useRef(0);
+  useEffect(() => {
+    if (live && used.size > prev.current) sfx(used.size % 4 === 0 ? 'combo' : 'pop');
+    prev.current = used.size;
+  }, [used.size, live]);
   return (
     <div className="linkers">
       {DEBATE_LINKERS.map((l) => (
@@ -38,12 +45,17 @@ export default function DebateArena() {
 
   function answer(i, s) {
     if (answers[i]) return;
-    setGame({ ...game, answers: { ...answers, [i]: s } });
+    const next = { ...answers, [i]: s };
+    sfx(cards[i].side === s ? 'correct' : 'wrong');
+    if (Object.keys(next).length === cards.length) setTimeout(() => sfx('star'), 350);
+    setGame({ ...game, answers: next });
   }
 
   function flip() {
     setFlipping(true);
+    for (let t = 0; t < 1500; t += 160) setTimeout(() => sfx('flip'), t);
     setTimeout(() => {
+      sfx('coin');
       setGame((g) => ({ ...g, side: Math.random() < 0.5 ? 'for' : 'against' }));
       setFlipping(false);
     }, 1600);
@@ -139,18 +151,20 @@ export default function DebateArena() {
           mode="game"
           title={`Argue ${side.toUpperCase()}`}
           intro={<p>Use linking words: on the one hand, however, moreover, to sum up…</p>}
-          liveExtra={(text) => <Linkers text={text} />}
+          liveExtra={(text, phase) => <Linkers text={text} live={phase === 'speak'} />}
           renderExtra={(results) => {
-            const used = phrasesUsed(results[0].row.transcript || '', DEBATE_LINKERS);
+            const t = results[0].row.transcript || '';
+            const used = phrasesUsed(t, DEBATE_LINKERS);
+            const stars = used.length >= 6 ? 3 : used.length >= 4 ? 2 : used.length >= 2 ? 1 : 0;
+            const score = correct * 50 + used.length * 100 + Math.min(countWords(t), 150);
             return (
-              <div className="card game-result">
-                <h3>🔗 You used {used.length} linking phrases</h3>
-                <Linkers text={results[0].row.transcript || ''} />
+              <GameResult game="debate" score={score} stars={stars} title={`🔗 ${used.length} linking phrases`} detail={{ topic: topic.id, side, sorted: correct, linkers: used.length }}>
+                <Linkers text={t} />
                 <p>{used.length >= 4 ? 'Persuasive and well organised! 🏆' : 'Organise your ideas with: firstly, moreover, however, to sum up.'}</p>
                 <button className="btn" onClick={restart}>
                   ⚔️ New debate
                 </button>
-              </div>
+              </GameResult>
             );
           }}
         />

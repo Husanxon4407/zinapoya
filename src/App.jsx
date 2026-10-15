@@ -15,6 +15,10 @@ import LinkerBingo from './pages/games/LinkerBingo.jsx';
 import StoryBuilder from './pages/games/StoryBuilder.jsx';
 import DebateArena from './pages/games/DebateArena.jsx';
 import Phrases from './pages/Phrases.jsx';
+import Quiz from './pages/games/Quiz.jsx';
+import WordSprint from './pages/games/WordSprint.jsx';
+import Vocab from './pages/Vocab.jsx';
+import VocabTopic from './pages/VocabTopic.jsx';
 import Progress from './pages/Progress.jsx';
 import History from './pages/History.jsx';
 
@@ -70,6 +74,10 @@ export default function App() {
           <Route path="/games/bingo" element={<LinkerBingo />} />
           <Route path="/games/story" element={<StoryBuilder />} />
           <Route path="/games/debate" element={<DebateArena />} />
+          <Route path="/games/quiz" element={<Quiz />} />
+          <Route path="/games/sprint" element={<WordSprint />} />
+          <Route path="/vocab" element={<Vocab />} />
+          <Route path="/vocab/:id" element={<VocabTopic />} />
           <Route path="/phrases" element={<Phrases />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/history" element={<History />} />
