@@ -64,6 +64,13 @@ create index if not exists ai_usage_user_created on public.ai_usage (user_id, cr
 alter table public.ai_usage enable row level security;
 -- No policies: students cannot read or change it.
 
+-- Table access for logged-in students (row-level security above still limits them to their own rows).
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on public.attempts, public.bookmarks to authenticated;
+grant select on public.model_answers to authenticated;
+grant all on public.attempts, public.bookmarks, public.model_answers, public.ai_usage to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 -- 5. Private storage for recordings -----------------------------------------
 insert into storage.buckets (id, name, public)
 values ('recordings', 'recordings', false)
