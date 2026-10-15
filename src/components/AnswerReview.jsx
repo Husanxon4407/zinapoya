@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { recordingForAI } from '../lib/audio.js';
 import { PARTS } from '../data/parts.js';
 import { analyse, paceLabel } from '../lib/metrics.js';
 import { aiEnabled, api } from '../lib/api.js';
@@ -61,6 +62,46 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
     setRow(attempt);
   }, [attempt]);
 
+  // When the browser could not turn speech into text, let Gemini listen to the recording.
+  const hasRecording = !!(row.localBlob || row.recording_path);
+  const canTranscribe = aiEnabled && saved && !row.feedback && hasRecording && (row.duration_sec || 0) >= 2;
+  const triedAuto = useRef(false);
+
+  async function transcribeRecording() {
+    setBusy('transcribe');
+    setError('');
+    try {
+      let blob = row.localBlob;
+      if (!blob) {
+        const signed = await api.getRecordingUrl(row);
+        if (!signed) throw new Error('The recording could not be loaded.');
+        blob = await (await fetch(signed)).blob();
+      }
+      const { audio, mime } = await recordingForAI(blob);
+      const res = await api.transcribe(row.id, audio, mime);
+      if (!res.transcript) {
+        setError('The AI could not hear any speech in this recording. Please try speaking louder or closer to the microphone.');
+        return;
+      }
+      const patch = { transcript: res.transcript, word_count: res.word_count, wpm: res.wpm, filler_count: res.filler_count };
+      setTranscript(res.transcript);
+      setRow((r) => ({ ...r, ...patch }));
+      patchAttempt?.(row.id, patch);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  }
+
+  useEffect(() => {
+    if (open && canTranscribe && !transcript.trim() && !triedAuto.current) {
+      triedAuto.current = true;
+      transcribeRecording();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, canTranscribe]);
+
   async function getFeedback() {
     setBusy('feedback');
     setError('');
@@ -108,15 +149,22 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
           <MetricChips attempt={{ ...row, transcript }} />
 
           <label className="transcript">
-            <span>What you said {recognitionSupported() ? '(fix any words the computer misheard)' : '(type what you said)'}</span>
+            <span>What you said {recognitionSupported() ? '(you can fix any words that were misheard)' : '(type what you said)'}</span>
             <textarea
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               rows={Math.min(8, Math.max(3, Math.ceil(transcript.length / 90)))}
-              placeholder="No speech was detected. You can type what you said here."
-              readOnly={!!row.feedback}
+              placeholder={busy === 'transcribe' ? 'Listening to your recording…' : 'No text yet. You can type what you said here.'}
+              readOnly={!!row.feedback || busy === 'transcribe'}
             />
           </label>
+
+          {busy === 'transcribe' && <p className="notice">✍️ The AI is listening to your recording and writing down what you said…</p>}
+          {canTranscribe && busy !== 'transcribe' && (
+            <button className="btn btn--ghost btn--small transcribe-btn" onClick={transcribeRecording}>
+              ✍️ {transcript.trim() ? 'Rewrite the text from my recording' : 'Write down what I said (AI)'}
+            </button>
+          )}
 
           {error && <p className="notice notice--warn">{error}</p>}
 

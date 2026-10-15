@@ -94,6 +94,11 @@ const remote = {
     if (error) throw new Error(await readFunctionError(error));
     return data;
   },
+  async transcribe(attemptId, audio, mime = 'audio/wav') {
+    const { data, error } = await invokeCoach({ body: { mode: 'transcribe', attempt_id: attemptId, audio, mime } }, 90000);
+    if (error) throw new Error(await readFunctionError(error));
+    return data;
+  },
   async chat(messages) {
     const { data, error } = await invokeCoach({ body: { mode: 'chat', messages } });
     if (error) throw new Error(await readFunctionError(error));
@@ -132,10 +137,10 @@ const remote = {
   },
 };
 
-// Call the AI coach, but never wait more than a minute.
-async function invokeCoach(options) {
+// Call the AI coach, but never wait forever.
+async function invokeCoach(options, ms = 60000) {
   const timeout = new Promise((resolve) =>
-    setTimeout(() => resolve({ data: null, error: { message: 'The coach is taking too long to answer. Please try again in a minute.' } }), 60000),
+    setTimeout(() => resolve({ data: null, error: { message: 'The coach is taking too long to answer. Please try again in a minute.' } }), ms),
   );
   return Promise.race([supabase.functions.invoke('feedback', options), timeout]);
 }
@@ -289,6 +294,9 @@ const local = {
   },
   async chat() {
     throw new Error('The coach chat needs the online server. Your teacher can switch it on (see README).');
+  },
+  async transcribe() {
+    throw new Error('Automatic transcripts need the online server. You can type what you said instead.');
   },
   async listBookmarks() {
     return ls.get(`su_bm_${ls.get('su_session', '')}`, []);

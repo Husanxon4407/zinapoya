@@ -182,6 +182,10 @@
   }
 }
 
+.transcribe-btn {
+  margin: -4px 0 14px;
+}
+
 .loading-progress {
   text-align: center;
   padding: 60px 0;

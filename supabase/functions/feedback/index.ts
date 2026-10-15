@@ -2,6 +2,7 @@
 //   mode "feedback": scores a saved answer and stores the result on the attempt.
 //   mode "model":    writes a B2 model answer for a question (cached for everyone).
 //   mode "chat":     "Ask the coach" chat, limited to English speaking / exam topics.
+//   mode "transcribe": writes down what the student said in a recording (when the browser could not).
 // Secrets: GEMINI_API_KEY (from https://aistudio.google.com).
 // Optional: GEMINI_MODEL, DAILY_AI_LIMIT, DAILY_CHAT_LIMIT.
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
@@ -11,6 +12,7 @@ const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-lite-latest';
 const DAILY_LIMIT = Number(Deno.env.get('DAILY_AI_LIMIT') ?? '25');
 const DAILY_CHAT_LIMIT = Number(Deno.env.get('DAILY_CHAT_LIMIT') ?? '40');
+const DAILY_TRANSCRIBE_LIMIT = Number(Deno.env.get('DAILY_TRANSCRIBE_LIMIT') ?? '60');
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -30,7 +32,7 @@ class CoachError extends Error {
 /* ------------------------------------------------------------------ */
 /* Gemini                                                              */
 /* ------------------------------------------------------------------ */
-type Turn = { role: 'user' | 'model'; text: string };
+type Turn = { role: 'user' | 'model'; text: string; audio?: { mime: string; data: string } };
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const ATTEMPT_TIMEOUT_MS = 10000; // stop waiting for one model after 10 s
@@ -60,23 +62,23 @@ async function discoverFallbacks(): Promise<string[]> {
   return fallbackModels;
 }
 
-async function tryModel(model: string, body: Record<string, unknown>) {
+async function tryModel(model: string, body: Record<string, unknown>, timeoutMs = ATTEMPT_TIMEOUT_MS) {
   const res = await fetch(`${API}/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, ok: res.ok, data };
 }
 
-async function callGemini({ system, turns, schema, temperature = 0.5 }: { system: string; turns: Turn[]; schema?: unknown; temperature?: number }) {
+async function callGemini({ system, turns, schema, temperature = 0.5, timeoutMs = ATTEMPT_TIMEOUT_MS, allowEmpty = false }: { system: string; turns: Turn[]; schema?: unknown; temperature?: number; timeoutMs?: number; allowEmpty?: boolean }) {
   if (!GEMINI_KEY) throw new CoachError('The AI coach is not set up yet. Ask your teacher to add the Gemini key.', 503);
   const started = Date.now();
   const makeBody = () => ({
     systemInstruction: { parts: [{ text: system }] },
-    contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
+    contents: turns.map((t) => ({ role: t.role, parts: t.audio ? [{ inlineData: { mimeType: t.audio.mime, data: t.audio.data } }, { text: t.text }] : [{ text: t.text }] })),
     generationConfig: {
       temperature,
       maxOutputTokens: 8192, // includes Gemini "thinking" tokens
@@ -88,17 +90,18 @@ async function callGemini({ system, turns, schema, temperature = 0.5 }: { system
   const tried = new Set<string>();
   const queue = [MODEL];
   let lastStatus = 0;
-  while (queue.length && tried.size < 4 && Date.now() - started < TOTAL_BUDGET_MS) {
+  const budget = Math.max(TOTAL_BUDGET_MS, timeoutMs + 15000);
+  while (queue.length && tried.size < 4 && Date.now() - started < budget) {
     const model = queue.shift()!;
     if (tried.has(model)) continue;
     tried.add(model);
     let r;
     try {
-      r = await tryModel(model, makeBody());
+      r = await tryModel(model, makeBody(), timeoutMs);
       // Some models don't accept thinkingConfig: retry the same model without it.
       if (!r.ok && r.status === 400 && thinkingParamOk && /thinking/i.test(JSON.stringify(r.data))) {
         thinkingParamOk = false;
-        r = await tryModel(model, makeBody());
+        r = await tryModel(model, makeBody(), timeoutMs);
       }
     } catch (e) {
       console.error(`Gemini ${model} timed out / network error`, String(e));
@@ -108,7 +111,7 @@ async function callGemini({ system, turns, schema, temperature = 0.5 }: { system
     }
     if (r.ok) {
       const text = r.data.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-      if (text) {
+      if (text || allowEmpty) {
         console.log(`Gemini ok: ${model} in ${Date.now() - started} ms`);
         return text;
       }
@@ -239,18 +242,22 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const isChat = body.mode === 'chat';
+    const isTranscribe = body.mode === 'transcribe';
+    const kind = isChat ? 'chat' : isTranscribe ? 'transcribe' : 'ai';
 
     // Daily limits per student keep usage inside the free quota.
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     let q = admin.from('ai_usage').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', since);
-    q = isChat ? q.eq('kind', 'chat') : q.neq('kind', 'chat');
+    q = kind === 'ai' ? q.in('kind', ['feedback', 'model']) : q.eq('kind', kind);
     const { count } = await q;
-    const limit = isChat ? DAILY_CHAT_LIMIT : DAILY_LIMIT;
+    const limit = isChat ? DAILY_CHAT_LIMIT : isTranscribe ? DAILY_TRANSCRIBE_LIMIT : DAILY_LIMIT;
     if ((count ?? 0) >= limit) {
+      if (isTranscribe) return json({ error: `You have used your ${limit} automatic transcripts for today. You can type what you said instead.` }, 429);
       return json({ error: isChat ? `You have sent ${limit} messages to the coach today. Come back tomorrow! 🌙` : `You have used your ${limit} AI checks for today. Come back tomorrow! 🌙` }, 429);
     }
 
     if (isChat) return await chat(body, user.id);
+    if (isTranscribe) return await transcribe(body, user.id);
     if (body.mode === 'model') return await modelAnswer(body, user.id);
     return await feedback(body, user.id);
   } catch (err) {
@@ -348,4 +355,39 @@ async function chat(body: { messages?: { role: string; text: string }[] }, userI
   const reply = (await callGemini({ system: CHAT_SYSTEM, turns, temperature: 0.6 })).trim();
   await admin.from('ai_usage').insert({ user_id: userId, kind: 'chat' });
   return json({ reply });
+}
+
+const TRANSCRIBE_SYSTEM = `You are a speech-to-text engine for English learners. Listen to the recording and write down exactly what the speaker says in English.
+- Write the words as spoken: keep grammar mistakes, repetitions and fillers (um, eh, er). Do NOT correct or improve anything.
+- Use normal punctuation and sentences.
+- If a few words are in another language (Uzbek, Russian), write them as heard.
+- Output only the transcript text. If there is no speech, output nothing.
+
+${GUARD}`;
+
+async function transcribe(body: { attempt_id: string; audio?: string; mime?: string }, userId: string) {
+  const { data: attempt } = await admin.from('attempts').select('id, duration_sec').eq('id', body.attempt_id).eq('user_id', userId).maybeSingle();
+  if (!attempt) return json({ error: 'Answer not found.' }, 404);
+  const audio = typeof body.audio === 'string' ? body.audio : '';
+  if (audio.length < 1000) return json({ error: 'The recording is empty. Please record your answer again.' }, 400);
+  if (audio.length > 14_000_000) return json({ error: 'The recording is too long to transcribe.' }, 413);
+
+  const text = (
+    await callGemini({
+      system: TRANSCRIBE_SYSTEM,
+      temperature: 0,
+      timeoutMs: 40000,
+      allowEmpty: true,
+      turns: [{ role: 'user', text: 'Transcribe this recording of a student answering an English speaking exam question.', audio: { mime: body.mime || 'audio/wav', data: audio } }],
+    })
+  )
+    .replace(/^\s*["“]|["”]\s*$/g, '')
+    .trim();
+
+  const words = (text.match(/[A-Za-z']+/g) || []).length;
+  const wpm = Math.round(words / (Math.max(attempt.duration_sec || 1, 1) / 60));
+  const fillers = (text.match(/\b(um+|uh+|er+|erm+|eh+|ah+|hmm+)\b/gi) || []).length;
+  await admin.from('attempts').update({ transcript: text, word_count: words, wpm, filler_count: fillers }).eq('id', attempt.id);
+  await admin.from('ai_usage').insert({ user_id: userId, kind: 'transcribe' });
+  return json({ transcript: text, word_count: words, wpm, filler_count: fillers });
 }
