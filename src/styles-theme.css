@@ -1,9 +1,9 @@
 /* ================= Page background (teal) ================= */
 body {
-  background: linear-gradient(160deg, #d6eeea 0%, #bfe1dc 55%, #a9d6cf 100%) fixed;
+  background: linear-gradient(160deg, #6fc0cf 0%, #5aafc0 55%, #4a9fb2 100%) fixed;
 }
 :root[data-theme='dark'] body {
-  background: linear-gradient(160deg, #073230 0%, #052322 55%, #041b1a 100%) fixed;
+  background: linear-gradient(160deg, #083a49 0%, #062a35 55%, #04202a 100%) fixed;
 }
 
 /* ================= Gentle animated background ================= */
@@ -28,7 +28,7 @@ body {
   will-change: transform;
 }
 .prism--1 {
-  background: radial-gradient(circle, #5eead4 0%, transparent 65%);
+  background: radial-gradient(circle, #67e8f9 0%, transparent 65%);
   top: -14vmax;
   left: -10vmax;
   animation: prismA 40s ease-in-out infinite alternate;
@@ -40,13 +40,13 @@ body {
   animation: prismB 48s ease-in-out infinite alternate;
 }
 .prism--3 {
-  background: radial-gradient(circle, #99f6e4 0%, transparent 65%);
+  background: radial-gradient(circle, #a5f3fc 0%, transparent 65%);
   bottom: -20vmax;
   left: 18vw;
   animation: prismC 44s ease-in-out infinite alternate;
 }
 .prism--4 {
-  background: conic-gradient(from 0deg, #2dd4bf, #38bdf8, #a7f3d0, #2dd4bf);
+  background: conic-gradient(from 0deg, #22d3ee, #38bdf8, #cffafe, #22d3ee);
   width: 28vmax;
   height: 28vmax;
   top: 35vh;
@@ -78,7 +78,7 @@ body {
 .backdrop__grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(15, 118, 110, 0.1) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(14, 116, 144, 0.1) 1px, transparent 1px);
   background-size: 30px 30px;
   mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse at center, #000 25%, transparent 75%);
@@ -88,7 +88,7 @@ body {
   bottom: -60px;
   opacity: 0;
   font-weight: 900;
-  color: #0f766e;
+  color: #0e7490;
   filter: grayscale(0.6);
   animation: floatUpSlow linear infinite;
 }
@@ -115,10 +115,10 @@ body {
   opacity: 0.06;
 }
 :root[data-theme='dark'] .backdrop__grid {
-  background-image: radial-gradient(rgba(94, 234, 212, 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(103, 232, 249, 0.08) 1px, transparent 1px);
 }
 :root[data-theme='dark'] .floater {
-  color: #5eead4;
+  color: #67e8f9;
 }
 
 /* "Moving background" off (or the device asks for reduced motion) */
@@ -174,33 +174,33 @@ body {
 .quick__card:hover,
 .vocab-card:hover,
 .q-item:hover {
-  box-shadow: 0 4px 10px rgba(15, 50, 48, 0.12);
+  box-shadow: 0 4px 10px rgba(8, 51, 68, 0.12);
 }
 .quick__card {
   box-shadow: none;
 }
 .xp-card {
   box-shadow: none;
-  background: linear-gradient(135deg, #0f766e, #155e75);
+  background: linear-gradient(135deg, #0e7490, #155e75);
 }
 .coach-fab {
-  box-shadow: 0 3px 10px rgba(15, 50, 48, 0.25);
-  background: linear-gradient(135deg, #0f766e, #0e7490);
+  box-shadow: 0 3px 10px rgba(8, 51, 68, 0.25);
+  background: linear-gradient(135deg, #0e7490, #155e75);
 }
 .coach__head {
-  background: linear-gradient(135deg, #0f766e, #0e7490);
+  background: linear-gradient(135deg, #0e7490, #155e75);
 }
 .btn {
   box-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
 }
 .logo__mark {
-  background: linear-gradient(135deg, #0f766e, #14b8a6);
+  background: linear-gradient(135deg, #0e7490, #22d3ee);
 }
 .level-badge {
-  background: linear-gradient(135deg, #0f766e, #0e7490);
+  background: linear-gradient(135deg, #0e7490, #155e75);
 }
 .btn--ai {
-  background: linear-gradient(135deg, #0f766e, #0e7490, #7c3aed);
+  background: linear-gradient(135deg, #0e7490, #0e7490, #7c3aed);
 }
 
 /* Stronger, easier-to-read text */
@@ -235,23 +235,23 @@ h3 {
   border-bottom: 1px solid var(--line);
 }
 :root[data-theme='dark'] .bottomnav {
-  background: #092d2c;
+  background: #08303c;
   border-top: 1px solid var(--line);
 }
 :root[data-theme='dark'] .usermenu__panel,
 :root[data-theme='dark'] .soundmenu__panel,
 :root[data-theme='dark'] .coach {
-  background: #0e3533;
+  background: #0c3a48;
   border: var(--border);
 }
 :root[data-theme='dark'] .coach__list {
-  background: #082b2a;
+  background: #072f3b;
 }
 :root[data-theme='dark'] .bubble--model {
-  background: #13403d;
+  background: #0f4757;
 }
 :root[data-theme='dark'] .btn--ghost {
-  background: #0e3533;
+  background: #0c3a48;
   border-color: var(--line);
   color: var(--text);
 }
@@ -263,17 +263,17 @@ h3 {
   color: var(--text);
 }
 :root[data-theme='dark'] .chart__area {
-  fill: rgba(45, 212, 191, 0.15);
+  fill: rgba(34, 211, 238, 0.15);
 }
 :root[data-theme='dark'] .chart__line {
-  stroke: #2dd4bf;
+  stroke: #22d3ee;
 }
 :root[data-theme='dark'] .calendar__day.lvl-1 {
-  background: rgba(45, 212, 191, 0.3);
-  color: #ccfbf1;
+  background: rgba(34, 211, 238, 0.3);
+  color: #cffafe;
 }
 :root[data-theme='dark'] .quiz-option {
-  background: #0e3533;
+  background: #0c3a48;
 }
 :root[data-theme='dark'] .quiz-option--right {
   background: var(--tint-good);
@@ -289,11 +289,11 @@ h3 {
   background: #3b2f0b;
 }
 .calendar__day.lvl-2 {
-  background: #2dd4bf;
-  color: #063b37;
+  background: #22d3ee;
+  color: #083344;
 }
 .calendar__day.lvl-3 {
-  background: #0f766e;
+  background: #0e7490;
   color: #fff;
 }
 
