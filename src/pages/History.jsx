@@ -53,7 +53,7 @@ function ThenVsNow({ attempts }) {
   return pairs.map(({ first, latest, count }) => (
     <div key={latest.id} className="card thennow">
       <p className="thennow__q">
-        <span style={{ color: PARTS[latest.part].color }}>{PARTS[latest.part].emoji} {PARTS[latest.part].name}</span> · {latest.question_text}{' '}
+        <span style={{ color: PARTS[latest.part].ink }}>{PARTS[latest.part].emoji} {PARTS[latest.part].name}</span> · {latest.question_text}{' '}
         <small className="muted">({count} tries)</small>
       </p>
       <div className="thennow__grid">

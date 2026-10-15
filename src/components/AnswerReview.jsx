@@ -93,7 +93,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
   return (
     <div className="card review" style={{ borderTopColor: part.color }}>
       <button className="review__head" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="review__tag" style={{ background: part.soft, color: part.color }}>
+        <span className="review__tag" style={{ background: part.soft, color: part.ink }}>
           {part.emoji} {title}
         </span>
         <span className="review__q">{step?.prompt || row.question_text}</span>

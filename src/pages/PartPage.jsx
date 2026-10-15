@@ -47,7 +47,7 @@ export default function PartPage() {
       <section className="part-hero" style={{ backgroundImage: `linear-gradient(${part.soft}, ${part.soft})` }}>
         <div>
           <span className="part-hero__emoji">{part.emoji}</span>
-          <h1 style={{ color: part.color }}>
+          <h1 style={{ color: part.ink }}>
             {part.name}: {part.title}
           </h1>
           <p>{part.what}</p>

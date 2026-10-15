@@ -4,8 +4,8 @@ import { useApp } from '../../state.jsx';
 import { sfx } from '../../lib/sound.js';
 
 const GAMES = [
-  { id: 'quiz', to: '/games/quiz', emoji: '🎯', name: 'Viktorina', tag: 'Vocabulary', color: '#4f46e5', soft: 'var(--tint-indigo)', text: 'A fast quiz on topic words and idioms. Beat the clock, build combos and don’t lose your 3 lives!' },
-  { id: 'sprint', to: '/games/sprint', emoji: '🏃', name: 'Word Sprint', tag: 'Speaking + vocabulary', color: '#0891b2', soft: 'var(--tint-cyan)', text: 'Talk for 1 minute and use topic words. Every word you say pops and gives you points.' },
+  { id: 'quiz', to: '/games/quiz', emoji: '🎯', name: 'Viktorina', tag: 'Vocabulary', color: '#5561e8', soft: 'var(--tint-indigo)', ink: 'var(--ink-indigo)', text: 'A fast quiz on topic words and idioms. Beat the clock, build combos and don’t lose your 3 lives!' },
+  { id: 'sprint', to: '/games/sprint', emoji: '🏃', name: 'Word Sprint', tag: 'Speaking + vocabulary', color: '#0891b2', soft: 'var(--tint-cyan)', ink: 'var(--ink-cyan)', text: 'Talk for 1 minute and use topic words. Every word you say pops and gives you points.' },
   { id: 'roulette', to: '/games/roulette', part: '1.1', emoji: '🎡', name: 'Question Roulette', text: 'Spin the wheel, then answer with Answer + Reason + Example in 30 seconds.' },
   { id: 'bingo', to: '/games/bingo', part: '1.2', emoji: '🧩', name: 'Linker Bingo', text: 'Compare two pictures. Every comparison word you say lights up a square. Get a line for BINGO!' },
   { id: 'story', to: '/games/story', part: '2', emoji: '📖', name: 'Story Builder', text: 'Plan your story in 6 quick steps, then tell it. Every past-tense verb scores.' },
@@ -44,18 +44,19 @@ export default function Games() {
           const p = g.part ? PARTS[g.part] : null;
           const color = p ? p.color : g.color;
           const soft = p ? p.soft : g.soft;
+          const ink = p ? p.ink : g.ink;
           const b = best(g.id);
           return (
-            <Link key={g.to} to={g.to} className="game-card" style={{ backgroundImage: `linear-gradient(${soft}, ${soft})` }} onClick={() => sfx('click')}>
+            <Link key={g.to} to={g.to} className="game-card" style={{ '--pc': color, '--ps': soft }} onClick={() => sfx('click')}>
               {plays(g.id) === 0 && <span className="game-card__new">NEW</span>}
               <span className="game-card__emoji">{g.emoji}</span>
-              <span className="game-card__part" style={{ color }}>
+              <span className="game-card__part" style={{ color: ink }}>
                 {p ? `${p.name} · ${p.title}` : g.tag}
               </span>
               <h3>{g.name}</h3>
               <p>{g.text}</p>
               <div className="game-card__foot">
-                <span className="btn btn--small" style={{ background: color }}>
+                <span className="btn btn--small game-card__play" style={{ background: color }}>
                   Play →
                 </span>
                 {b > 0 && <span className="game-card__best">🏆 Best {b}</span>}

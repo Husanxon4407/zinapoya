@@ -19,6 +19,13 @@
   --p2-soft: #ffeedf;
   --p3: #e11d48;
   --p3-soft: #ffe6ec;
+  /* Darker shades of each part colour for readable text */
+  --p11-ink: #0f766e;
+  --p12-ink: #6d28d9;
+  --p2-ink: #c2410c;
+  --p3-ink: #be123c;
+  --ink-indigo: #4338ca;
+  --ink-cyan: #0e7490;
 
   --radius: 18px;
   --shadow: none;
@@ -73,6 +80,12 @@
   --p2-soft: rgba(251, 146, 60, 0.13);
   --p3: #fb7185;
   --p3-soft: rgba(251, 113, 133, 0.13);
+  --p11-ink: #5eead4;
+  --p12-ink: #c4b5fd;
+  --p2-ink: #fdba74;
+  --p3-ink: #fda4af;
+  --ink-indigo: #a5b4fc;
+  --ink-cyan: #67e8f9;
 
   --tint-indigo: rgba(116, 128, 238, 0.15);
   --tint-indigo-strong: rgba(109, 106, 248, 0.35);

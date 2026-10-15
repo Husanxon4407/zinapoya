@@ -104,7 +104,7 @@ export default function Progress() {
             const s = stats.parts[k];
             return (
               <div key={k} className="part-row">
-                <span className="part-row__name" style={{ color: p.color }}>
+                <span className="part-row__name" style={{ color: p.ink }}>
                   {p.emoji} {p.name}
                 </span>
                 <span className="bar__track">

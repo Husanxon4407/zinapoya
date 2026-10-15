@@ -47,7 +47,7 @@ export default function Landing() {
         </div>
         <div className="hero__parts">
           {PART_KEYS.map((k) => (
-            <div key={k} className="mini-part" style={{ backgroundImage: `linear-gradient(${PARTS[k].soft}, ${PARTS[k].soft})`, color: PARTS[k].color }}>
+            <div key={k} className="mini-part" style={{ '--pc': PARTS[k].color, '--ps': PARTS[k].soft, color: PARTS[k].ink }}>
               <span className="mini-part__emoji">{PARTS[k].emoji}</span>
               <strong>{PARTS[k].name}</strong>
               <small>{PARTS[k].title}</small>

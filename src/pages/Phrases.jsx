@@ -61,7 +61,7 @@ export default function Phrases() {
         ))}
       </div>
 
-      <h2 style={{ color: part.color }}>{group.title}</h2>
+      <h2 style={{ color: part.ink }}>{group.title}</h2>
       <div className="phrase-groups">
         {group.groups.map((g) => (
           <div key={g.name} className="card phrase-group" style={{ borderTopColor: part.color }}>

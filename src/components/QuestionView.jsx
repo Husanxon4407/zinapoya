@@ -5,7 +5,7 @@ export default function QuestionView({ step, compact = false }) {
   const part = PARTS[step.part];
   return (
     <div className={`qview ${compact ? 'qview--compact' : ''}`}>
-      <div className="qview__tag" style={{ background: part.soft, color: part.color }}>
+      <div className="qview__tag" style={{ background: part.soft, color: part.ink }}>
         {part.emoji} {part.name} · {step.label}
       </div>
 

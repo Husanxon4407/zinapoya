@@ -76,7 +76,7 @@ export function Workout() {
         title="⚡ Daily 10-minute workout"
         intro={
           <p>
-            Warm up with three quick questions, then train your focus part: <strong style={{ color: weak.color }}>{weak.name} — {weak.title}</strong>.
+            Warm up with three quick questions, then train your focus part: <strong style={{ color: weak.ink }}>{weak.name} — {weak.title}</strong>.
           </p>
         }
       />
