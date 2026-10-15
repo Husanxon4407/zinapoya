@@ -4,8 +4,8 @@ import { useApp } from '../../state.jsx';
 import { sfx } from '../../lib/sound.js';
 
 const GAMES = [
-  { id: 'quiz', to: '/games/quiz', emoji: '🎯', name: 'Viktorina', tag: 'Vocabulary', color: '#4f46e5', soft: '#e0e7ff', text: 'A fast quiz on topic words and idioms. Beat the clock, build combos and don’t lose your 3 lives!' },
-  { id: 'sprint', to: '/games/sprint', emoji: '🏃', name: 'Word Sprint', tag: 'Speaking + vocabulary', color: '#0891b2', soft: '#cffafe', text: 'Talk for 1 minute and use topic words. Every word you say pops and gives you points.' },
+  { id: 'quiz', to: '/games/quiz', emoji: '🎯', name: 'Viktorina', tag: 'Vocabulary', color: '#4f46e5', soft: 'var(--tint-indigo)', text: 'A fast quiz on topic words and idioms. Beat the clock, build combos and don’t lose your 3 lives!' },
+  { id: 'sprint', to: '/games/sprint', emoji: '🏃', name: 'Word Sprint', tag: 'Speaking + vocabulary', color: '#0891b2', soft: 'var(--tint-cyan)', text: 'Talk for 1 minute and use topic words. Every word you say pops and gives you points.' },
   { id: 'roulette', to: '/games/roulette', part: '1.1', emoji: '🎡', name: 'Question Roulette', text: 'Spin the wheel, then answer with Answer + Reason + Example in 30 seconds.' },
   { id: 'bingo', to: '/games/bingo', part: '1.2', emoji: '🧩', name: 'Linker Bingo', text: 'Compare two pictures. Every comparison word you say lights up a square. Get a line for BINGO!' },
   { id: 'story', to: '/games/story', part: '2', emoji: '📖', name: 'Story Builder', text: 'Plan your story in 6 quick steps, then tell it. Every past-tense verb scores.' },

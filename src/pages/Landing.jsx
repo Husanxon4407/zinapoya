@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { PARTS, PART_KEYS } from '../data/parts.js';
 import { aiEnabled } from '../lib/api.js';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 
 const FEATURES = [
   ['⏱️', 'Real exam simulator', 'Same questions, same timers. The examiner voice reads every question.'],
@@ -18,9 +19,12 @@ export default function Landing() {
         <span className="logo">
           <span className="logo__mark">🎤</span> SpeakUp
         </span>
-        <Link to="/login" className="btn btn--ghost btn--small">
-          Log in
-        </Link>
+        <div className="landing__actions">
+          <ThemeToggle />
+          <Link to="/login" className="btn btn--ghost btn--small">
+            Log in
+          </Link>
+        </div>
       </header>
 
       <section className="hero">

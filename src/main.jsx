@@ -5,6 +5,10 @@ import { AppProvider } from './state.jsx';
 import App from './App.jsx';
 import './styles.css';
 import './styles-games.css';
+import './styles-theme.css';
+import { applyTheme } from './lib/theme.js';
+
+applyTheme();
 
 // Vercel also serves every version on its own long address (…-abc123-….vercel.app).
 // Logins are stored per address, so always send people to the one main address.

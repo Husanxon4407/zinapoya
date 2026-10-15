@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useApp } from './state.jsx';
 import Layout from './components/Layout.jsx';
+import Backdrop from './components/Backdrop.jsx';
 import Landing from './pages/Landing.jsx';
 import { ForgotPassword, Login, ResetPassword, Signup } from './pages/Auth.jsx';
 import TryIt from './pages/TryIt.jsx';
@@ -31,6 +32,17 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  return (
+    <>
+      <Backdrop />
+      <div className="app-layer">
+        <Screens />
+      </div>
+    </>
+  );
+}
+
+function Screens() {
   const { user, authReady, recovering } = useApp();
 
   if (!authReady) {

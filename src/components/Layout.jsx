@@ -3,6 +3,7 @@ import { useApp } from '../state.jsx';
 import { aiEnabled, api, isLocalMode } from '../lib/api.js';
 import SoundControls from './SoundControls.jsx';
 import CoachChat from './CoachChat.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 
 const LINKS = [
   ['/', '🏠', 'Home'],
@@ -30,6 +31,7 @@ export default function Layout() {
           ))}
         </nav>
         <div className="topbar__user">
+          <ThemeToggle />
           <SoundControls />
           <span className="streak" title="Days in a row">🔥 {stats.streak}</span>
           <details className="usermenu">
