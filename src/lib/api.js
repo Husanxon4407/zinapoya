@@ -5,6 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const isLocalMode = !URL || !KEY;
+// Set VITE_AI_ENABLED=true once the ANTHROPIC_API_KEY secret is added in Supabase.
+export const aiEnabled = !isLocalMode && import.meta.env.VITE_AI_ENABLED === 'true';
 const supabase = isLocalMode ? null : createClient(URL, KEY);
 
 const MAX_RECORDINGS = 30;

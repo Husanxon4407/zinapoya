@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { PARTS, PART_KEYS } from '../data/parts.js';
+import { aiEnabled } from '../lib/api.js';
 
 const FEATURES = [
   ['⏱️', 'Real exam simulator', 'Same questions, same timers. The examiner voice reads every question.'],
   ['🎧', 'Hear yourself', 'Every answer is recorded so you can listen and notice your mistakes.'],
-  ['✨', 'AI speaking coach', 'Get your level, corrected sentences and better words in seconds.'],
+  ['✨', aiEnabled ? 'AI speaking coach' : 'AI speaking coach (coming soon)', 'Get your level, corrected sentences and better words in seconds.'],
   ['🎮', 'Fun mini-games', 'Question Roulette, Linker Bingo, Story Builder and Debate Arena.'],
   ['📈', 'Track your progress', 'Your streak, scores and full history — on any device.'],
   ['💬', 'Phrase bank', 'Ready-made phrases for every part, with pronunciation.'],

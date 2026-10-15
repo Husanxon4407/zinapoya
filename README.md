@@ -42,7 +42,8 @@ accounts and progress are stored only in that browser and AI feedback is off.
    supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
    supabase functions deploy feedback
    ```
-   Optional secrets: `DAILY_AI_LIMIT` (AI checks per student per 24 h, default 25) and
+   Then set `VITE_AI_ENABLED=true` (in `.env` and in Vercel's environment variables, then
+   redeploy) so the AI buttons appear. Optional secrets: `DAILY_AI_LIMIT` (AI checks per student per 24 h, default 25) and
    `CLAUDE_MODEL` (default `claude-haiku-5-5`, the cheapest model — roughly a fraction of a
    cent per feedback).
 5. **Login settings:** *Authentication → URL Configuration* → set *Site URL* to your website

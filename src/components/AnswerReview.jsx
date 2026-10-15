@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PARTS } from '../data/parts.js';
 import { analyse, paceLabel } from '../lib/metrics.js';
-import { api } from '../lib/api.js';
+import { aiEnabled, api } from '../lib/api.js';
 import { useApp } from '../state.jsx';
 import FeedbackView from './FeedbackView.jsx';
 import { recognitionSupported } from '../lib/speech.js';
@@ -122,6 +122,8 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
 
           {row.feedback ? (
             <FeedbackView feedback={row.feedback} scores={row.scores} />
+          ) : !aiEnabled ? (
+            <p className="notice">🎧 Listen to your recording and read what you said. Could you say it better? Try the question again!</p>
           ) : guest ? (
             <p className="notice">✨ Sign up for free to get AI feedback on your answers.</p>
           ) : (
@@ -132,7 +134,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
             )
           )}
 
-          {!guest && (
+          {!guest && aiEnabled && (
             <div className="model">
               {model ? (
                 <div className="model__answer">
