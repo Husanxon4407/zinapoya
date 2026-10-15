@@ -118,15 +118,15 @@ function PlayRipple({ id, c }) {
 }
 
 const ITEMS = [
-  { C: Mic, c: G.indigo, top: '10%', left: '3%', w: 110, anim: 'geoFloat', dur: 9 },
-  { C: Headphones, c: G.coral, top: '12%', left: '87%', w: 120, anim: 'geoTilt', dur: 12 },
-  { C: Bubble, c: G.cyan, text: 'Hello!', top: '55%', left: '1%', w: 150, anim: 'bubblePop', dur: 7 },
-  { C: TypingBubble, c: G.mint, top: '66%', left: '87%', w: 120, anim: 'geoFloat', dur: 10 },
-  { C: Equalizer, c: G.indigo, top: '40%', left: '92%', w: 90, anim: 'none', dur: 1 },
-  { C: Waveform, c: G.cyan, top: '86%', left: '20%', w: 220, anim: 'geoDrift', dur: 18 },
-  { C: Book, c: G.coral, top: '33%', left: '7%', w: 100, anim: 'geoTilt', dur: 14 },
-  { C: PlayRipple, c: G.mint, top: '4%', left: '60%', w: 80, anim: 'none', dur: 1 },
-  { C: Bubble, c: G.coral, text: 'ABC', top: '84%', left: '72%', w: 110, anim: 'bubblePop', dur: 9 },
+  { C: Mic, c: G.indigo, top: '10%', left: '3%', w: 66, anim: 'geoFloat', dur: 13 },
+  { C: Headphones, c: G.coral, top: '12%', left: '87%', w: 72, anim: 'geoTilt', dur: 17 },
+  { C: Bubble, c: G.cyan, text: 'Hello!', top: '55%', left: '1%', w: 90, anim: 'bubblePop', dur: 10 },
+  { C: TypingBubble, c: G.mint, top: '66%', left: '87%', w: 72, anim: 'geoFloat', dur: 14 },
+  { C: Equalizer, c: G.indigo, top: '40%', left: '92%', w: 54, anim: 'none', dur: 1 },
+  { C: Waveform, c: G.cyan, top: '86%', left: '20%', w: 132, anim: 'geoDrift', dur: 25 },
+  { C: Book, c: G.coral, top: '33%', left: '7%', w: 60, anim: 'geoTilt', dur: 20 },
+  { C: PlayRipple, c: G.mint, top: '4%', left: '60%', w: 48, anim: 'none', dur: 1 },
+  { C: Bubble, c: G.coral, text: 'ABC', top: '84%', left: '72%', w: 66, anim: 'bubblePop', dur: 13 },
 ];
 
 export default function Backdrop() {
