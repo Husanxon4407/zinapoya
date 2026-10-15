@@ -90,19 +90,19 @@ const remote = {
     return data?.signedUrl || null;
   },
   async requestFeedback(attemptId, transcript) {
-    const { data, error } = await supabase.functions.invoke('feedback', { body: { mode: 'feedback', attempt_id: attemptId, transcript } });
+    const { data, error } = await invokeCoach({ body: { mode: 'feedback', attempt_id: attemptId, transcript } });
     if (error) throw new Error(await readFunctionError(error));
     return data;
   },
   async chat(messages) {
-    const { data, error } = await supabase.functions.invoke('feedback', { body: { mode: 'chat', messages } });
+    const { data, error } = await invokeCoach({ body: { mode: 'chat', messages } });
     if (error) throw new Error(await readFunctionError(error));
     return data.reply;
   },
   async getModelAnswer({ question_id, part, question_text }) {
     const { data: cached } = await supabase.from('model_answers').select('answer').eq('question_id', question_id).maybeSingle();
     if (cached) return cached.answer;
-    const { data, error } = await supabase.functions.invoke('feedback', { body: { mode: 'model', question_id, part, question_text } });
+    const { data, error } = await invokeCoach({ body: { mode: 'model', question_id, part, question_text } });
     if (error) throw new Error(await readFunctionError(error));
     return data.answer;
   },
@@ -131,6 +131,14 @@ const remote = {
     return data;
   },
 };
+
+// Call the AI coach, but never wait more than a minute.
+async function invokeCoach(options) {
+  const timeout = new Promise((resolve) =>
+    setTimeout(() => resolve({ data: null, error: { message: 'The coach is taking too long to answer. Please try again in a minute.' } }), 60000),
+  );
+  return Promise.race([supabase.functions.invoke('feedback', options), timeout]);
+}
 
 async function readFunctionError(error) {
   try {

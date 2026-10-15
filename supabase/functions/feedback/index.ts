@@ -32,34 +32,97 @@ class CoachError extends Error {
 /* ------------------------------------------------------------------ */
 type Turn = { role: 'user' | 'model'; text: string };
 
-async function callGemini({ system, turns, schema, temperature = 0.5 }: { system: string; turns: Turn[]; schema?: unknown; temperature?: number }) {
-  if (!GEMINI_KEY) throw new CoachError('The AI coach is not set up yet. Ask your teacher to add the Gemini key.', 503);
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+const API = 'https://generativelanguage.googleapis.com/v1beta';
+const ATTEMPT_TIMEOUT_MS = 20000; // stop waiting for one model after 20 s
+const TOTAL_BUDGET_MS = 45000; // give up completely after ~45 s
+let fallbackModels: string[] | null = null; // discovered once per function instance
+let thinkingParamOk = true; // turned off if a model rejects thinkingConfig
+
+// Ask Google which fast "flash" text models this key can use, so a busy or
+// retired model never breaks the coach.
+async function discoverFallbacks(): Promise<string[]> {
+  if (fallbackModels) return fallbackModels;
+  try {
+    const res = await fetch(`${API}/models?pageSize=200`, { headers: { 'x-goog-api-key': GEMINI_KEY }, signal: AbortSignal.timeout(8000) });
+    const data = await res.json();
+    fallbackModels = (data.models ?? [])
+      .filter((m: { name: string; supportedGenerationMethods?: string[] }) => m.supportedGenerationMethods?.includes('generateContent'))
+      .map((m: { name: string }) => m.name.replace(/^models\//, ''))
+      .filter((n: string) => /flash/.test(n) && !/(image|tts|audio|live|embed|native|robotics|computer)/.test(n))
+      // Newest versions first; stable names before previews.
+      .sort((a: string, b: string) => Number(/preview|exp/.test(a)) - Number(/preview|exp/.test(b)) || b.localeCompare(a, 'en', { numeric: true }))
+      .slice(0, 6);
+  } catch (e) {
+    console.error('Could not list Gemini models', String(e));
+    fallbackModels = [];
+  }
+  console.log('Gemini fallback models:', fallbackModels.join(', '));
+  return fallbackModels;
+}
+
+async function tryModel(model: string, body: Record<string, unknown>) {
+  const res = await fetch(`${API}/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_KEY },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
-      contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
-      generationConfig: {
-        temperature,
-        maxOutputTokens: 8192, // includes Gemini "thinking" tokens
-        ...(schema ? { responseMimeType: 'application/json', responseSchema: schema } : {}),
-      },
-    }),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error('Gemini error', res.status, JSON.stringify(data).slice(0, 800));
-    if (res.status === 429) throw new CoachError('The coach is very busy right now (free daily limit). Please try again later.', 429);
-    throw new CoachError('The AI coach is not available right now. Please try again later.', 502);
+  return { status: res.status, ok: res.ok, data };
+}
+
+async function callGemini({ system, turns, schema, temperature = 0.5 }: { system: string; turns: Turn[]; schema?: unknown; temperature?: number }) {
+  if (!GEMINI_KEY) throw new CoachError('The AI coach is not set up yet. Ask your teacher to add the Gemini key.', 503);
+  const started = Date.now();
+  const makeBody = () => ({
+    systemInstruction: { parts: [{ text: system }] },
+    contents: turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] })),
+    generationConfig: {
+      temperature,
+      maxOutputTokens: 8192, // includes Gemini "thinking" tokens
+      ...(thinkingParamOk ? { thinkingConfig: { thinkingLevel: 'low' } } : {}), // faster answers
+      ...(schema ? { responseMimeType: 'application/json', responseSchema: schema } : {}),
+    },
+  });
+
+  const tried = new Set<string>();
+  const queue = [MODEL];
+  let lastStatus = 0;
+  while (queue.length && tried.size < 4 && Date.now() - started < TOTAL_BUDGET_MS) {
+    const model = queue.shift()!;
+    if (tried.has(model)) continue;
+    tried.add(model);
+    let r;
+    try {
+      r = await tryModel(model, makeBody());
+      // Some models don't accept thinkingConfig: retry the same model without it.
+      if (!r.ok && r.status === 400 && thinkingParamOk && /thinking/i.test(JSON.stringify(r.data))) {
+        thinkingParamOk = false;
+        r = await tryModel(model, makeBody());
+      }
+    } catch (e) {
+      console.error(`Gemini ${model} timed out / network error`, String(e));
+      lastStatus = 504;
+      queue.push(...(await discoverFallbacks()));
+      continue;
+    }
+    if (r.ok) {
+      const text = r.data.candidates?.[0]?.content?.parts?.filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text ?? '').join('') ?? '';
+      if (text) {
+        console.log(`Gemini ok: ${model} in ${Date.now() - started} ms`);
+        return text;
+      }
+      console.error('Gemini empty', model, JSON.stringify(r.data).slice(0, 600));
+      throw new CoachError('The coach could not answer that. Try asking in a different way.', 422);
+    }
+    lastStatus = r.status;
+    console.error('Gemini error', model, r.status, JSON.stringify(r.data).slice(0, 600));
+    // Busy (503), rate-limited (429) or retired (404): try another model.
+    if ([404, 429, 500, 503].includes(r.status)) queue.push(...(await discoverFallbacks()));
+    else break;
   }
-  const cand = data.candidates?.[0];
-  const text = cand?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('') ?? '';
-  if (!text) {
-    console.error('Gemini empty', JSON.stringify(data).slice(0, 800));
-    throw new CoachError('The coach could not answer that. Try asking in a different way.', 422);
-  }
-  return text;
+  if (lastStatus === 429) throw new CoachError('The coach has reached Google’s free limit for now. Please try again in a few minutes.', 429);
+  throw new CoachError('The coach is very busy right now. Please try again in a minute.', 503);
 }
 
 /* ------------------------------------------------------------------ */
