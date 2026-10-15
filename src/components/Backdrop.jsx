@@ -7,7 +7,7 @@ const ICONS = ['🎤', '📚', '✏️', '💬', '🎧', '🗣️', '⭐', '📖
 export default function Backdrop() {
   const floaters = useMemo(
     () =>
-      Array.from({ length: 16 }, (_, i) => ({
+      Array.from({ length: 9 }, (_, i) => ({
         icon: ICONS[i % ICONS.length],
         left: (i * 61) % 100,
         size: 16 + ((i * 7) % 18),
