@@ -2331,22 +2331,28 @@ a.roster__row:hover {
   }
 }
 
-/* ---------- Home: main column (75%) + side column (25%) ---------- */
+/* ---------- Home: main column centred on the screen, side column at the right edge ---------- */
 .main:has(.home) {
-  max-width: 1320px;
-  padding-left: 32px;
-  padding-right: 32px;
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 .home {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(250px, 1fr);
+  /* Equal outer columns keep the main column exactly in the centre; the right one holds the side cards. */
+  grid-template-columns: minmax(250px, 1fr) minmax(0, 960px) minmax(250px, 1fr);
   gap: 28px;
   align-items: start;
 }
 .home__main {
+  grid-column: 2;
   min-width: 0;
 }
 .home__side {
+  grid-column: 3;
+  justify-self: end;
+  width: 100%;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -2439,18 +2445,31 @@ a.side-card:hover {
   margin: 0 0 10px;
   font-size: 0.9rem;
 }
-@media (max-width: 980px) {
-  /* Tablets and phones: one column, the exam comes first. */
-  .main:has(.home) {
-    padding-left: 16px;
-    padding-right: 16px;
-  }
+@media (max-width: 1180px) {
+  /* Smaller screens: one centred column, the exam first, the side cards below it. */
   .home {
     grid-template-columns: minmax(0, 1fr);
+    max-width: 960px;
+    margin: 0 auto;
     gap: 16px;
+  }
+  .home__main,
+  .home__side {
+    grid-column: 1;
   }
   .home__side {
     position: static;
+    justify-self: stretch;
+    max-width: none;
     margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    align-items: start;
+  }
+}
+@media (max-width: 760px) {
+  .main:has(.home) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 }
