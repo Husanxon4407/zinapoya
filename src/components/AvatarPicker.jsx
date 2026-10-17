@@ -1,20 +1,31 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import Avatar from './Avatar.jsx';
-import { squareImage } from '../lib/image.js';
+import PhotoCropper from './PhotoCropper.jsx';
 
-// Shows the photo with "Choose photo" / "Remove" buttons. onPick receives a small square JPEG blob.
+// Shows the photo with "Choose photo" / "Remove" buttons. A chosen photo opens the editor first;
+// onPick receives the small square JPEG blob of the part the student framed.
 export default function AvatarPicker({ name, url, onPick, onRemove, busy = false, onError }) {
   const input = useRef(null);
+  const [file, setFile] = useState(null);
 
-  async function choose(e) {
-    const file = e.target.files?.[0];
+  function choose(e) {
+    const f = e.target.files?.[0];
     e.target.value = '';
-    if (!file) return;
+    if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      onError?.('Please choose a photo (JPG or PNG).');
+      return;
+    }
+    setFile(f);
+  }
+
+  async function save(blob) {
     try {
-      await onPick(await squareImage(file));
+      await onPick(blob);
     } catch (err) {
       onError?.(err.message);
     }
+    setFile(null);
   }
 
   return (
@@ -32,6 +43,7 @@ export default function AvatarPicker({ name, url, onPick, onRemove, busy = false
         <small className="muted">{busy ? 'Saving…' : 'Optional. A clear photo of your face works best.'}</small>
       </div>
       <input ref={input} type="file" accept="image/*" hidden onChange={choose} />
+      {file && <PhotoCropper file={file} onCancel={() => setFile(null)} onSave={save} />}
     </div>
   );
 }

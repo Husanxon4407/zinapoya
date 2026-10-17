@@ -79,3 +79,6 @@ create policy "own avatar update" on storage.objects for update to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "own avatar delete" on storage.objects for delete to authenticated
   using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Let the website see the new tables and functions straight away.
+notify pgrst, 'reload schema';

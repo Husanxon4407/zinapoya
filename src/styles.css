@@ -2288,3 +2288,80 @@ a.roster__row:hover {
   margin: 8px 0 0;
   background: var(--surface);
 }
+
+/* ---------- Photo editor ---------- */
+.cropper-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 12, 20, 0.6);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.cropper {
+  width: min(360px, 100%);
+  margin: 0;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+.cropper h3 {
+  margin: 0 0 4px;
+}
+.cropper__frame {
+  position: relative;
+  width: min(280px, 100%);
+  aspect-ratio: 1;
+  margin: 14px auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--track);
+  cursor: grab;
+  touch-action: none; /* our own drag and pinch instead of page scrolling */
+  user-select: none;
+  display: grid;
+  place-items: center;
+}
+.cropper__frame:active {
+  cursor: grabbing;
+}
+.cropper__frame:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+}
+.cropper__frame img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+.cropper__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(10, 12, 20, 0.55);
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+}
+.cropper__zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+.cropper__zoom input {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  accent-color: var(--primary);
+  background: none;
+}
+.cropper__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}

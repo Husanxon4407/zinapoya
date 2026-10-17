@@ -182,7 +182,7 @@ remote.weeklyLeaderboard = async () => {
 remote.savePushSubscription = async (sub) => {
   // A shared phone moves the reminder to whoever turned it on last.
   const { error } = await supabase.rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: sub.keys.p256dh, p_auth: sub.keys.auth });
-  if (error) throw error;
+  if (error) throw new Error(notSetUp(error) ? 'Reminders are not switched on for this website yet. Please try again later.' : error.message);
 };
 remote.deletePushSubscription = async (endpoint) => {
   const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
@@ -209,6 +209,9 @@ remote.teacher = {
     return data;
   },
 };
+
+// The database is missing a table or function (a supabase/migrations file has not been run yet).
+const notSetUp = (error) => /schema cache|does not exist|Could not find/i.test(error?.message || '');
 
 async function currentUid() {
   const { data } = await supabase.auth.getSession();

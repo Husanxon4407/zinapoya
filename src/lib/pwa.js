@@ -72,7 +72,13 @@ export async function enableReminders() {
   const reg = await registration();
   await navigator.serviceWorker.ready;
   const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(VAPID_PUBLIC_KEY) }));
-  await api.savePushSubscription(sub.toJSON());
+  try {
+    await api.savePushSubscription(sub.toJSON());
+  } catch (e) {
+    // Not saved on the server, so don't leave the switch looking "on".
+    await sub.unsubscribe().catch(() => {});
+    throw e;
+  }
 }
 
 export async function disableReminders() {

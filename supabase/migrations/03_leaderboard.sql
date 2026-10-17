@@ -56,3 +56,6 @@ $$;
 
 revoke all on function public.weekly_leaderboard() from public, anon;
 grant execute on function public.weekly_leaderboard() to authenticated;
+
+-- Let the website see the new tables and functions straight away.
+notify pgrst, 'reload schema';

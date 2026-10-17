@@ -1,33 +1,17 @@
-// Turns any photo into a small square JPEG for profile pictures.
-export async function squareImage(file, size = 256) {
-  if (!file?.type?.startsWith('image/')) throw new Error('Please choose a photo (JPG or PNG).');
-  const bitmap = await loadImage(file);
-  const side = Math.min(bitmap.width, bitmap.height);
+// Helpers for profile photos.
+// Cuts the square (sx, sy, side) out of the image and saves it as a size×size JPEG.
+export function cropToBlob(img, sx, sy, side, size = 256) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d');
-  // Crop the centre of the photo so faces stay in the middle.
-  ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, size, size);
+  ctx.fillStyle = '#fff'; // transparent PNGs get a white background instead of black
+  ctx.fillRect(0, 0, size, size);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('This photo could not be read.'))), 'image/jpeg', 0.85),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('This photo could not be saved.'))), 'image/jpeg', 0.88),
   );
-}
-
-function loadImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('This photo could not be read. Try a JPG or PNG.'));
-    };
-    img.src = url;
-  });
 }
 
 export const blobToDataUrl = (blob) =>

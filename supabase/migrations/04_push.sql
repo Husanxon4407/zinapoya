@@ -1,7 +1,5 @@
--- SpeakUp update 4: daily reminder notifications.
--- Before running: Database → Extensions → switch ON "pg_cron" and "pg_net".
--- Replace CRON_SECRET_HERE below with the same secret you saved for the "reminders" function.
--- Then paste this file into Supabase → SQL Editor → Run.
+-- SpeakUp update 4: daily reminder notifications (part 1: saving students' reminder settings).
+-- Paste this file into Supabase → SQL Editor → Run. Then do 05_reminder_schedule.sql.
 
 -- 1. Which phones/browsers want a reminder ---------------------------------------
 create table if not exists public.push_subscriptions (
@@ -33,18 +31,5 @@ $$;
 revoke all on function public.save_push_subscription(text, text, text) from public, anon;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
 
--- 2. Every day at 19:00 Tashkent time (14:00 UTC), ask the "reminders" function to send them --
-select cron.unschedule('speakup-daily-reminder')
-where exists (select 1 from cron.job where jobname = 'speakup-daily-reminder');
-
-select cron.schedule(
-  'speakup-daily-reminder',
-  '0 14 * * *',
-  $$
-  select net.http_post(
-    url := 'https://tmmwqvffwulfcvjesmlr.supabase.co/functions/v1/reminders',
-    headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'CRON_SECRET_HERE'),
-    body := '{}'::jsonb
-  );
-  $$
-);
+-- Let the website see the new function straight away.
+notify pgrst, 'reload schema';
