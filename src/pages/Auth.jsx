@@ -32,11 +32,21 @@ function GoogleButton() {
   );
 }
 
+// When Google sign-in fails, Supabase sends the student back with ?error_description=… in the address.
+export function signInErrorFromUrl() {
+  const params = new URLSearchParams(window.location.search || window.location.hash.slice(1));
+  const code = params.get('error_code');
+  const text = params.get('error_description');
+  if (!code && !text) return '';
+  if (code === 'bad_oauth_state' || /expired/i.test(text || '')) return 'The Google sign-in took too long and expired. Please tap “Continue with Google” again.';
+  return `Google sign-in did not work: ${text || code}. Please try again.`;
+}
+
 export function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(signInErrorFromUrl);
   const [busy, setBusy] = useState(false);
 
   async function submit(e) {

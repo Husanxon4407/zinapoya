@@ -4,7 +4,7 @@ import { useApp } from './state.jsx';
 import Layout from './components/Layout.jsx';
 import Backdrop from './components/Backdrop.jsx';
 import Landing from './pages/Landing.jsx';
-import { ForgotPassword, Login, ResetPassword, Signup } from './pages/Auth.jsx';
+import { ForgotPassword, Login, ResetPassword, Signup, signInErrorFromUrl } from './pages/Auth.jsx';
 import TryIt from './pages/TryIt.jsx';
 import Home from './pages/Home.jsx';
 import PartPage from './pages/PartPage.jsx';
@@ -64,7 +64,8 @@ function Screens() {
       <>
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<Landing />} />
+          {/* A failed Google sign-in comes back to "/": show the reason on the login page. */}
+          <Route path="/" element={signInErrorFromUrl() ? <Navigate to={`/login${window.location.search}`} replace /> : <Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot" element={<ForgotPassword />} />
