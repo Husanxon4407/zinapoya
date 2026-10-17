@@ -2583,9 +2583,27 @@ a.roster__row:hover {
 }
 .home__main {
   grid-column: 2;
+  grid-row: 1;
   min-width: 0;
 }
+.home__left {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: sticky;
+  top: 84px;
+}
+/* On wide screens these live in the left column instead. */
+.home .only-narrow {
+  display: none;
+}
 .home__side {
+  grid-row: 1;
   grid-column: 3;
   justify-self: end;
   width: 100%;
@@ -2621,6 +2639,37 @@ a.side-card {
 }
 a.side-card:hover {
   border-color: var(--primary);
+}
+.side-card__label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.daily-card,
+.suggest-card {
+  border-left: 4px solid var(--pc);
+}
+.daily-card__q {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 0 0 6px !important;
+}
+.daily-card .muted,
+.suggest-card .muted {
+  display: block;
+  margin-bottom: 10px;
+}
+.daily-card--done {
+  opacity: 0.8;
+}
+.suggest-card__part {
+  font-weight: 800;
+  margin: 0 0 4px !important;
 }
 .top3__list {
   list-style: none;
@@ -2693,6 +2742,16 @@ a.side-card:hover {
   .home__main,
   .home__side {
     grid-column: 1;
+    grid-row: auto;
+  }
+  .home__left {
+    display: none;
+  }
+  .home .only-narrow {
+    display: flex;
+  }
+  .home .suggest.only-narrow {
+    display: block;
   }
   .home__side {
     position: static;
@@ -2709,4 +2768,19 @@ a.side-card:hover {
     padding-left: 16px;
     padding-right: 16px;
   }
+}
+
+/* Privacy links in the account menu and on My profile */
+.usermenu__privacy {
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 4px;
+}
+.profile__foot {
+  text-align: center;
+  font-size: 0.9rem;
+}
+.profile__foot a {
+  color: var(--muted);
 }

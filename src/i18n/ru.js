@@ -48,6 +48,10 @@ export default {
   '{a}/{b} questions': '{a}/{b} вопросов',
   'avg {n}': 'в среднем {n}',
 
+  'For today': 'На сегодня',
+  'Practise next': 'Что тренировать',
+  Practise: 'Тренировать',
+
   // Leaderboard
   More: 'Ещё',
   'This week’s top 10': 'Топ-10 недели',

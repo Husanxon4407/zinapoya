@@ -104,7 +104,7 @@ export default function Home() {
 
         <Link
           to={`/practice/${daily.part}/${daily.id}?daily=1`}
-          className={`daily ${dailyDone ? 'daily--done' : ''}`}
+          className={`daily only-narrow ${dailyDone ? 'daily--done' : ''}`}
           style={{ '--pc': dailyPart.color }}
         >
           <span className="daily__emoji">{dailyDone ? '✅' : '🌟'}</span>
@@ -140,7 +140,7 @@ export default function Home() {
         </section>
 
         {stats.total > 0 && (
-          <Link to={`/part/${weak.key}`} className="suggest" style={{ '--pc': weak.color, color: weak.ink }}>
+          <Link to={`/part/${weak.key}`} className="suggest only-narrow" style={{ '--pc': weak.color, color: weak.ink }}>
             💡 {t('Suggestion: practise')} <strong>{t(weak.name)} — {t(weak.title)}</strong>. {t('It’s your weakest part right now.')} →
           </Link>
         )}
@@ -172,6 +172,35 @@ export default function Home() {
           })}
         </section>
       </div>
+
+      {/* Wide screens only: today's challenge and the next step, quietly on the left. */}
+      <aside className="home__left" aria-label={t('For today')}>
+        <Link
+          to={`/practice/${daily.part}/${daily.id}?daily=1`}
+          className={`card side-card daily-card ${dailyDone ? 'daily-card--done' : ''}`}
+          style={{ '--pc': dailyPart.color }}
+        >
+          <small className="side-card__label">
+            {dailyDone ? '✅' : '🌟'} {t('Today’s challenge')}
+          </small>
+          <p className="daily-card__q">{daily.text}</p>
+          <small className="muted">
+            {dailyPart.emoji} {t(dailyPart.name)} · {dailyDone ? t('done! Try it again any time') : t('+20 bonus points')}
+          </small>
+          <span className="side-card__link">{dailyDone ? t('Try again') : t('Start')} →</span>
+        </Link>
+
+        {stats.total > 0 && (
+          <Link to={`/part/${weak.key}`} className="card side-card suggest-card" style={{ '--pc': weak.color }}>
+            <small className="side-card__label">💡 {t('Practise next')}</small>
+            <p className="suggest-card__part" style={{ color: weak.ink }}>
+              {weak.emoji} {t(weak.name)} — {t(weak.title)}
+            </p>
+            <small className="muted">{t('It’s your weakest part right now.')}</small>
+            <span className="side-card__link">{t('Practise')} →</span>
+          </Link>
+        )}
+      </aside>
 
       <aside className="home__side" aria-label={t('More')}>
         <TopThree board={board} />

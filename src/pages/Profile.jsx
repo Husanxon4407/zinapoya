@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../state.jsx';
 import { api } from '../lib/api.js';
 import AvatarPicker from '../components/AvatarPicker.jsx';
@@ -90,6 +91,9 @@ export default function Profile() {
           <small>{t('Day streak')}</small>
         </div>
       </div>
+      <p className="profile__foot">
+        <Link to="/privacy">{t('Privacy policy')}</Link>
+      </p>
     </div>
   );
 }

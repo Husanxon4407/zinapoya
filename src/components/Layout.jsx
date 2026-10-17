@@ -62,6 +62,9 @@ export default function Layout() {
               >
                 {t('Log out')}
               </button>
+              <Link className="usermenu__privacy" to="/privacy" onClick={() => menuRef.current?.removeAttribute('open')}>
+                {t('Privacy policy')}
+              </Link>
             </div>
           </details>
         </div>

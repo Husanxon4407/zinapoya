@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
 
 // Public privacy page (Google sign-in needs a link to it). Keep it short and in simple English.
-export default function Privacy() {
+// inApp: opened while logged in, inside the normal top bar (so no second logo).
+export default function Privacy({ inApp = false }) {
   return (
     <div className="privacy">
-      <Link to="/" className="logo">
-        <span className="logo__mark">🎤</span> SpeakUp
-      </Link>
+      {!inApp && (
+        <Link to="/" className="logo">
+          <span className="logo__mark">🎤</span> SpeakUp
+        </Link>
+      )}
       <div className="card">
         <h1>Privacy policy</h1>
         <p className="muted">Last updated: 17 October 2026</p>

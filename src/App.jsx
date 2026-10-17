@@ -111,7 +111,7 @@ function Screens() {
           <Route path="/history" element={<History />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/mistakes" element={<Mistakes />} />
-          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/privacy" element={<Privacy inApp />} />
           <Route path="/teacher" element={<Teacher />} />
           <Route path="/teacher/:id" element={<TeacherStudent />} />
           <Route path="/reset-password" element={<ResetPassword />} />

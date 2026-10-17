@@ -48,6 +48,10 @@ export default {
   '{a}/{b} questions': '{a}/{b} savol',
   'avg {n}': 'o‘rtacha {n}',
 
+  'For today': 'Bugun uchun',
+  'Practise next': 'Keyingi mashq',
+  Practise: 'Mashq qilish',
+
   // Leaderboard
   More: 'Qo‘shimcha',
   'This week’s top 10': 'Bu haftaning eng yaxshi 10 talik',
