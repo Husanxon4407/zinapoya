@@ -59,37 +59,39 @@ export default function Leaderboard() {
   );
 }
 
-// Small podium for the Home page: this week's top 3, plus the student's own place.
+// Compact top 3 for the Home side column, plus the student's own place.
 export function TopThree({ board }) {
-  const { rows, me } = board;
+  const { rows, error, me } = board;
   const t = useT();
+  if (error) return null;
   const top = (rows || []).filter((r) => r.points > 0).slice(0, 3);
-  if (top.length === 0) return null;
-  // 2nd, 1st, 3rd so the winner stands in the middle.
-  const podium = [top[1], top[0], top[2]].filter(Boolean);
   const meInTop = top.some((r) => r.is_me);
 
   return (
-    <Link to="/progress#leaderboard" className="card podium" aria-label={t('This week’s top 3. Open the full leaderboard.')}>
-      <div className="podium__head">
-        <h3>🏆 {t('This week’s top 3')}</h3>
-        <small className="muted">{t('See top 10')} →</small>
-      </div>
-      <ol className="podium__places">
-        {podium.map((r) => (
-          <li key={`${r.rank}-${r.name}`} className={`podium__place podium__place--${r.rank} ${r.is_me ? 'podium__place--me' : ''}`}>
-            <span className="podium__medal">{MEDALS[r.rank - 1] || `#${r.rank}`}</span>
-            <Avatar name={r.name} url={r.avatar_url} size={r.rank === 1 ? 56 : 44} />
-            <strong>{r.is_me ? t('You') : r.name.split(' ')[0]}</strong>
-            <small>{t('{n} pts', { n: r.points })}</small>
-          </li>
-        ))}
-      </ol>
-      {!meInTop && me && (
-        <p className="podium__me">
+    <section className="card side-card top3" aria-labelledby="top3-title">
+      <h3 id="top3-title">🏆 {t('This week’s top 3')}</h3>
+      {!rows && <div className="spinner" />}
+      {rows && top.length === 0 && <p className="muted small">{t('No points yet this week. Be the first!')}</p>}
+      {top.length > 0 && (
+        <ol className="top3__list">
+          {top.map((r) => (
+            <li key={`${r.rank}-${r.name}`} className={r.is_me ? 'top3__me' : ''}>
+              <span className="top3__medal">{MEDALS[r.rank - 1] || `#${r.rank}`}</span>
+              <Avatar name={r.name} url={r.avatar_url} size={32} />
+              <span className="top3__name">{r.is_me ? t('You') : r.name.split(' ')[0]}</span>
+              <strong>{r.points}</strong>
+            </li>
+          ))}
+        </ol>
+      )}
+      {rows && !meInTop && me && (
+        <p className="top3__you">
           {me.points > 0 ? t('You are #{rank} with {n} pts. Keep going!', { rank: me.rank, n: me.points }) : t('Answer a question to get on the board!')}
         </p>
       )}
-    </Link>
+      <Link to="/progress#leaderboard" className="side-card__link">
+        {t('See top 10')} →
+      </Link>
+    </section>
   );
 }

@@ -49,6 +49,7 @@ export default {
   'avg {n}': 'в среднем {n}',
 
   // Leaderboard
+  More: 'Ещё',
   'This week’s top 10': 'Топ-10 недели',
   'This week’s top 3': 'Топ-3 недели',
   'This week’s top 3. Open the full leaderboard.': 'Топ-3 недели. Открыть полный рейтинг.',

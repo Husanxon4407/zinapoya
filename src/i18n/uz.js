@@ -49,6 +49,7 @@ export default {
   'avg {n}': 'o‘rtacha {n}',
 
   // Leaderboard
+  More: 'Qo‘shimcha',
   'This week’s top 10': 'Bu haftaning eng yaxshi 10 talik',
   'This week’s top 3': 'Bu haftaning eng yaxshi 3 talik',
   'This week’s top 3. Open the full leaderboard.': 'Bu haftaning eng yaxshi 3 talik. To‘liq reytingni ochish.',

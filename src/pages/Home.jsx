@@ -34,13 +34,13 @@ function InstallBanner() {
     }
   };
   return (
-    <div className="install-banner">
-      <span className="install-banner__icon">📲</span>
-      <div>
-        <strong>{t('Put SpeakUp on your home screen')}</strong>
-        <small>{t('Practise in one tap, like a real app.')}</small>
-        {steps && <InstallSteps />}
-      </div>
+    <section className="card side-card install-card">
+      <button className="icon-btn install-card__hide" aria-label={t('Hide')} title={t('Hide')} onClick={hide}>
+        ✕
+      </button>
+      <h3>📲 {t('Put SpeakUp on your home screen')}</h3>
+      <p className="muted small">{t('Practise in one tap, like a real app.')}</p>
+      {steps && <InstallSteps />}
       {state === 'prompt' ? (
         <button className="btn btn--small" onClick={install}>
           {t('Install')}
@@ -52,10 +52,7 @@ function InstallBanner() {
           </button>
         )
       )}
-      <button className="icon-btn" aria-label={t('Hide')} title={t('Hide')} onClick={hide}>
-        ✕
-      </button>
-    </div>
+    </section>
   );
 }
 
@@ -79,110 +76,118 @@ export default function Home() {
 
   return (
     <div className="home">
-      <section className="welcome">
-        <div>
-          <h1>
-            {t(greeting())}, {(profile?.name || user.name).split(' ')[0]}! 👋
-          </h1>
-          <p className="muted">
-            {stats.todayCount === 0 ? t('Ready for today’s speaking practice?') : t('Answers today: {n}. Keep going!', { n: stats.todayCount })}
-          </p>
-        </div>
-        <div className="welcome__stats">
-          <div className="stat">
-            <strong>🔥 {stats.streak}</strong>
-            <small>{t('day streak')}</small>
+      <div className="home__main">
+        <section className="welcome">
+          <div>
+            <h1>
+              {t(greeting())}, {(profile?.name || user.name).split(' ')[0]}! 👋
+            </h1>
+            <p className="muted">
+              {stats.todayCount === 0 ? t('Ready for today’s speaking practice?') : t('Answers today: {n}. Keep going!', { n: stats.todayCount })}
+            </p>
           </div>
-          <div className="stat">
-            <strong>🎤 {stats.total}</strong>
-            <small>{t('answers')}</small>
+          <div className="welcome__stats">
+            <div className="stat">
+              <strong>🔥 {stats.streak}</strong>
+              <small>{t('day streak')}</small>
+            </div>
+            <div className="stat">
+              <strong>🎤 {stats.total}</strong>
+              <small>{t('answers')}</small>
+            </div>
+            <div className="stat">
+              <strong>⏱️ {stats.minutes}</strong>
+              <small>{t('minutes')}</small>
+            </div>
           </div>
-          <div className="stat">
-            <strong>⏱️ {stats.minutes}</strong>
-            <small>{t('minutes')}</small>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <InstallBanner />
+        <Link
+          to={`/practice/${daily.part}/${daily.id}?daily=1`}
+          className={`daily ${dailyDone ? 'daily--done' : ''}`}
+          style={{ '--pc': dailyPart.color }}
+        >
+          <span className="daily__emoji">{dailyDone ? '✅' : '🌟'}</span>
+          <div className="daily__body">
+            <small>
+              {t('Today’s challenge')} · {dailyPart.emoji} {t(dailyPart.name)} · {dailyDone ? t('done! Try it again any time') : t('+20 bonus points')}
+            </small>
+            <h3>{daily.text}</h3>
+          </div>
+          {me && me.points > 0 && (
+            <span className="daily__rank" title={t('Your place on this week’s leaderboard')}>
+              🏆 #{me.rank}
+              <small>{t('{n} pts', { n: me.points })}</small>
+            </span>
+          )}
+        </Link>
 
-      <Link
-        to={`/practice/${daily.part}/${daily.id}?daily=1`}
-        className={`daily ${dailyDone ? 'daily--done' : ''}`}
-        style={{ '--pc': dailyPart.color }}
-      >
-        <span className="daily__emoji">{dailyDone ? '✅' : '🌟'}</span>
-        <div className="daily__body">
-          <small>
-            {t('Today’s challenge')} · {dailyPart.emoji} {t(dailyPart.name)} · {dailyDone ? t('done! Try it again any time') : t('+20 bonus points')}
-          </small>
-          <h3>{daily.text}</h3>
-        </div>
-        {me && me.points > 0 && (
-          <span className="daily__rank" title={t('Your place on this week’s leaderboard')}>
-            🏆 #{me.rank}
-            <small>{t('{n} pts', { n: me.points })}</small>
-          </span>
+        <section className="quick">
+          <Link to="/workout" className="quick__card quick__card--workout">
+            <span className="quick__emoji">⚡</span>
+            <div>
+              <h3>{t('Daily 10-minute workout')}</h3>
+              <p>{t('3 quick questions + one task from your weakest part.')}</p>
+            </div>
+          </Link>
+          <Link to="/mock" className="quick__card quick__card--mock">
+            <span className="quick__emoji">🎓</span>
+            <div>
+              <h3>{t('Full mock exam')}</h3>
+              <p>{t('All four parts, real timing, about 15 minutes.')}</p>
+            </div>
+          </Link>
+        </section>
+
+        {stats.total > 0 && (
+          <Link to={`/part/${weak.key}`} className="suggest" style={{ '--pc': weak.color, color: weak.ink }}>
+            💡 {t('Suggestion: practise')} <strong>{t(weak.name)} — {t(weak.title)}</strong>. {t('It’s your weakest part right now.')} →
+          </Link>
         )}
-      </Link>
 
-      <section className="quick">
-        <Link to="/workout" className="quick__card quick__card--workout">
-          <span className="quick__emoji">⚡</span>
-          <div>
-            <h3>{t('Daily 10-minute workout')}</h3>
-            <p>{t('3 quick questions + one task from your weakest part.')}</p>
-          </div>
-        </Link>
-        <Link to="/mock" className="quick__card quick__card--mock">
-          <span className="quick__emoji">🎓</span>
-          <div>
-            <h3>{t('Full mock exam')}</h3>
-            <p>{t('All four parts, real timing, about 15 minutes.')}</p>
-          </div>
-        </Link>
-      </section>
+        <h2 className="section-title">{t('Exam map')}</h2>
+        <section className="part-grid">
+          {PART_KEYS.map((k) => {
+            const p = PARTS[k];
+            const s = stats.parts[k];
+            return (
+              <Link key={k} to={`/part/${k}`} className="part-card" style={{ '--pc': p.color, '--ps': p.soft }}>
+                <div className="part-card__top">
+                  <span className="part-card__emoji">{p.emoji}</span>
+                  <ProgressRing value={s.unique} max={PART_TOTALS[k]} color={p.color} />
+                </div>
+                <h3 style={{ color: p.ink }}>
+                  {t(p.name)} · {t(p.title)}
+                </h3>
+                <p>{t(p.what)}</p>
+                <div className="part-card__meta">
+                  <span>⏱️ {t(p.timing)}</span>
+                  <span>
+                    {t('{a}/{b} questions', { a: s.unique, b: PART_TOTALS[k] })}
+                    {s.avg !== null && ` · ${t('avg {n}', { n: s.avg })}`}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
+        </section>
+      </div>
 
-      <TopThree board={board} />
+      <aside className="home__side" aria-label={t('More')}>
+        <TopThree board={board} />
 
-      {stats.total > 0 && (
-        <Link to={`/part/${weak.key}`} className="suggest" style={{ '--pc': weak.color, color: weak.ink }}>
-          💡 {t('Suggestion: practise')} <strong>{t(weak.name)} — {t(weak.title)}</strong>. {t('It’s your weakest part right now.')} →
-        </Link>
-      )}
+        {mistakes.ready && mistakes.todo.length > 0 && (
+          <Link to="/mistakes" className="card side-card mistakes-card">
+            <h3>📒 {t('My mistakes')}</h3>
+            <p>
+              {t('Mistakes to review:')} <strong>{mistakes.todo.length}</strong>
+            </p>
+            <span className="side-card__link">{t('Fix them before the exam!')} →</span>
+          </Link>
+        )}
 
-      {mistakes.ready && mistakes.todo.length > 0 && (
-        <Link to="/mistakes" className="suggest suggest--mistakes">
-          📒 {t('Mistakes to review:')} <strong>{mistakes.todo.length}</strong>. {t('Fix them before the exam!')} →
-        </Link>
-      )}
-
-      <h2 className="section-title">{t('Exam map')}</h2>
-      <section className="part-grid">
-        {PART_KEYS.map((k) => {
-          const p = PARTS[k];
-          const s = stats.parts[k];
-          return (
-            <Link key={k} to={`/part/${k}`} className="part-card" style={{ '--pc': p.color, '--ps': p.soft }}>
-              <div className="part-card__top">
-                <span className="part-card__emoji">{p.emoji}</span>
-                <ProgressRing value={s.unique} max={PART_TOTALS[k]} color={p.color} />
-              </div>
-              <h3 style={{ color: p.ink }}>
-                {t(p.name)} · {t(p.title)}
-              </h3>
-              <p>{t(p.what)}</p>
-              <div className="part-card__meta">
-                <span>⏱️ {t(p.timing)}</span>
-                <span>
-                  {t('{a}/{b} questions', { a: s.unique, b: PART_TOTALS[k] })}
-                  {s.avg !== null && ` · ${t('avg {n}', { n: s.avg })}`}
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </section>
+        <InstallBanner />
+      </aside>
     </div>
   );
 }
