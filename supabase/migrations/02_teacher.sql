@@ -16,4 +16,4 @@ create policy "teacher reads recordings" on storage.objects for select to authen
 
 -- Make YOUR account the teacher: put the email you log in with between the quotes.
 update public.profiles set role = 'teacher'
-where id = (select id from auth.users where email = 'TEACHER_EMAIL_HERE');
+where id = (select id from auth.users where email = 'canikissyou4407@gmail.com');
