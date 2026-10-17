@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Confetti from './Confetti.jsx';
 import { sfx } from '../lib/sound.js';
 import { useApp } from '../state.jsx';
+import { useT } from '../i18n/index.js';
 
 /**
  * End-of-game card: animated stars, points, personal best, sound and confetti.
@@ -12,6 +13,7 @@ export default function GameResult({ game, score, stars, title, detail, children
   const [best, setBest] = useState(null);
   const [confetti, setConfetti] = useState(0);
   const saved = useRef(false);
+  const t = useT();
 
   useEffect(() => {
     if (saved.current) return;
@@ -38,8 +40,8 @@ export default function GameResult({ game, score, stars, title, detail, children
       </div>
       {title && <h2>{title}</h2>}
       <p className="game-result__points">
-        ⭐ {score} points
-        {best !== null && (score > best && score > 0 ? <span className="record"> 🥇 New record!</span> : best > 0 ? <span className="muted"> · best {best}</span> : null)}
+        ⭐ {t('{n} points', { n: score })}
+        {best !== null && (score > best && score > 0 ? <span className="record"> 🥇 {t('New record!')}</span> : best > 0 ? <span className="muted"> · {t('best {n}', { n: best })}</span> : null)}
       </p>
       {children}
     </div>

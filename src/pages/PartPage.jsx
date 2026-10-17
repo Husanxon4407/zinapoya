@@ -7,6 +7,7 @@ import { PART2 } from '../data/part2.js';
 import { PART3 } from '../data/part3.js';
 import { useApp } from '../state.jsx';
 import { levelFromScore } from '../lib/progress.js';
+import { useT } from '../i18n/index.js';
 
 function itemsFor(key) {
   if (key === '1.1') return PART1_1.map((q) => ({ id: q.id, title: q.text, group: q.topic, match: [q.id] }));
@@ -20,6 +21,7 @@ export default function PartPage() {
   const { attempts } = useApp();
   const [filter, setFilter] = useState('all');
   const part = PARTS[key];
+  const t = useT();
 
   const best = useMemo(() => {
     const m = {};
@@ -48,20 +50,20 @@ export default function PartPage() {
         <div>
           <span className="part-hero__emoji">{part.emoji}</span>
           <h1 style={{ color: part.ink }}>
-            {part.name}: {part.title}
+            {t(part.name)}: {t(part.title)}
           </h1>
-          <p>{part.what}</p>
-          <p className="muted">⏱️ {part.timing}</p>
+          <p>{t(part.what)}</p>
+          <p className="muted">⏱️ {t(part.timing)}</p>
         </div>
         <div className="part-hero__tips">
-          <h4>What the examiner wants</h4>
+          <h4>{t('What the examiner wants')}</h4>
           <ol>
-            {part.tips.map((t) => (
-              <li key={t}>{t}</li>
+            {part.tips.map((tip) => (
+              <li key={tip}>{t(tip)}</li>
             ))}
           </ol>
           <Link to={`/practice/${key}/random`} className="btn btn--big" style={{ background: part.color }}>
-            🎲 Random {key === '1.1' ? '3 questions' : 'task'}
+            🎲 {key === '1.1' ? t('Random 3 questions') : t('Random task')}
           </Link>
         </div>
       </section>
@@ -69,13 +71,13 @@ export default function PartPage() {
       <div className="filters">
         {[['all', 'All'], ['new', 'Not tried yet'], ['done', 'Practised']].map(([v, l]) => (
           <button key={v} className={`filter ${filter === v ? 'filter--on' : ''}`} onClick={() => setFilter(v)}>
-            {l}
+            {t(l)}
           </button>
         ))}
         {key === '1.1' &&
-          Object.entries(TOPICS).map(([k, t]) => (
+          Object.entries(TOPICS).map(([k, topic]) => (
             <button key={k} className={`filter ${filter === k ? 'filter--on' : ''}`} onClick={() => setFilter(k)}>
-              {t.emoji} {t.label}
+              {topic.emoji} {t(topic.label)}
             </button>
           ))}
       </div>
@@ -103,7 +105,7 @@ export default function PartPage() {
             </div>
           </Link>
         ))}
-        {shown.length === 0 && <p className="muted">Nothing here yet.</p>}
+        {shown.length === 0 && <p className="muted">{t('Nothing here yet.')}</p>}
       </div>
     </div>
   );

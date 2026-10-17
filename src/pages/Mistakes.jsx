@@ -6,6 +6,7 @@ import { PARTS } from '../data/parts.js';
 import { speak } from '../lib/speech.js';
 import { shuffle } from '../lib/steps.js';
 import { collectMistakes } from '../lib/mistakes.js';
+import { useT } from '../i18n/index.js';
 
 const REVIEW_SIZE = 5;
 const KNEW_TO_MASTER = 2;
@@ -60,27 +61,28 @@ function bumpKnew(key) {
 }
 
 function MistakeCard({ m, mastered, onToggle }) {
+  const t = useT();
   return (
     <div className="mistake">
       <div className="mistake__meta">
         <span className="mistake__tag" style={{ background: PARTS[m.part]?.soft, color: PARTS[m.part]?.ink }}>
-          {PARTS[m.part]?.emoji} {PARTS[m.part]?.name}
+          {PARTS[m.part]?.emoji} {t(PARTS[m.part]?.name || '')}
         </span>
         <span>
-          {m.category.emoji} {m.category.name}
+          {m.category.emoji} {t(m.category.name)}
         </span>
         {m.times > 1 && <span className="mistake__times">×{m.times}</span>}
       </div>
       <p className="correction__bad">✗ {m.original}</p>
       <p className="correction__good">
         ✓ {m.better}{' '}
-        <button className="icon-btn" title="Listen" onClick={() => speak(m.better)}>
+        <button className="icon-btn" title={t('Listen')} onClick={() => speak(m.better)}>
           🔊
         </button>
       </p>
       {m.why && <p className="correction__why">{m.why}</p>}
       <button className={`btn btn--small ${mastered ? 'btn--ghost' : ''}`} onClick={onToggle}>
-        {mastered ? '↩ Review again' : 'Got it ✓'}
+        {mastered ? `↩ ${t('Review again')}` : `${t('Got it')} ✓`}
       </button>
     </div>
   );
@@ -91,16 +93,15 @@ function Review({ items, onDone, onKnew }) {
   const [shown, setShown] = useState(false);
   const [score, setScore] = useState(0);
   const m = items[i];
+  const t = useT();
 
   if (!m) {
     return (
       <div className="card review-box">
-        <h2>🎉 Review finished!</h2>
-        <p>
-          You knew {score} of {items.length}. Mistakes you know twice move to “Mastered”.
-        </p>
+        <h2>🎉 {t('Review finished!')}</h2>
+        <p>{t('You knew {a} of {b}. Mistakes you know twice move to “Mastered”.', { a: score, b: items.length })}</p>
         <button className="btn" onClick={onDone}>
-          Back to my mistakes
+          {t('Back to my mistakes')}
         </button>
       </div>
     );
@@ -118,30 +119,30 @@ function Review({ items, onDone, onKnew }) {
   return (
     <div className="card review-box">
       <p className="muted">
-        {i + 1} / {items.length} · Say this sentence correctly, out loud. Then check.
+        {i + 1} / {items.length} · {t('Say this sentence correctly, out loud. Then check.')}
       </p>
       <p className="review-box__bad">✗ {m.original}</p>
       {shown ? (
         <>
           <p className="correction__good review-box__good">
             ✓ {m.better}{' '}
-            <button className="icon-btn" title="Listen" onClick={() => speak(m.better)}>
+            <button className="icon-btn" title={t('Listen')} onClick={() => speak(m.better)}>
               🔊
             </button>
           </p>
           {m.why && <p className="correction__why">{m.why}</p>}
           <div className="again">
             <button className="btn" onClick={() => next(true)}>
-              😎 I knew it
+              😎 {t('I knew it')}
             </button>
             <button className="btn btn--ghost" onClick={() => next(false)}>
-              🤔 Not yet
+              🤔 {t('Not yet')}
             </button>
           </div>
         </>
       ) : (
         <button className="btn" onClick={() => setShown(true)}>
-          👀 Show the right sentence
+          👀 {t('Show the right sentence')}
         </button>
       )}
     </div>
@@ -153,11 +154,12 @@ export default function Mistakes() {
   const [tab, setTab] = useState('todo');
   const [cat, setCat] = useState('all');
   const [review, setReview] = useState(null);
+  const t = useT();
 
   if (review) {
     return (
       <div className="mistakes">
-        <h1>🔁 Quick review</h1>
+        <h1>🔁 {t('Quick review')}</h1>
         <Review
           items={review}
           onDone={() => setReview(null)}
@@ -175,16 +177,16 @@ export default function Mistakes() {
 
   return (
     <div className="mistakes">
-      <h1>📒 My mistakes</h1>
-      <p className="muted">Every sentence the AI coach corrected for you, in one place. Learn them and stop making them in the exam!</p>
+      <h1>📒 {t('My mistakes')}</h1>
+      <p className="muted">{t('Every sentence the AI coach corrected for you, in one place. Learn them and stop making them in the exam!')}</p>
 
       {!ready && <div className="spinner" />}
 
       {ready && all.length === 0 && (
         <div className="card">
-          <p>No mistakes collected yet. Record an answer and press “✨ Get AI feedback”. Your corrections will appear here.</p>
+          <p>{t('No mistakes collected yet. Record an answer and press “✨ Get AI feedback”. Your corrections will appear here.')}</p>
           <Link className="btn" to="/">
-            Start practising
+            {t('Start practising')}
           </Link>
         </div>
       )}
@@ -193,31 +195,31 @@ export default function Mistakes() {
         <>
           {todo.length > 0 && (
             <button className="btn btn--ai review-start" onClick={() => setReview(shuffle(todo).slice(0, REVIEW_SIZE))}>
-              🔁 Quick review ({Math.min(REVIEW_SIZE, todo.length)} mistakes)
+              🔁 {t('Quick review')} ({Math.min(REVIEW_SIZE, todo.length)})
             </button>
           )}
 
           <div className="tabs">
             <button className={`tab ${tab === 'todo' ? 'tab--on' : ''}`} onClick={() => setTab('todo')}>
-              To review ({todo.length})
+              {t('To review')} ({todo.length})
             </button>
             <button className={`tab ${tab === 'done' ? 'tab--on' : ''}`} onClick={() => setTab('done')}>
-              Mastered ({done.length})
+              {t('Mastered')} ({done.length})
             </button>
           </div>
 
           <div className="filters">
             <button className={`filter ${cat === 'all' ? 'filter--on' : ''}`} onClick={() => setCat('all')}>
-              All
+              {t('All')}
             </button>
             {cats.map((c) => (
               <button key={c.id} className={`filter ${cat === c.id ? 'filter--on' : ''}`} onClick={() => setCat(c.id)}>
-                {c.emoji} {c.name} ({countIn(c.id)})
+                {c.emoji} {t(c.name)} ({countIn(c.id)})
               </button>
             ))}
           </div>
 
-          {list.length === 0 && <p className="muted">{tab === 'todo' ? '🎉 Nothing left to review here!' : 'Nothing mastered here yet.'}</p>}
+          {list.length === 0 && <p className="muted">{tab === 'todo' ? `🎉 ${t('Nothing left to review here!')}` : t('Nothing mastered here yet.')}</p>}
           <div className="mistake-list">
             {list.map((m) => (
               <MistakeCard key={m.key} m={m} mastered={tab === 'done'} onToggle={() => setMastered(m.key, tab === 'todo')} />

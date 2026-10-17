@@ -145,3 +145,55 @@ export function createSpeakingSession({ onTranscript } = {}) {
 
   return { start, stop };
 }
+
+/**
+ * Listens for one short phrase (a word or a sentence) and returns what the browser heard.
+ * Gives several guesses, because a slightly unclear word is often the 2nd or 3rd guess.
+ * Returns { result: Promise<string[]>, stop() }.
+ */
+export function listenOnce({ timeoutMs = 8000, lang = 'en-US' } = {}) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let finish = () => {};
+  const result = new Promise((resolve, reject) => {
+    if (!SR) {
+      reject(new Error('This browser cannot listen to speech. Please use Chrome, Edge or Safari.'));
+      return;
+    }
+    recognition = new SR();
+    recognition.lang = lang;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
+    const heard = [];
+    let done = false;
+    const timer = setTimeout(() => finish(), timeoutMs);
+    finish = (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      try {
+        recognition.stop();
+      } catch {
+        /* already stopped */
+      }
+      if (err) reject(err);
+      else resolve(heard);
+    };
+    recognition.onresult = (e) => {
+      for (const res of e.results) for (let i = 0; i < res.length; i++) heard.push(res[i].transcript);
+      finish();
+    };
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') finish(new Error('The microphone is blocked. Allow the microphone for this site, then try again.'));
+      else finish();
+    };
+    recognition.onend = () => finish();
+    try {
+      recognition.start();
+    } catch (e) {
+      finish(e);
+    }
+  });
+  return { result, stop: () => finish() };
+}

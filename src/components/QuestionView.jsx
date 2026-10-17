@@ -1,12 +1,14 @@
 import { PARTS } from '../data/parts.js';
+import { stepLabel, useT } from '../i18n/index.js';
 
 // Shows what the examiner shows: pictures, cue card questions or the For/Against table.
 export default function QuestionView({ step, compact = false }) {
   const part = PARTS[step.part];
+  const t = useT();
   return (
     <div className={`qview ${compact ? 'qview--compact' : ''}`}>
       <div className="qview__tag" style={{ background: part.soft, color: part.ink }}>
-        {part.emoji} {part.name} · {step.label}
+        {part.emoji} {t(part.name)} · {stepLabel(t, step.label)}
       </div>
 
       {step.image && <img className="qview__img" src={step.image} alt={step.setTitle || step.label} />}

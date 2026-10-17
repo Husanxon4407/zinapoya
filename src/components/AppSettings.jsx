@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
+import LangSwitch from './LangSwitch.jsx';
+import { translate, useT } from '../i18n/index.js';
 import { currentSubscription, disableReminders, enableReminders, isIOS, isStandalone, pushSupported, useInstall } from '../lib/pwa.js';
 
 export function InstallSteps() {
+  const t = useT();
   return (
     <ol className="install-steps">
       <li>
-        Tap the <strong>Share</strong> button <span aria-hidden="true">⬆️</span> at the bottom of Safari.
+        {t('Tap the Share button at the bottom of Safari.')} <span aria-hidden="true">⬆️</span>
       </li>
       <li>
-        Choose <strong>Add to Home Screen</strong>.
+        {t('Choose “Add to Home Screen”.')}
       </li>
       <li>
-        Tap <strong>Add</strong>. SpeakUp now opens like an app!
+        {t('Tap “Add”. SpeakUp now opens like an app!')}
       </li>
     </ol>
   );
@@ -19,6 +22,7 @@ export function InstallSteps() {
 
 export default function AppSettings() {
   const { state, install } = useInstall();
+  const t = useT();
   const [reminder, setReminder] = useState(null); // null = checking
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +44,7 @@ export default function AppSettings() {
       else await enableReminders();
       setReminder(!reminder);
     } catch (e) {
-      setError(e.message || 'Something went wrong. Please try again.');
+      setError(e.message || translate('Something went wrong. Please try again.'));
     } finally {
       setBusy(false);
     }
@@ -48,43 +52,51 @@ export default function AppSettings() {
 
   return (
     <div className="card app-settings">
-      <h3>📱 App & reminders</h3>
+      <h3>📱 {t('App & reminders')}</h3>
 
       <div className="setting">
         <div>
-          <strong>Install SpeakUp on your phone</strong>
-          <small>Opens full screen from your home screen, like a real app.</small>
+          <strong>🌐 {t('Language')}</strong>
+          <small>{t('Menus and instructions. Practice stays in English.')}</small>
         </div>
-        {state === 'installed' && <span className="setting__ok">✅ Installed</span>}
+        <LangSwitch full />
+      </div>
+
+      <div className="setting">
+        <div>
+          <strong>{t('Install SpeakUp on your phone')}</strong>
+          <small>{t('Opens full screen from your home screen, like a real app.')}</small>
+        </div>
+        {state === 'installed' && <span className="setting__ok">✅ {t('Installed')}</span>}
         {state === 'prompt' && (
           <button className="btn btn--small" onClick={install}>
-            📲 Install
+            📲 {t('Install')}
           </button>
         )}
         {state === 'ios' && (
           <button className="btn btn--small btn--ghost" onClick={() => setShowSteps(!showSteps)}>
-            How?
+            {t('How?')}
           </button>
         )}
-        {state === 'none' && <small className="muted">Open this site on your phone in Chrome or Safari to install it.</small>}
+        {state === 'none' && <small className="muted">{t('Open this site on your phone in Chrome or Safari to install it.')}</small>}
       </div>
       {state === 'ios' && showSteps && <InstallSteps />}
 
       <div className="setting">
         <div>
-          <strong>🔔 Daily reminder at 19:00</strong>
-          <small>Only on days when you have not practised yet.</small>
+          <strong>🔔 {t('Daily reminder at 19:00')}</strong>
+          <small>{t('Only on days when you have not practised yet.')}</small>
         </div>
         {iosNeedsInstall ? (
-          <small className="muted">On iPhone, install the app first (above), then turn this on inside the app.</small>
+          <small className="muted">{t('On iPhone, install the app first (above), then turn this on inside the app.')}</small>
         ) : !canPush ? (
-          <small className="muted">Not available in this browser.</small>
+          <small className="muted">{t('Not available in this browser.')}</small>
         ) : (
           <button
             className={`toggle-switch ${reminder ? 'toggle-switch--on' : ''}`}
             role="switch"
             aria-checked={!!reminder}
-            aria-label="Daily reminder"
+            aria-label={t('Daily reminder')}
             disabled={busy || reminder === null}
             onClick={toggle}
           >
@@ -92,7 +104,7 @@ export default function AppSettings() {
           </button>
         )}
       </div>
-      {error && <p className="notice notice--warn">{error}</p>}
+      {error && <p className="notice notice--warn">{t(error)}</p>}
     </div>
   );
 }

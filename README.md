@@ -71,6 +71,13 @@ Do these once in the Supabase dashboard, in this order. Every SQL file is safe t
 
 Students turn reminders on in **My profile → 🔔 Daily reminder**. On iPhone this works only after "Add to Home Screen" (iOS 16.4 or newer).
 
+## Uzbek / Russian translations
+
+Menus and instructions can be shown in English, Uzbek (Latin) or Russian (🌐 switch in the top bar).
+The translations live in `src/i18n/uz.js` and `src/i18n/ru.js`: English text on the left, translation on the right.
+Edit the right-hand side to improve a translation; keep `{n}`, `{a}` and similar exactly as they are.
+Anything without a translation simply shows in English. Exam questions, vocabulary and AI feedback stay in English on purpose.
+
 ## Notes
 
 - Speech-to-text uses the browser's built-in recogniser: works best in **Chrome or Edge**

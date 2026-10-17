@@ -94,6 +94,9 @@ export default function VocabTopic() {
             <Link className="btn btn--ghost" to={`/games/sprint?topic=${topic.id}`}>
               🏃 Word Sprint: speak with these words
             </Link>
+            <Link className="btn btn--ghost" to={`/games/pronounce?topic=${topic.id}`}>
+              🗣️ Say these words right
+            </Link>
           </div>
         </div>
       </section>

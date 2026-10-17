@@ -1,6 +1,8 @@
 import { useRef } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
+import LangSwitch from './LangSwitch.jsx';
+import { useT } from '../i18n/index.js';
 import { useApp } from '../state.jsx';
 import { aiEnabled, api, isLocalMode } from '../lib/api.js';
 import SoundControls from './SoundControls.jsx';
@@ -18,6 +20,7 @@ const LINKS = [
 export default function Layout() {
   const { user, profile, stats, attemptsReady, loadError } = useApp();
   const navigate = useNavigate();
+  const t = useT();
   const menuRef = useRef(null);
   const name = profile?.name || user.name;
   const links = profile?.role === 'teacher' ? [...LINKS, ['/teacher', '🧑‍🏫', 'Class']] : LINKS;
@@ -26,28 +29,29 @@ export default function Layout() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="logo">
-          <span className="logo__mark">🎤</span> SpeakUp
+          <span className="logo__mark">🎤</span> <span className="logo__text">SpeakUp</span>
         </NavLink>
         <nav className="topnav">
           {links.map(([to, icon, label]) => (
             <NavLink key={to} to={to} end={to === '/'}>
-              {icon} {label}
+              {icon} {t(label)}
             </NavLink>
           ))}
         </nav>
         <div className="topbar__user">
+          <LangSwitch />
           <ThemeToggle />
           <SoundControls />
-          <span className="streak" title="Days in a row">🔥 {stats.streak}</span>
+          <span className="streak" title={t('Days in a row')}>🔥 {stats.streak}</span>
           <details className="usermenu" ref={menuRef}>
-            <summary aria-label="Account menu">
+            <summary aria-label={t('Account menu')}>
               <Avatar name={name} url={profile?.avatar_url} size={40} />
             </summary>
             <div className="usermenu__panel">
               <strong>{name}</strong>
               <small>{user.email}</small>
               <Link className="btn btn--small" to="/profile" onClick={() => menuRef.current?.removeAttribute('open')}>
-                👤 My profile
+                👤 {t('My profile')}
               </Link>
               <button
                 className="btn btn--ghost btn--small"
@@ -56,7 +60,7 @@ export default function Layout() {
                   navigate('/');
                 }}
               >
-                Log out
+                {t('Log out')}
               </button>
             </div>
           </details>
@@ -65,7 +69,7 @@ export default function Layout() {
 
       {isLocalMode && (
         <div className="demo-banner">
-          Local demo mode — your account and progress are saved only in this browser. AI feedback is switched off.
+          {t('Local demo mode — your account and progress are saved only in this browser. AI feedback is switched off.')}
         </div>
       )}
 
@@ -76,7 +80,7 @@ export default function Layout() {
         ) : (
           <div className="loading-progress">
             <div className="spinner" />
-            <p className="muted">Loading your progress…</p>
+            <p className="muted">{t('Loading your progress…')}</p>
           </div>
         )}
       </main>
@@ -87,7 +91,7 @@ export default function Layout() {
         {links.map(([to, icon, label]) => (
           <NavLink key={to} to={to} end={to === '/'}>
             <span>{icon}</span>
-            <small>{label}</small>
+            <small>{t(label)}</small>
           </NavLink>
         ))}
       </nav>

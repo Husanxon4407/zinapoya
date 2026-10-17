@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cropToBlob } from '../lib/image.js';
+import { translate, useT } from '../i18n/index.js';
 
 const MAX_ZOOM = 4;
 const OUTPUT_SIZE = 320;
@@ -15,6 +16,7 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
   const [error, setError] = useState('');
   const pointers = useRef(new Map());
   const pinch = useRef(null);
+  const t = useT();
 
   // Load the photo (the URL stays alive while the editor is open).
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
     const url = URL.createObjectURL(file);
     const el = new Image();
     el.onload = () => alive && setImg({ el, url, w: el.naturalWidth, h: el.naturalHeight });
-    el.onerror = () => alive && setError('This photo could not be read. Try a JPG or PNG.');
+    el.onerror = () => alive && setError(translate('This photo could not be read. Try a JPG or PNG.'));
     el.src = url;
     return () => {
       alive = false;
@@ -141,7 +143,7 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
       const top = frame / 2 - (img.h * scale) / 2 + view.y;
       await onSave(await cropToBlob(img.el, -left / scale, -top / scale, frame / scale, OUTPUT_SIZE));
     } catch (e) {
-      setError(e.message || 'This photo could not be saved.');
+      setError(e.message || translate('This photo could not be saved.'));
       setSaving(false);
     }
   }
@@ -151,8 +153,8 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
   return (
     <div className="cropper-overlay" onClick={(e) => e.target === e.currentTarget && onCancel()}>
       <div className="card cropper" role="dialog" aria-modal="true" aria-labelledby="cropper-title">
-        <h3 id="cropper-title">Adjust your photo</h3>
-        <p className="muted small">Drag the photo to move it. Zoom to make your face bigger.</p>
+        <h3 id="cropper-title">{t('Adjust your photo')}</h3>
+        <p className="muted small">{t('Drag the photo to move it. Zoom to make your face bigger.')}</p>
 
         {error && <p className="notice notice--warn">{error}</p>}
 
@@ -160,7 +162,7 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
           ref={frameRef}
           className="cropper__frame"
           tabIndex={0}
-          aria-label="Photo position. Use the arrow keys to move and + or - to zoom."
+          aria-label={t('Photo position. Use the arrow keys to move and + or - to zoom.')}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
@@ -193,7 +195,7 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
             step="0.01"
             value={view.zoom}
             onChange={(e) => zoomTo(Number(e.target.value))}
-            aria-label="Zoom"
+            aria-label={t('Zoom')}
             disabled={!img}
           />
           <span aria-hidden="true">🔍+</span>
@@ -201,10 +203,10 @@ export default function PhotoCropper({ file, onCancel, onSave }) {
 
         <div className="cropper__actions">
           <button type="button" className="btn btn--ghost" onClick={onCancel} disabled={saving}>
-            Cancel
+            {t('Cancel')}
           </button>
           <button type="button" className="btn" onClick={save} disabled={!img || saving}>
-            {saving ? 'Saving…' : '✅ Use this photo'}
+            {saving ? t('Saving…') : `✅ ${t('Use this photo')}`}
           </button>
         </div>
       </div>

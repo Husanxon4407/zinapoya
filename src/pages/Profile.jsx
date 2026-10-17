@@ -3,6 +3,7 @@ import { useApp } from '../state.jsx';
 import { api } from '../lib/api.js';
 import AvatarPicker from '../components/AvatarPicker.jsx';
 import AppSettings from '../components/AppSettings.jsx';
+import { useT } from '../i18n/index.js';
 
 export default function Profile() {
   const { user, profile, setProfile, stats, xp } = useApp();
@@ -10,6 +11,7 @@ export default function Profile() {
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (profile?.name) setName(profile.name);
@@ -23,7 +25,7 @@ export default function Profile() {
       setProfile(await fn());
       if (kind === 'name') setSaved(true);
     } catch (e) {
-      setError(e.message || 'Something went wrong. Please try again.');
+      setError(e.message || t('Something went wrong. Please try again.'));
     } finally {
       setBusy('');
     }
@@ -33,7 +35,7 @@ export default function Profile() {
 
   return (
     <div className="profile">
-      <h1>👤 My profile</h1>
+      <h1>👤 {t('My profile')}</h1>
 
       <div className="card">
         <AvatarPicker
@@ -53,17 +55,19 @@ export default function Profile() {
           }}
         >
           <label>
-            Your name
+            {t('Your name')}
             <input required maxLength={40} value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <button className="btn" disabled={busy === 'name' || !trimmed || trimmed === profile?.name}>
-            {busy === 'name' ? 'Saving…' : 'Save name'}
+            {busy === 'name' ? t('Saving…') : t('Save name')}
           </button>
         </form>
 
-        {saved && <p className="notice">✅ Saved!</p>}
-        {error && <p className="notice notice--warn">{error}</p>}
-        <p className="muted profile__email">Email: {user.email}</p>
+        {saved && <p className="notice">✅ {t('Saved!')}</p>}
+        {error && <p className="notice notice--warn">{t(error)}</p>}
+        <p className="muted profile__email">
+          {t('Email')}: {user.email}
+        </p>
       </div>
 
       <AppSettings />
@@ -71,19 +75,19 @@ export default function Profile() {
       <div className="card profile__stats">
         <div>
           <strong>{xp.level}</strong>
-          <small>Level · {xp.name}</small>
+          <small>{t('Level')} · {t(xp.name)}</small>
         </div>
         <div>
           <strong>{stats.total}</strong>
-          <small>Answers</small>
+          <small>{t('Answers')}</small>
         </div>
         <div>
           <strong>{stats.minutes}</strong>
-          <small>Minutes spoken</small>
+          <small>{t('Minutes spoken')}</small>
         </div>
         <div>
           <strong>🔥 {stats.streak}</strong>
-          <small>Day streak</small>
+          <small>{t('Day streak')}</small>
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ import DebateArena from './pages/games/DebateArena.jsx';
 import Phrases from './pages/Phrases.jsx';
 import Quiz from './pages/games/Quiz.jsx';
 import WordSprint from './pages/games/WordSprint.jsx';
+import Pronounce from './pages/games/Pronounce.jsx';
 import Vocab from './pages/Vocab.jsx';
 import VocabTopic from './pages/VocabTopic.jsx';
 import Progress from './pages/Progress.jsx';
@@ -28,10 +29,18 @@ import Privacy from './pages/Privacy.jsx';
 import Teacher, { TeacherStudent } from './pages/Teacher.jsx';
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    // Links like /progress#leaderboard open at that section (after the page has drawn).
+    const target = hash && document.getElementById(hash.slice(1));
+    if (target) target.scrollIntoView({ block: 'start' });
+    else window.scrollTo(0, 0);
+    if (hash && !target) {
+      const t = setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' }), 400);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [pathname, hash]);
   return null;
 }
 
@@ -94,6 +103,7 @@ function Screens() {
           <Route path="/games/debate" element={<DebateArena />} />
           <Route path="/games/quiz" element={<Quiz />} />
           <Route path="/games/sprint" element={<WordSprint />} />
+          <Route path="/games/pronounce" element={<Pronounce />} />
           <Route path="/vocab" element={<Vocab />} />
           <Route path="/vocab/:id" element={<VocabTopic />} />
           <Route path="/phrases" element={<Phrases />} />

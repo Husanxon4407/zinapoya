@@ -5,21 +5,23 @@ import { mockExamSteps, workoutSteps } from '../lib/steps.js';
 import { useApp } from '../state.jsx';
 import { PARTS } from '../data/parts.js';
 import { levelFromScore } from '../lib/progress.js';
+import { useT } from '../i18n/index.js';
 
 function MockSummary({ results }) {
   const { attempts } = useApp();
+  const t = useT();
   // Pull fresh rows (they gain scores as feedback arrives).
   const rows = results.map((r) => attempts.find((a) => a.id === r.row.id) || r.row);
   const scored = rows.filter((r) => typeof r.scores?.overall === 'number');
   const avg = scored.length ? Math.round(scored.reduce((s, r) => s + r.scores.overall, 0) / scored.length) : null;
   return (
     <div className="card mock-summary">
-      <h3>📋 Mock exam report</h3>
+      <h3>📋 {t('Mock exam report')}</h3>
       {avg === null ? (
-        <p className="muted">Ask the AI coach for feedback on each answer below — your overall level will appear here.</p>
+        <p className="muted">{t('Ask the AI coach for feedback on each answer below — your overall level will appear here.')}</p>
       ) : (
         <p>
-          Average score so far: <strong>{avg}/100</strong> · estimated level <strong>{levelFromScore(avg)}</strong> ({scored.length}/{rows.length} answers checked)
+          {t('Average score so far:')} <strong>{avg}/100</strong> · {t('estimated level')} <strong>{levelFromScore(avg)}</strong> ({t('{a}/{b} answers checked', { a: scored.length, b: rows.length })})
         </p>
       )}
     </div>
@@ -29,17 +31,18 @@ function MockSummary({ results }) {
 export function MockExam() {
   const [steps, setSteps] = useState(() => mockExamSteps());
   const [round, setRound] = useState(0);
+  const t = useT();
   return (
     <div>
       <Link to="/" className="back">
-        ← Home
+        ← {t('Home')}
       </Link>
       <ExamRunner
         key={round}
         steps={steps}
         mode="mock"
-        title="🎓 Full mock exam"
-        intro={<p>All four parts in a row, just like exam day. Don’t stop between questions — the examiner won’t wait!</p>}
+        title={`🎓 ${t('Full mock exam')}`}
+        intro={<p>{t('All four parts in a row, just like exam day. Don’t stop between questions — the examiner won’t wait!')}</p>}
         renderExtra={(results) => (
           <>
             <MockSummary results={results} />
@@ -51,7 +54,7 @@ export function MockExam() {
                   setRound(round + 1);
                 }}
               >
-                🔁 Another mock exam
+                🔁 {t('Another mock exam')}
               </button>
             </div>
           </>
@@ -65,18 +68,23 @@ export function Workout() {
   const { stats } = useApp();
   const [steps] = useState(() => workoutSteps(stats.weakest));
   const weak = PARTS[stats.weakest];
+  const t = useT();
   return (
     <div>
       <Link to="/" className="back">
-        ← Home
+        ← {t('Home')}
       </Link>
       <ExamRunner
         steps={steps}
         mode="workout"
-        title="⚡ Daily 10-minute workout"
+        title={`⚡ ${t('Daily 10-minute workout')}`}
         intro={
           <p>
-            Warm up with three quick questions, then train your focus part: <strong style={{ color: weak.ink }}>{weak.name} — {weak.title}</strong>.
+            {t('Warm up with three quick questions, then train your focus part:')}{' '}
+            <strong style={{ color: weak.ink }}>
+              {t(weak.name)} — {t(weak.title)}
+            </strong>
+            .
           </p>
         }
       />
