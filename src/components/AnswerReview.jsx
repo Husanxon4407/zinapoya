@@ -46,7 +46,8 @@ export function MetricChips({ attempt }) {
   );
 }
 
-export default function AnswerReview({ step, attempt, guest = false, defaultOpen = true }) {
+// readOnly: the teacher looking at a student's answer (no AI buttons, nothing can be changed).
+export default function AnswerReview({ step, attempt, guest = false, defaultOpen = true, readOnly = false }) {
   const { patchAttempt } = useApp() || {};
   const [row, setRow] = useState(attempt);
   const [transcript, setTranscript] = useState(attempt.transcript || '');
@@ -56,7 +57,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
   const [open, setOpen] = useState(defaultOpen);
   const url = useRecordingUrl(row, open);
   const part = PARTS[row.part];
-  const saved = !guest && !String(row.id).startsWith('unsaved');
+  const saved = !guest && !readOnly && !String(row.id).startsWith('unsaved');
 
   useEffect(() => {
     setRow(attempt);
@@ -149,13 +150,13 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
           <MetricChips attempt={{ ...row, transcript }} />
 
           <label className="transcript">
-            <span>What you said {recognitionSupported() ? '(you can fix any words that were misheard)' : '(type what you said)'}</span>
+            <span>{readOnly ? 'What they said' : <>What you said {recognitionSupported() ? '(you can fix any words that were misheard)' : '(type what you said)'}</>}</span>
             <textarea
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               rows={Math.min(8, Math.max(3, Math.ceil(transcript.length / 90)))}
               placeholder={busy === 'transcribe' ? 'Listening to your recording…' : 'No text yet. You can type what you said here.'}
-              readOnly={!!row.feedback || busy === 'transcribe'}
+              readOnly={readOnly || !!row.feedback || busy === 'transcribe'}
             />
           </label>
 
@@ -170,6 +171,8 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
 
           {row.feedback ? (
             <FeedbackView feedback={row.feedback} scores={row.scores} />
+          ) : readOnly ? (
+            <p className="muted">No AI feedback on this answer yet.</p>
           ) : !aiEnabled ? (
             <p className="notice">🎧 Listen to your recording and read what you said. Could you say it better? Try the question again!</p>
           ) : guest ? (
@@ -182,7 +185,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
             )
           )}
 
-          {!guest && aiEnabled && (
+          {!guest && !readOnly && aiEnabled && (
             <div className="model">
               {model ? (
                 <div className="model__answer">

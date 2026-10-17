@@ -1,4 +1,6 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import Avatar from './Avatar.jsx';
 import { useApp } from '../state.jsx';
 import { aiEnabled, api, isLocalMode } from '../lib/api.js';
 import SoundControls from './SoundControls.jsx';
@@ -14,8 +16,11 @@ const LINKS = [
 ];
 
 export default function Layout() {
-  const { user, stats, attemptsReady, loadError } = useApp();
+  const { user, profile, stats, attemptsReady, loadError } = useApp();
   const navigate = useNavigate();
+  const menuRef = useRef(null);
+  const name = profile?.name || user.name;
+  const links = profile?.role === 'teacher' ? [...LINKS, ['/teacher', '🧑‍🏫', 'Class']] : LINKS;
 
   return (
     <div className="app">
@@ -24,7 +29,7 @@ export default function Layout() {
           <span className="logo__mark">🎤</span> SpeakUp
         </NavLink>
         <nav className="topnav">
-          {LINKS.map(([to, icon, label]) => (
+          {links.map(([to, icon, label]) => (
             <NavLink key={to} to={to} end={to === '/'}>
               {icon} {label}
             </NavLink>
@@ -34,11 +39,16 @@ export default function Layout() {
           <ThemeToggle />
           <SoundControls />
           <span className="streak" title="Days in a row">🔥 {stats.streak}</span>
-          <details className="usermenu">
-            <summary aria-label="Account menu">{user.name.slice(0, 1).toUpperCase()}</summary>
+          <details className="usermenu" ref={menuRef}>
+            <summary aria-label="Account menu">
+              <Avatar name={name} url={profile?.avatar_url} size={40} />
+            </summary>
             <div className="usermenu__panel">
-              <strong>{user.name}</strong>
+              <strong>{name}</strong>
               <small>{user.email}</small>
+              <Link className="btn btn--small" to="/profile" onClick={() => menuRef.current?.removeAttribute('open')}>
+                👤 My profile
+              </Link>
               <button
                 className="btn btn--ghost btn--small"
                 onClick={async () => {
@@ -74,7 +84,7 @@ export default function Layout() {
       {aiEnabled && <CoachChat />}
 
       <nav className="bottomnav">
-        {LINKS.map(([to, icon, label]) => (
+        {links.map(([to, icon, label]) => (
           <NavLink key={to} to={to} end={to === '/'}>
             <span>{icon}</span>
             <small>{label}</small>

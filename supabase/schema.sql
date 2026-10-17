@@ -101,3 +101,7 @@ create policy "own recordings write" on storage.objects for insert to authentica
   with check (bucket_id = 'recordings' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "own recordings delete" on storage.objects for delete to authenticated
   using (bucket_id = 'recordings' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 6. Newer features ------------------------------------------------------------
+-- After this file, run each file in supabase/migrations/ in number order
+-- (01_profiles.sql, 02_teacher.sql, …). Each one is safe to run more than once.

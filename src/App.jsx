@@ -22,6 +22,9 @@ import Vocab from './pages/Vocab.jsx';
 import VocabTopic from './pages/VocabTopic.jsx';
 import Progress from './pages/Progress.jsx';
 import History from './pages/History.jsx';
+import Profile from './pages/Profile.jsx';
+import Mistakes from './pages/Mistakes.jsx';
+import Teacher, { TeacherStudent } from './pages/Teacher.jsx';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -93,6 +96,10 @@ function Screens() {
           <Route path="/phrases" element={<Phrases />} />
           <Route path="/progress" element={<Progress />} />
           <Route path="/history" element={<History />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/mistakes" element={<Mistakes />} />
+          <Route path="/teacher" element={<Teacher />} />
+          <Route path="/teacher/:id" element={<TeacherStudent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

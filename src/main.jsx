@@ -7,8 +7,10 @@ import './styles.css';
 import './styles-games.css';
 import './styles-theme.css';
 import { applyTheme } from './lib/theme.js';
+import { registerServiceWorker } from './lib/pwa.js';
 
 applyTheme();
+registerServiceWorker();
 
 // Vercel also serves every version on its own long address (…-abc123-….vercel.app).
 // Logins are stored per address, so always send people to the one main address.

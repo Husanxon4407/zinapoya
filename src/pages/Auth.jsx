@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, isLocalMode } from '../lib/api.js';
-import { useApp } from '../state.jsx';
+import { PENDING_AVATAR, useApp } from '../state.jsx';
+import AvatarPicker from '../components/AvatarPicker.jsx';
+import { blobToDataUrl } from '../lib/image.js';
 
 function AuthShell({ title, subtitle, children }) {
   return (
@@ -83,16 +85,21 @@ export function Signup() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [photo, setPhoto] = useState(null); // data URL of the chosen photo
 
   async function submit(e) {
     e.preventDefault();
     setBusy(true);
     setError('');
     try {
+      // The photo is uploaded right after the first login (see state.jsx).
+      if (photo) localStorage.setItem(PENDING_AVATAR, photo);
+      else localStorage.removeItem(PENDING_AVATAR);
       const { needsConfirmation } = await api.signUp({ name: name.trim(), email, password });
       if (needsConfirmation) setCheckEmail(true);
       else navigate('/');
     } catch (err) {
+      localStorage.removeItem(PENDING_AVATAR);
       setError(err.message);
     } finally {
       setBusy(false);
@@ -116,6 +123,13 @@ export function Signup() {
     <AuthShell title="Create your account" subtitle="Free. Your progress is saved and you can log in from any device.">
       <GoogleButton />
       <form onSubmit={submit} className="form">
+        <AvatarPicker
+          name={name}
+          url={photo}
+          onPick={async (blob) => setPhoto(await blobToDataUrl(blob))}
+          onRemove={() => setPhoto(null)}
+          onError={setError}
+        />
         <label>
           Your name
           <input required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />

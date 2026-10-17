@@ -101,3 +101,19 @@ export function levelFromScore(score) {
   if (score >= 45) return 'B1';
   return 'A2';
 }
+
+// Weekly leaderboard points (same rules as weekly_leaderboard() in supabase/migrations/03_leaderboard.sql):
+// 10 per answer, +5 for Part 2/3, +20 per day with the daily challenge, + game points ÷ 10. Weeks start Monday, Tashkent time.
+export function weekStartTashkent(now = new Date()) {
+  const t = new Date(now.getTime() + 5 * 3600e3);
+  const daysSinceMonday = (t.getUTCDay() + 6) % 7;
+  return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() - daysSinceMonday) - 5 * 3600e3);
+}
+
+export function weeklyPoints(attempts, gameScores) {
+  const start = weekStartTashkent();
+  const recent = attempts.filter((a) => new Date(a.created_at) >= start);
+  const dailyDays = new Set(recent.filter((a) => a.mode === 'daily').map((a) => new Date(new Date(a.created_at).getTime() + 5 * 3600e3).toISOString().slice(0, 10)));
+  const games = gameScores.filter((g) => new Date(g.created_at) >= start).reduce((s, g) => s + (g.score || 0), 0);
+  return recent.reduce((s, a) => s + 10 + (a.part === '2' || a.part === '3' ? 5 : 0), 0) + 20 * dailyDays.size + Math.round(games / 10);
+}

@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../state.jsx';
 import { PARTS, PART_KEYS } from '../data/parts.js';
 import { BADGES, levelFromScore } from '../lib/progress.js';
+import Leaderboard from '../components/Leaderboard.jsx';
 
-function ScoreChart({ points }) {
+export function ScoreChart({ points, emptyText = 'Get AI feedback on at least two answers to see your score line here.' }) {
   if (points.length < 2) {
-    return <p className="muted">Get AI feedback on at least two answers to see your score line here.</p>;
+    return <p className="muted">{emptyText}</p>;
   }
   const W = 600;
   const H = 200;
@@ -36,7 +37,7 @@ function ScoreChart({ points }) {
   );
 }
 
-function Calendar({ attempts }) {
+export function Calendar({ attempts }) {
   const days = [];
   const counts = {};
   for (const a of attempts) {
@@ -56,6 +57,30 @@ function Calendar({ attempts }) {
         </span>
       ))}
     </div>
+  );
+}
+
+export function PartBars({ stats }) {
+  return (
+    <>
+      {PART_KEYS.map((k) => {
+        const p = PARTS[k];
+        const s = stats.parts[k];
+        return (
+          <div key={k} className="part-row">
+            <span className="part-row__name" style={{ color: p.ink }}>
+              {p.emoji} {p.name}
+            </span>
+            <span className="bar__track">
+              <span className="bar__fill" style={{ width: `${s.avg ?? 0}%`, background: p.color }} />
+            </span>
+            <span className="part-row__nums">
+              {s.count} answers · {s.avg === null ? '—' : `${levelFromScore(s.avg)} ${s.avg}`}
+            </span>
+          </div>
+        );
+      })}
+    </>
   );
 }
 
@@ -99,23 +124,7 @@ export default function Progress() {
       <div className="two-col">
         <div className="card">
           <h3>By exam part</h3>
-          {PART_KEYS.map((k) => {
-            const p = PARTS[k];
-            const s = stats.parts[k];
-            return (
-              <div key={k} className="part-row">
-                <span className="part-row__name" style={{ color: p.ink }}>
-                  {p.emoji} {p.name}
-                </span>
-                <span className="bar__track">
-                  <span className="bar__fill" style={{ width: `${s.avg ?? 0}%`, background: p.color }} />
-                </span>
-                <span className="part-row__nums">
-                  {s.count} answers · {s.avg === null ? '—' : `${levelFromScore(s.avg)} ${s.avg}`}
-                </span>
-              </div>
-            );
-          })}
+          <PartBars stats={stats} />
           {stats.total > 0 && (
             <Link to={`/part/${weak.key}`} className="btn" style={{ background: weak.color, marginTop: 12 }}>
               Practise my weakest part: {weak.name} →
@@ -128,6 +137,17 @@ export default function Progress() {
           <p className="muted small">Darker = more answers that day. Practise a little every day to keep your streak!</p>
         </div>
       </div>
+
+      <Leaderboard />
+
+      <Link to="/mistakes" className="card mistakes-link">
+        <span>📒</span>
+        <div>
+          <h3>My mistakes notebook</h3>
+          <p className="muted">All your AI corrections in one place, with a quick review game.</p>
+        </div>
+        <strong>→</strong>
+      </Link>
 
       <div className="card">
         <h3>🏅 Badges</h3>

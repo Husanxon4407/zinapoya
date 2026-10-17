@@ -1,6 +1,8 @@
 // Data layer. Uses Supabase when it is configured (.env), otherwise a
 // "local demo mode" that keeps everything in this browser so the site still works.
 import { createClient } from '@supabase/supabase-js';
+import { blobToDataUrl } from './image.js';
+import { weeklyPoints } from './progress.js';
 
 const URL = import.meta.env.VITE_SUPABASE_URL;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -80,7 +82,9 @@ const remote = {
     return data;
   },
   async listAttempts() {
-    const { data, error } = await supabase.from('attempts').select('*').order('created_at', { ascending: false }).limit(1000);
+    // Filter by user: the teacher can read everyone's rows, but "my history" must stay mine.
+    const uid = await currentUid();
+    const { data, error } = await supabase.from('attempts').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(1000);
     if (error) throw error;
     return data;
   },
@@ -125,17 +129,91 @@ const remote = {
     const { error } = await supabase.from('bookmarks').delete().eq('id', id);
     if (error) throw error;
   },
+  // Profile (name, photo, role). Falls back to the account data if the profiles table is not set up yet.
+  async getProfile(user) {
+    const { data } = await supabase.from('profiles').select('id, name, avatar_url, role').eq('id', user.id).maybeSingle();
+    return data || { id: user.id, name: user.name, avatar_url: null, role: 'student' };
+  },
+  async updateProfile(patch) {
+    const { data: auth } = await supabase.auth.getUser();
+    const { data, error } = await supabase.from('profiles').update(patch).eq('id', auth.user.id).select('id, name, avatar_url, role').single();
+    if (error) throw error;
+    if (patch.name) await supabase.auth.updateUser({ data: { full_name: patch.name } });
+    return data;
+  },
+  async uploadAvatar(blob) {
+    const { data: auth } = await supabase.auth.getUser();
+    const uid = auth.user.id;
+    const path = `${uid}/avatar-${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg' });
+    if (error) throw error;
+    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const profile = await remote.updateProfile({ avatar_url: pub.publicUrl });
+    removeOldAvatars(uid, path).catch(console.warn);
+    return profile;
+  },
+  async removeAvatar() {
+    const { data: auth } = await supabase.auth.getUser();
+    const profile = await remote.updateProfile({ avatar_url: null });
+    removeOldAvatars(auth.user.id, null).catch(console.warn);
+    return profile;
+  },
+
   async saveGameScore(row) {
     const { data, error } = await supabase.from('game_scores').insert(row).select().single();
     if (error) throw error;
     return data;
   },
   async listGameScores() {
-    const { data, error } = await supabase.from('game_scores').select('*').order('created_at', { ascending: false }).limit(500);
+    const uid = await currentUid();
+    const { data, error } = await supabase.from('game_scores').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(500);
     if (error) throw error;
     return data;
   },
 };
+
+remote.weeklyLeaderboard = async () => {
+  const { data, error } = await supabase.rpc('weekly_leaderboard');
+  if (error) throw error;
+  return data;
+};
+
+// Daily reminder notifications.
+remote.savePushSubscription = async (sub) => {
+  // A shared phone moves the reminder to whoever turned it on last.
+  const { error } = await supabase.rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: sub.keys.p256dh, p_auth: sub.keys.auth });
+  if (error) throw error;
+};
+remote.deletePushSubscription = async (endpoint) => {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  if (error) throw error;
+};
+
+// Teacher dashboard (row-level security only lets the teacher account read these).
+const OVERVIEW_COLS = 'id, user_id, part, question_id, mode, duration_sec, word_count, wpm, scores, created_at';
+remote.teacher = {
+  async listStudents() {
+    const { data, error } = await supabase.from('profiles').select('id, name, avatar_url, role, created_at').eq('role', 'student').order('name');
+    if (error) throw error;
+    return data;
+  },
+  async listAttempts(days = 60) {
+    const since = new Date(Date.now() - days * 864e5).toISOString();
+    const { data, error } = await supabase.from('attempts').select(OVERVIEW_COLS).gte('created_at', since).order('created_at', { ascending: false }).limit(5000);
+    if (error) throw error;
+    return data;
+  },
+  async listStudentAttempts(id) {
+    const { data, error } = await supabase.from('attempts').select('*').eq('user_id', id).order('created_at', { ascending: false }).limit(300);
+    if (error) throw error;
+    return data;
+  },
+};
+
+async function currentUid() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user.id;
+}
 
 // Call the AI coach, but never wait forever.
 async function invokeCoach(options, ms = 60000) {
@@ -153,6 +231,13 @@ async function readFunctionError(error) {
     /* fall through */
   }
   return error.message || 'Something went wrong';
+}
+
+// Delete every old profile photo except the one in use.
+async function removeOldAvatars(uid, keep) {
+  const { data } = await supabase.storage.from('avatars').list(uid);
+  const old = (data || []).map((f) => `${uid}/${f.name}`).filter((p) => p !== keep);
+  if (old.length) await supabase.storage.from('avatars').remove(old);
 }
 
 // Keep only the newest MAX_RECORDINGS recordings so storage stays small.
@@ -311,6 +396,27 @@ const local = {
     const k = `su_bm_${ls.get('su_session', '')}`;
     ls.set(k, ls.get(k, []).filter((b) => b.id !== id));
   },
+  async getProfile(user) {
+    const p = ls.get(`su_profile_${user.id}`, {});
+    return { id: user.id, name: p.name || user.name, avatar_url: p.avatar_url || null, role: p.role || 'student' };
+  },
+  async updateProfile(patch) {
+    const u = currentLocalUser();
+    const k = `su_profile_${u.id}`;
+    ls.set(k, { ...ls.get(k, {}), ...patch });
+    if (patch.name) {
+      const users = ls.get('su_users', {});
+      users[u.email].name = patch.name;
+      ls.set('su_users', users);
+    }
+    return local.getProfile(currentLocalUser());
+  },
+  async uploadAvatar(blob) {
+    return local.updateProfile({ avatar_url: await blobToDataUrl(blob) });
+  },
+  async removeAvatar() {
+    return local.updateProfile({ avatar_url: null });
+  },
   async saveGameScore(row) {
     const k = `su_games_${ls.get('su_session', '')}`;
     const saved = { ...row, id: uuid(), created_at: new Date().toISOString() };
@@ -321,5 +427,34 @@ const local = {
     return ls.get(`su_games_${ls.get('su_session', '')}`, []);
   },
 };
+
+// Local demo mode: the "class" is every account created in this browser.
+const localStudents = () =>
+  Object.values(ls.get('su_users', {}))
+    .map((u) => ({ ...u, ...ls.get(`su_profile_${u.id}`, {}) }))
+    .filter((u) => u.role !== 'teacher')
+    .map((u) => ({ id: u.id, name: u.name, avatar_url: u.avatar_url || null, role: 'student', created_at: null }));
+local.teacher = {
+  listStudents: async () => localStudents(),
+  listAttempts: async () => localStudents().flatMap((u) => ls.get(`su_attempts_${u.id}`, [])).sort((x, y) => (x.created_at < y.created_at ? 1 : -1)),
+  listStudentAttempts: async (id) => ls.get(`su_attempts_${id}`, []),
+};
+
+// Local demo mode: a leaderboard of the accounts in this browser.
+local.weeklyLeaderboard = async () => {
+  const me = ls.get('su_session', '');
+  const rows = localStudents()
+    .map((u) => ({ user_id: u.id, name: u.name, avatar_url: u.avatar_url, points: weeklyPoints(ls.get(`su_attempts_${u.id}`, []), ls.get(`su_games_${u.id}`, [])) }))
+    .filter((r) => r.points > 0 || r.user_id === me)
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+  return rows
+    .map((r, i) => ({ ...r, rank: rows.findIndex((x) => x.points === r.points) + 1, pos: i + 1, is_me: r.user_id === me }))
+    .filter((r) => (r.pos <= 10 && r.points > 0) || r.is_me);
+};
+
+local.savePushSubscription = async () => {
+  throw new Error('Reminders work after the site is connected to Supabase.');
+};
+local.deletePushSubscription = async () => {};
 
 export const api = isLocalMode ? local : remote;

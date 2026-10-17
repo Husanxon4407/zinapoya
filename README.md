@@ -56,6 +56,21 @@ Push this folder to GitHub, then import it on [Vercel](https://vercel.com) or
 and add the two `VITE_SUPABASE_…` variables in the host's settings.
 `vercel.json` / `public/_redirects` make page links like `/progress` work after refresh.
 
+## 4. New features: photos, teacher dashboard, leaderboard, reminders
+
+Do these once in the Supabase dashboard, in this order. Every SQL file is safe to run again.
+
+1. **Profile photos**: SQL Editor → paste `supabase/migrations/01_profiles.sql` → Run.
+2. **Teacher dashboard**: open `supabase/migrations/02_teacher.sql`, put the email you log in with where it says `TEACHER_EMAIL_HERE`, then paste it into the SQL Editor → Run. Log out and back in: a **🧑‍🏫 Class** tab appears.
+3. **Leaderboard**: SQL Editor → paste `supabase/migrations/03_leaderboard.sql` → Run.
+4. **Daily reminders** (19:00 Tashkent time):
+   1. Edge Functions → Secrets: add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `CRON_SECRET`. The public key must match `VITE_VAPID_PUBLIC_KEY` in `.env.production`.
+   2. Edge Functions → Deploy a new function → name it `reminders` → paste `supabase/functions/reminders/index.ts` → Deploy. In its settings, switch **Verify JWT** OFF (it checks `CRON_SECRET` instead).
+   3. Database → Extensions: switch on **pg_cron** and **pg_net**.
+   4. Open `supabase/migrations/04_push.sql`, replace `CRON_SECRET_HERE` with your `CRON_SECRET`, paste it into the SQL Editor → Run.
+
+Students turn reminders on in **My profile → 🔔 Daily reminder**. On iPhone this works only after "Add to Home Screen" (iOS 16.4 or newer).
+
 ## Notes
 
 - Speech-to-text uses the browser's built-in recogniser: works best in **Chrome or Edge**
