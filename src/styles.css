@@ -2365,3 +2365,21 @@ a.roster__row:hover {
   justify-content: flex-end;
   flex-wrap: wrap;
 }
+
+/* ---------- Privacy page ---------- */
+.privacy {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+.privacy .logo {
+  display: inline-flex;
+  margin-bottom: 16px;
+}
+.privacy h2 {
+  font-size: 1.2rem;
+  margin-top: 1.4em;
+}
+.privacy li {
+  margin-bottom: 6px;
+}

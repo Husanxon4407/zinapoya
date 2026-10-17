@@ -150,6 +150,9 @@ export function Signup() {
       <p className="auth__links">
         Already have an account? <Link to="/login">Log in</Link>
       </p>
+      <p className="auth__links">
+        <Link to="/privacy">Privacy policy</Link>
+      </p>
     </AuthShell>
   );
 }

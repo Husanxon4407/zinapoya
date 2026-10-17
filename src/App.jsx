@@ -24,6 +24,7 @@ import Progress from './pages/Progress.jsx';
 import History from './pages/History.jsx';
 import Profile from './pages/Profile.jsx';
 import Mistakes from './pages/Mistakes.jsx';
+import Privacy from './pages/Privacy.jsx';
 import Teacher, { TeacherStudent } from './pages/Teacher.jsx';
 
 function ScrollToTop() {
@@ -68,6 +69,7 @@ function Screens() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot" element={<ForgotPassword />} />
           <Route path="/try" element={<TryIt />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </>
@@ -98,6 +100,7 @@ function Screens() {
           <Route path="/history" element={<History />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/mistakes" element={<Mistakes />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/teacher" element={<Teacher />} />
           <Route path="/teacher/:id" element={<TeacherStudent />} />
           <Route path="/reset-password" element={<ResetPassword />} />
