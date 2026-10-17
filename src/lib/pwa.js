@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { api, isLocalMode } from './api.js';
 
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 export function registerServiceWorker() {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
@@ -48,7 +47,7 @@ export function useInstall() {
 
 /* ---------- Daily reminder (web push) ---------- */
 export const pushSupported = () =>
-  !isLocalMode && !!VAPID_PUBLIC_KEY && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  !isLocalMode && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
 async function registration() {
   return navigator.serviceWorker.getRegistration('/') || navigator.serviceWorker.register('/sw.js');
@@ -71,7 +70,7 @@ export async function enableReminders() {
   if (permission !== 'granted') throw new Error('Notifications are blocked. Allow them in your browser settings for this site, then try again.');
   const reg = await registration();
   await navigator.serviceWorker.ready;
-  const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(VAPID_PUBLIC_KEY) }));
+  const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(await api.vapidPublicKey()) }));
   try {
     await api.savePushSubscription(sub.toJSON());
   } catch (e) {

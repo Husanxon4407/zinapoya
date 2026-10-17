@@ -63,12 +63,11 @@ Do these once in the Supabase dashboard, in this order. Every SQL file is safe t
 1. **Profile photos**: SQL Editor → paste `supabase/migrations/01_profiles.sql` → Run.
 2. **Teacher dashboard**: paste `supabase/migrations/02_teacher.sql` (it already has the teacher's email) into the SQL Editor → Run. Log out and back in: a **🧑‍🏫 Class** tab appears.
 3. **Leaderboard**: SQL Editor → paste `supabase/migrations/03_leaderboard.sql` → Run.
-4. **Daily reminders** (19:00 Tashkent time):
-   1. Edge Functions → Secrets: add `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `CRON_SECRET`. The public key must match `VITE_VAPID_PUBLIC_KEY` in `.env.production`.
-   2. Edge Functions → Deploy a new function → name it `reminders` → paste `supabase/functions/reminders/index.ts` → Deploy. In its settings, switch **Verify JWT** OFF (it checks `CRON_SECRET` instead).
-   3. SQL Editor → paste `supabase/migrations/04_push.sql` → Run. (Students can now turn the reminder on.)
-   4. Database → Extensions: switch on **pg_cron** and **pg_net**.
-   5. Open `supabase/migrations/05_reminder_schedule.sql`, replace `CRON_SECRET_HERE` with your `CRON_SECRET`, paste it into the SQL Editor → Run.
+4. **Daily reminders** (19:00 Tashkent time). No keys or secrets to copy: the function makes its own.
+   1. SQL Editor → paste `supabase/migrations/04_push.sql` → Run.
+   2. Edge Functions → Deploy a new function → name it `reminders` → paste `supabase/functions/reminders/index.ts` → Deploy. In its settings, switch **Verify JWT** OFF.
+   3. Database → Extensions: switch on **pg_cron** and **pg_net**.
+   4. SQL Editor → paste `supabase/migrations/05_reminder_schedule.sql` → Run.
 
 Students turn reminders on in **My profile → 🔔 Daily reminder**. On iPhone this works only after "Add to Home Screen" (iOS 16.4 or newer).
 

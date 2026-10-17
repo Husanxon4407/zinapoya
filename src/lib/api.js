@@ -184,6 +184,15 @@ remote.savePushSubscription = async (sub) => {
   const { error } = await supabase.rpc('save_push_subscription', { p_endpoint: sub.endpoint, p_p256dh: sub.keys.p256dh, p_auth: sub.keys.auth });
   if (error) throw new Error(notSetUp(error) ? 'Reminders are not switched on for this website yet. Please try again later.' : error.message);
 };
+// The public push key comes from the "reminders" function (it creates the keys on its first run).
+let vapidKey = null;
+remote.vapidPublicKey = async () => {
+  if (vapidKey) return vapidKey;
+  const { data, error } = await supabase.functions.invoke('reminders', { body: { action: 'public-key' } });
+  if (error || !data?.publicKey) throw new Error('Reminders are not switched on for this website yet. Please try again later.');
+  vapidKey = data.publicKey;
+  return vapidKey;
+};
 remote.deletePushSubscription = async (endpoint) => {
   const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
   if (error) throw error;

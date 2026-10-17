@@ -31,5 +31,18 @@ $$;
 revoke all on function public.save_push_subscription(text, text, text) from public, anon;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
 
+-- 2. Server-only settings: the push keys (made by the "reminders" function on its first run)
+--    and a random secret that only the 19:00 job and the function know. Students cannot read this table.
+create table if not exists public.app_secrets (
+  key   text primary key,
+  value text not null
+);
+alter table public.app_secrets enable row level security;
+revoke all on public.app_secrets from anon, authenticated;
+grant all on public.app_secrets to service_role;
+insert into public.app_secrets (key, value)
+values ('cron_secret', replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''))
+on conflict (key) do nothing;
+
 -- Let the website see the new function straight away.
 notify pgrst, 'reload schema';
