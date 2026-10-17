@@ -1204,6 +1204,18 @@ textarea:focus {
   border-radius: 16px;
   padding: 18px;
 }
+:root[data-theme='dark'] .feedback {
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.12), rgba(167, 139, 250, 0.03));
+  border: 1px solid rgba(167, 139, 250, 0.18);
+}
+:root[data-theme='dark'] .correction,
+:root[data-theme='dark'] .upgrade,
+:root[data-theme='dark'] .improved {
+  background: #262a36;
+}
+:root[data-theme='dark'] .correction__bad {
+  text-decoration-color: rgba(251, 113, 133, 0.5);
+}
 .feedback section {
   margin-top: 16px;
 }
