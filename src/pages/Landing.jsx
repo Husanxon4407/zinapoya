@@ -55,12 +55,14 @@ export default function Landing() {
             <span className="grad">{t('your level.')}</span>
           </h1>
           <p>{t('Zinapoya helps you climb the Multilevel exam, step by step — with real questions, recordings and an AI coach. Speaking is ready now; Listening, Reading and Writing are on the way.')}</p>
+          {/* TODO when Listening/Reading/Writing launch: "Try one question" is speaking-only (/try).
+              Change these CTAs to lead to a "choose a section" step instead of straight to Speaking. */}
           <div className="hero__cta">
             <Link to="/signup" className="btn btn--big">
               {t('Start free')}
             </Link>
             <Link to="/try" className="btn btn--big btn--outline">
-              🎤 {t('Try one question')}
+              🎤 {t('Try one speaking question')}
             </Link>
           </div>
         </div>

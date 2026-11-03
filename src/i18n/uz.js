@@ -628,4 +628,5 @@ export default {
   "Phone": "Telefon",
   "Instagram": "Instagram",
   "Email": "Email",
+  "Try one speaking question": "Bitta speaking savolini sinab ko‘ring",
 };

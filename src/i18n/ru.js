@@ -628,4 +628,5 @@ export default {
   "Phone": "Телефон",
   "Instagram": "Instagram",
   "Email": "Email",
+  "Try one speaking question": "Попробовать один вопрос Speaking",
 };

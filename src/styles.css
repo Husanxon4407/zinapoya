@@ -689,6 +689,39 @@ a {
   margin: 0 auto 24px;
 }
 
+/* Make the main-page cards "float" so they stand out from the near-white background. */
+.landing .stat-tile,
+.landing .section-card,
+.landing .how-step,
+.landing .faq-item,
+.landing .ask-form,
+.landing .ask-thanks,
+.landing .rules,
+.landing .contact-tile,
+.landing .video-frame {
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  box-shadow: 0 12px 30px -14px rgba(30, 27, 75, 0.35), 0 3px 10px -4px rgba(30, 27, 75, 0.12);
+}
+:root[data-theme='dark'] .landing .stat-tile,
+:root[data-theme='dark'] .landing .section-card,
+:root[data-theme='dark'] .landing .how-step,
+:root[data-theme='dark'] .landing .faq-item,
+:root[data-theme='dark'] .landing .ask-form,
+:root[data-theme='dark'] .landing .ask-thanks,
+:root[data-theme='dark'] .landing .rules,
+:root[data-theme='dark'] .landing .contact-tile,
+:root[data-theme='dark'] .landing .video-frame {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6), 0 2px 8px -3px rgba(0, 0, 0, 0.5);
+}
+/* Section cards keep their coloured accent border, just add the float. */
+.landing .section-card {
+  border-width: 1px;
+}
+.landing .section-card--ready {
+  border-color: var(--sc);
+}
+
 /* Hero staircase */
 .stairs {
   display: flex;
