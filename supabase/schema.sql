@@ -18,6 +18,9 @@ create table if not exists public.attempts (
   scores        jsonb,          -- {fluency, vocabulary, grammar, task, overall, level}
   feedback      jsonb,          -- full AI feedback
   recording_path text,          -- path inside the "recordings" storage bucket
+  browser_transcript  text,     -- what the browser wrote live (to cross-check the AI transcript)
+  transcript_segments jsonb,    -- AI transcript: [{start_sec, text}], unclear words as [[word]]
+  transcript_source   text,     -- 'browser' | 'ai' | 'edited'
   created_at    timestamptz not null default now()
 );
 create index if not exists attempts_user_created on public.attempts (user_id, created_at desc);

@@ -1084,15 +1084,115 @@ textarea:focus {
   font-weight: 800;
   margin: 0;
 }
-.live-transcript {
+.rec-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.mic-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 24px;
+}
+.mic-meter__icon {
+  font-size: 1rem;
+  margin-right: 4px;
+  align-self: center;
+}
+.mic-meter__bar {
+  width: 5px;
+  border-radius: 3px;
+  background: var(--track);
+  transition: background 0.08s;
+}
+.mic-meter__bar.is-on {
+  background: var(--good);
+}
+.mic-meter--silent .mic-meter__icon {
+  animation: blink 1s infinite;
+}
+.mic-silent {
+  margin: 0;
+  font-size: 0.88rem;
+}
+.live-box {
+  width: 100%;
+  border: var(--border);
+  border-radius: 14px;
+  background: var(--bg);
+  padding: 10px 12px;
+  text-align: left;
+}
+.live-box__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.live-source {
+  font-size: 0.75rem;
+  font-weight: 800;
   color: var(--muted);
-  font-size: 0.9rem;
-  max-height: 110px;
+}
+.live-source--browser,
+.live-source--ai {
+  color: var(--good);
+}
+.live-source--paused {
+  color: var(--ink-warn);
+}
+.live-transcript {
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.5;
+  min-height: 72px;
+  max-height: 180px;
   overflow: auto;
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .live-transcript i {
-  opacity: 0.6;
+  color: var(--muted);
+  opacity: 0.8;
+}
+.live-transcript__empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.mic-help {
+  text-align: left;
+}
+.mic-help p {
+  margin: 6px 0;
+  font-weight: 400;
+}
+.share-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.share-link p {
+  margin: 4px 0 0;
+}
+.share-link code {
+  overflow-wrap: anywhere;
+}
+.share-link__done {
+  color: var(--good);
+  font-weight: 700;
+}
+.open-browser {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
 }
 .notes {
   display: flex;
@@ -1261,6 +1361,105 @@ textarea:focus {
 .transcript textarea {
   font-weight: 400;
   font-size: 1rem;
+}
+.transcript__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.transcript__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.transcript .notice {
+  margin: 0;
+  font-weight: 600;
+}
+.tsource {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--track);
+  color: var(--muted);
+}
+.tsource--ai {
+  background: var(--tint-good);
+  color: var(--ink-good);
+}
+.tsource--checking {
+  background: var(--tint-amber);
+  color: var(--ink-warn);
+}
+.tsource--edited {
+  background: var(--tint-indigo);
+  color: var(--ink-indigo);
+}
+.tview {
+  font-weight: 400;
+}
+.tview__hint {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tview__text {
+  border: var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  line-height: 1.75;
+  font-size: 1rem;
+  background: var(--card);
+}
+.tview__seg {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.tview__seg:hover {
+  background: var(--tint-indigo);
+}
+.tview__time {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+.tview__word {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0 1px;
+  cursor: pointer;
+  text-decoration: underline wavy;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+}
+.tview__word--unclear {
+  text-decoration-color: var(--bad);
+  background: var(--tint-bad-soft);
+  border-radius: 4px;
+}
+.tview__word--differs {
+  text-decoration-color: var(--amber);
+}
+.tview__word.is-picked {
+  outline: 2px solid var(--primary);
+  border-radius: 4px;
+}
+.tview__note {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--tint-amber-soft);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 400;
 }
 .model {
   margin-top: 12px;

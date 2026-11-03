@@ -8,6 +8,44 @@ import Avatar from '../components/Avatar.jsx';
 import AnswerReview from '../components/AnswerReview.jsx';
 import { Calendar, PartBars, ScoreChart } from './Progress.jsx';
 
+const SITE_URL = 'https://speakup-multilevel.vercel.app';
+
+// Share the site with the full https:// address: Telegram on iPhone only makes it tappable then.
+function ShareLink() {
+  const [done, setDone] = useState('');
+  async function share() {
+    const text = 'SpeakUp — practise for the Multilevel speaking exam';
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'SpeakUp', text, url: SITE_URL });
+        return;
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text}\n${SITE_URL}`);
+      setDone('Link copied — paste it into your Telegram group.');
+    } catch {
+      setDone(`Copy this link: ${SITE_URL}`);
+    }
+  }
+  return (
+    <div className="card share-link">
+      <div>
+        <b>📣 Share SpeakUp with students</b>
+        <p className="muted">
+          Always send the full link <code>{SITE_URL}</code> (with https://) so it can be tapped on iPhones too.
+        </p>
+        {done && <p className="share-link__done">{done}</p>}
+      </div>
+      <button className="btn" onClick={share}>
+        🔗 Share link
+      </button>
+    </div>
+  );
+}
+
 const DAY = 864e5;
 
 function startOfWeek() {
@@ -98,6 +136,7 @@ export default function Teacher() {
   return (
     <div className="teacher">
       <h1>🧑‍🏫 My class</h1>
+      <ShareLink />
       {error && <p className="notice notice--warn">{error}</p>}
       {!students && !error && <div className="spinner" />}
 

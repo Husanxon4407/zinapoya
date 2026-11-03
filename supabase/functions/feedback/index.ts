@@ -2,9 +2,11 @@
 //   mode "feedback": scores a saved answer and stores the result on the attempt.
 //   mode "model":    writes a B2 model answer for a question (cached for everyone).
 //   mode "chat":     "Ask the coach" chat, limited to English speaking / exam topics.
-//   mode "transcribe": writes down what the student said in a recording (when the browser could not).
+//   mode "transcribe": carefully writes down what the student said in a recording (after every answer).
+//   mode "live":     quick text for a ~10 s piece of sound, shown live while the student speaks
+//                    (used when the phone's own speech-to-text does not work).
 // Secrets: GEMINI_API_KEY (from https://aistudio.google.com).
-// Optional: GEMINI_MODEL, DAILY_AI_LIMIT, DAILY_CHAT_LIMIT.
+// Optional: GEMINI_MODEL, TRANSCRIBE_MODEL, DAILY_AI_LIMIT, DAILY_CHAT_LIMIT, DAILY_TRANSCRIBE_LIMIT, DAILY_LIVE_LIMIT.
 // SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by Supabase.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -12,7 +14,10 @@ const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-flash-lite-latest';
 const DAILY_LIMIT = Number(Deno.env.get('DAILY_AI_LIMIT') ?? '25');
 const DAILY_CHAT_LIMIT = Number(Deno.env.get('DAILY_CHAT_LIMIT') ?? '40');
-const DAILY_TRANSCRIBE_LIMIT = Number(Deno.env.get('DAILY_TRANSCRIBE_LIMIT') ?? '60');
+const DAILY_TRANSCRIBE_LIMIT = Number(Deno.env.get('DAILY_TRANSCRIBE_LIMIT') ?? '80');
+const DAILY_LIVE_LIMIT = Number(Deno.env.get('DAILY_LIVE_LIMIT') ?? '400');
+// A stronger model listens more carefully; flash-lite is the backup when it is busy.
+const TRANSCRIBE_MODEL = Deno.env.get('TRANSCRIBE_MODEL') ?? 'gemini-flash-latest';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
@@ -73,7 +78,29 @@ async function tryModel(model: string, body: Record<string, unknown>, timeoutMs 
   return { status: res.status, ok: res.ok, data };
 }
 
-async function callGemini({ system, turns, schema, temperature = 0.5, timeoutMs = ATTEMPT_TIMEOUT_MS, allowEmpty = false }: { system: string; turns: Turn[]; schema?: unknown; temperature?: number; timeoutMs?: number; allowEmpty?: boolean }) {
+async function callGemini({
+  system,
+  turns,
+  schema,
+  temperature = 0.5,
+  timeoutMs = ATTEMPT_TIMEOUT_MS,
+  allowEmpty = false,
+  models = [MODEL],
+  maxModels = 4,
+  budgetMs,
+  useFallbacks = true,
+}: {
+  system: string;
+  turns: Turn[];
+  schema?: unknown;
+  temperature?: number;
+  timeoutMs?: number;
+  allowEmpty?: boolean;
+  models?: string[];
+  maxModels?: number;
+  budgetMs?: number;
+  useFallbacks?: boolean;
+}) {
   if (!GEMINI_KEY) throw new CoachError('The AI coach is not set up yet. Ask your teacher to add the Gemini key.', 503);
   const started = Date.now();
   const makeBody = () => ({
@@ -88,10 +115,11 @@ async function callGemini({ system, turns, schema, temperature = 0.5, timeoutMs 
   });
 
   const tried = new Set<string>();
-  const queue = [MODEL];
+  const queue = [...models];
   let lastStatus = 0;
-  const budget = Math.max(TOTAL_BUDGET_MS, timeoutMs + 15000);
-  while (queue.length && tried.size < 4 && Date.now() - started < budget) {
+  const budget = budgetMs ?? Math.max(TOTAL_BUDGET_MS, timeoutMs + 15000);
+  const more = async () => (useFallbacks ? await discoverFallbacks() : []);
+  while (queue.length && tried.size < maxModels && Date.now() - started < budget) {
     const model = queue.shift()!;
     if (tried.has(model)) continue;
     tried.add(model);
@@ -106,7 +134,7 @@ async function callGemini({ system, turns, schema, temperature = 0.5, timeoutMs 
     } catch (e) {
       console.error(`Gemini ${model} timed out / network error`, String(e));
       lastStatus = 504;
-      queue.push(...(await discoverFallbacks()));
+      queue.push(...(await more()));
       continue;
     }
     if (r.ok) {
@@ -121,7 +149,7 @@ async function callGemini({ system, turns, schema, temperature = 0.5, timeoutMs 
     lastStatus = r.status;
     console.error('Gemini error', model, r.status, JSON.stringify(r.data).slice(0, 600));
     // Busy (503), rate-limited (429) or retired (404): try another model.
-    if ([404, 429, 500, 503].includes(r.status)) queue.push(...(await discoverFallbacks()));
+    if ([404, 429, 500, 503].includes(r.status)) queue.push(...(await more()));
     else break;
   }
   if (lastStatus === 429) throw new CoachError('The coach has reached Google’s free limit for now. Please try again in a few minutes.', 429);
@@ -144,7 +172,7 @@ const GUARD = `Safety rules (always follow):
 - Keep everything appropriate for school students.`;
 
 const COACH_SYSTEM = `You are a friendly, encouraging English speaking examiner and coach for teenage and adult students preparing for the Uzbek Multilevel (CEFR) speaking exam.
-You receive the exam question and a transcript of the student's spoken answer. The transcript comes from automatic speech recognition, so ignore missing punctuation and capital letters, and do not punish words that were obviously misheard.
+You receive the exam question and a transcript of the student's spoken answer. The transcript was made by careful AI speech recognition and checked by the student, but it can still contain a few misheard words: ignore punctuation and capital letters, and do not punish words that were obviously misheard.
 
 Score each criterion from 0 to 10 for the student's actual level:
 - fluency: length of the answer for the time given, flow, few hesitations or fillers
@@ -243,21 +271,24 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const isChat = body.mode === 'chat';
     const isTranscribe = body.mode === 'transcribe';
-    const kind = isChat ? 'chat' : isTranscribe ? 'transcribe' : 'ai';
+    const isLive = body.mode === 'live';
+    const kind = isChat ? 'chat' : isTranscribe ? 'transcribe' : isLive ? 'live' : 'ai';
 
     // Daily limits per student keep usage inside the free quota.
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     let q = admin.from('ai_usage').select('id', { count: 'exact', head: true }).eq('user_id', user.id).gte('created_at', since);
     q = kind === 'ai' ? q.in('kind', ['feedback', 'model']) : q.eq('kind', kind);
     const { count } = await q;
-    const limit = isChat ? DAILY_CHAT_LIMIT : isTranscribe ? DAILY_TRANSCRIBE_LIMIT : DAILY_LIMIT;
+    const limit = isChat ? DAILY_CHAT_LIMIT : isTranscribe ? DAILY_TRANSCRIBE_LIMIT : isLive ? DAILY_LIVE_LIMIT : DAILY_LIMIT;
     if ((count ?? 0) >= limit) {
+      if (isLive) return json({ error: 'Live text limit reached for today. Your full text will appear after you finish.' }, 429);
       if (isTranscribe) return json({ error: `You have used your ${limit} automatic transcripts for today. You can type what you said instead.` }, 429);
       return json({ error: isChat ? `You have sent ${limit} messages to the coach today. Come back tomorrow! 🌙` : `You have used your ${limit} AI checks for today. Come back tomorrow! 🌙` }, 429);
     }
 
     if (isChat) return await chat(body, user.id);
     if (isTranscribe) return await transcribe(body, user.id);
+    if (isLive) return await live(body, user.id);
     if (body.mode === 'model') return await modelAnswer(body, user.id);
     return await feedback(body, user.id);
   } catch (err) {
@@ -357,37 +388,122 @@ async function chat(body: { messages?: { role: string; text: string }[] }, userI
   return json({ reply });
 }
 
-const TRANSCRIBE_SYSTEM = `You are a speech-to-text engine for English learners. Listen to the recording and write down exactly what the speaker says in English.
-- Write the words as spoken: keep grammar mistakes, repetitions and fillers (um, eh, er). Do NOT correct or improve anything.
-- Use normal punctuation and sentences.
-- If a few words are in another language (Uzbek, Russian), write them as heard.
-- Output only the transcript text. If there is no speech, output nothing.
+const TRANSCRIBE_SYSTEM = `You are a very careful speech-to-text engine for English learners from Uzbekistan. Students use your transcript to check every word they said, so accuracy matters more than anything else.
+Listen to the whole recording, then write down exactly what the speaker says.
+- Write the words as spoken: keep grammar mistakes, wrong word forms, repetitions, false starts and fillers (um, eh, er). Never correct, improve, complete or summarise anything.
+- The speaker has an accent. When a word is clearly the English word they mean, write that word correctly spelled.
+- If you are not sure which word was said (unclear sound, strong accent, noise), still write your best guess but put it in double square brackets, like [[travel]]. Mark only the uncertain words, not whole sentences.
+- The exam question is given only to help you recognise topic words. NEVER add words the speaker did not say, even if they would answer the question better.
+- If a few words are in Uzbek or Russian, write them as heard in Latin letters.
+- Split the transcript into short segments (one sentence or phrase each), each with the time in seconds from the start of the recording where it begins.
+- If there is no speech at all, return an empty list.
 
 ${GUARD}`;
 
-async function transcribe(body: { attempt_id: string; audio?: string; mime?: string }, userId: string) {
-  const { data: attempt } = await admin.from('attempts').select('id, duration_sec').eq('id', body.attempt_id).eq('user_id', userId).maybeSingle();
+const TRANSCRIBE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    segments: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: { start_sec: { type: 'NUMBER' }, text: { type: 'STRING' } },
+        required: ['start_sec', 'text'],
+      },
+    },
+  },
+  required: ['segments'],
+};
+
+const stripMarks = (t: string) => t.replace(/\[\[([^\]]*)\]\]/g, '$1');
+const countWords = (t: string) => (t.match(/[A-Za-z']+/g) || []).length;
+const countFillers = (t: string) => (t.match(/\b(um+|uh+|er+|erm+|eh+|ah+|hmm+)\b/gi) || []).length;
+const unquote = (t: string) => t.replace(/^\s*["“]|["”]\s*$/g, '').trim();
+
+async function transcribe(body: { attempt_id: string; audio?: string; mime?: string; browser_transcript?: string }, userId: string) {
+  const { data: attempt } = await admin.from('attempts').select('id, duration_sec, question_text, feedback').eq('id', body.attempt_id).eq('user_id', userId).maybeSingle();
   if (!attempt) return json({ error: 'Answer not found.' }, 404);
   const audio = typeof body.audio === 'string' ? body.audio : '';
   if (audio.length < 1000) return json({ error: 'The recording is empty. Please record your answer again.' }, 400);
   if (audio.length > 14_000_000) return json({ error: 'The recording is too long to transcribe.' }, 413);
 
-  const text = (
-    await callGemini({
-      system: TRANSCRIBE_SYSTEM,
-      temperature: 0,
-      timeoutMs: 40000,
-      allowEmpty: true,
-      turns: [{ role: 'user', text: 'Transcribe this recording of a student answering an English speaking exam question.', audio: { mime: body.mime || 'audio/wav', data: audio } }],
-    })
-  )
-    .replace(/^\s*["“]|["”]\s*$/g, '')
-    .trim();
+  const raw = await callGemini({
+    system: TRANSCRIBE_SYSTEM,
+    schema: TRANSCRIBE_SCHEMA,
+    temperature: 0,
+    timeoutMs: 40000,
+    allowEmpty: true,
+    models: [TRANSCRIBE_MODEL, MODEL],
+    turns: [
+      {
+        role: 'user',
+        text: `A student is answering this English speaking exam question:\n<question>\n${String(attempt.question_text ?? '').slice(0, 1500)}\n</question>\nTranscribe the recording.`,
+        audio: { mime: body.mime || 'audio/wav', data: audio },
+      },
+    ],
+  });
 
-  const words = (text.match(/[A-Za-z']+/g) || []).length;
+  let segments: { start_sec: number; text: string }[] = [];
+  try {
+    const parsed = JSON.parse(raw || '{"segments":[]}');
+    segments = (parsed.segments ?? [])
+      .map((x: { start_sec?: number; text?: string }) => ({ start_sec: Math.max(0, Math.round(Number(x.start_sec) * 10) / 10 || 0), text: unquote(String(x.text ?? '')) }))
+      .filter((x: { text: string }) => x.text)
+      .slice(0, 200);
+  } catch {
+    // The model answered with plain text instead of JSON: keep it as one segment.
+    const t = unquote(raw);
+    if (t) segments = [{ start_sec: 0, text: t }];
+  }
+
+  const text = stripMarks(segments.map((x) => x.text).join(' ')).replace(/\s+/g, ' ').trim();
+  const words = countWords(text);
   const wpm = Math.round(words / (Math.max(attempt.duration_sec || 1, 1) / 60));
-  const fillers = (text.match(/\b(um+|uh+|er+|erm+|eh+|ah+|hmm+)\b/gi) || []).length;
-  await admin.from('attempts').update({ transcript: text, word_count: words, wpm, filler_count: fillers }).eq('id', attempt.id);
+  const fillers = countFillers(text);
+  // Never change an answer that already has feedback (the feedback belongs to that text).
+  const patch: Record<string, unknown> = attempt.feedback ? {} : { transcript: text, word_count: words, wpm, filler_count: fillers };
+  const extra = {
+    transcript_segments: segments,
+    transcript_source: 'ai',
+    ...(typeof body.browser_transcript === 'string' ? { browser_transcript: body.browser_transcript.slice(0, 8000) } : {}),
+  };
+  const { error } = await admin.from('attempts').update({ ...patch, ...extra }).eq('id', attempt.id);
+  // Database not updated yet (migration 06 not run): save the basic fields only.
+  if (error && Object.keys(patch).length) await admin.from('attempts').update(patch).eq('id', attempt.id);
   await admin.from('ai_usage').insert({ user_id: userId, kind: 'transcribe' });
-  return json({ transcript: text, word_count: words, wpm, filler_count: fillers });
+  return json({ transcript: text, segments, word_count: words, wpm, filler_count: fillers });
+}
+
+const LIVE_SYSTEM = `You write live captions for an English learner from Uzbekistan who is speaking right now.
+You get a short piece (about 10 seconds) of their speech. Write exactly the English words in it, as spoken, keeping mistakes and fillers. Never correct or add words.
+The previous caption text is given only so you can continue the sentence naturally; do NOT repeat it.
+Output only the new words, nothing else. If there is no speech, output nothing.
+
+${GUARD}`;
+
+async function live(body: { audio?: string; previous?: string }, userId: string) {
+  const audio = typeof body.audio === 'string' ? body.audio : '';
+  if (audio.length < 1000) return json({ text: '' });
+  if (audio.length > 2_000_000) return json({ error: 'This piece of sound is too long.' }, 413);
+  const text = unquote(
+    await callGemini({
+      system: LIVE_SYSTEM,
+      temperature: 0,
+      timeoutMs: 9000,
+      allowEmpty: true,
+      maxModels: 2,
+      budgetMs: 14000,
+      useFallbacks: false,
+      models: [MODEL, TRANSCRIBE_MODEL],
+      turns: [
+        {
+          role: 'user',
+          text: `Previous caption: "${String(body.previous ?? '').slice(-300)}"\nWrite the new words in this piece of speech.`,
+          audio: { mime: 'audio/wav', data: audio },
+        },
+      ],
+    }),
+  ).replace(/\s+/g, ' ');
+  await admin.from('ai_usage').insert({ user_id: userId, kind: 'live' });
+  return json({ text });
 }

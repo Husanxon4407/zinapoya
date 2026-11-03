@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { recordingForAI } from '../lib/audio.js';
 import { PARTS } from '../data/parts.js';
 import { analyse, paceLabel } from '../lib/metrics.js';
 import { aiEnabled, api } from '../lib/api.js';
 import { useApp } from '../state.jsx';
 import FeedbackView from './FeedbackView.jsx';
-import { recognitionSupported } from '../lib/speech.js';
+import TranscriptView from './TranscriptView.jsx';
+import { transcriber, useTranscription } from '../lib/transcriber.js';
+import { segmentsText } from '../lib/wordDiff.js';
 import { stepLabel, translate, useT } from '../i18n/index.js';
 
 export function useRecordingUrl(attempt, enabled = true) {
@@ -48,62 +49,102 @@ export function MetricChips({ attempt }) {
   );
 }
 
+const RECENT_MS = 2 * 3600 * 1000;
+
+// MediaRecorder files often have no length written in them, so the browser cannot jump to a moment.
+// Asking for a far-away position makes it read the whole file once; after that, jumping works.
+function fixDuration(e) {
+  const a = e.currentTarget;
+  if (a.duration !== Infinity) return;
+  const back = () => {
+    a.removeEventListener('timeupdate', back);
+    a.currentTime = 0;
+  };
+  a.addEventListener('timeupdate', back);
+  a.currentTime = 1e101;
+}
+
 // readOnly: the teacher looking at a student's answer (no AI buttons, nothing can be changed).
 export default function AnswerReview({ step, attempt, guest = false, defaultOpen = true, readOnly = false }) {
+  const t = useT();
   const { patchAttempt } = useApp() || {};
   const [row, setRow] = useState(attempt);
   const [transcript, setTranscript] = useState(attempt.transcript || '');
+  const [segments, setSegments] = useState(attempt.transcript_segments?.length ? attempt.transcript_segments : null);
+  // The live text, kept to cross-check the AI transcript word by word.
+  const [liveText] = useState(() => attempt.browser_transcript ?? (attempt.transcript_segments ? '' : attempt.transcript || ''));
+  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [model, setModel] = useState('');
   const [open, setOpen] = useState(defaultOpen);
+  const audioRef = useRef(null);
   const url = useRecordingUrl(row, open);
   const part = PARTS[row.part];
-  const saved = !guest && !readOnly && !String(row.id).startsWith('unsaved');
+  const saved = !guest && !readOnly && !/^(unsaved|guest)/.test(String(row.id));
+  const job = useTranscription(saved ? row.id : null);
+  const checking = job?.status === 'waiting' || job?.status === 'working';
 
   useEffect(() => {
     setRow(attempt);
   }, [attempt]);
 
-  // When the browser could not turn speech into text, let Gemini listen to the recording.
-  const hasRecording = !!(row.localBlob || row.recording_path);
-  const canTranscribe = aiEnabled && saved && !row.feedback && hasRecording && (row.duration_sec || 0) >= 2;
-  const triedAuto = useRef(false);
-
-  async function transcribeRecording() {
-    setBusy('transcribe');
-    setError('');
-    try {
-      let blob = row.localBlob;
-      if (!blob) {
-        const signed = await api.getRecordingUrl(row);
-        if (!signed) throw new Error(translate('The recording could not be loaded.'));
-        blob = await (await fetch(signed)).blob();
-      }
-      const { audio, mime } = await recordingForAI(blob);
-      const res = await api.transcribe(row.id, audio, mime);
-      if (!res.transcript) {
-        setError(translate('The AI could not hear any speech in this recording. Please try speaking louder or closer to the microphone.'));
-        return;
-      }
-      const patch = { transcript: res.transcript, word_count: res.word_count, wpm: res.wpm, filler_count: res.filler_count };
+  // The careful AI transcript arrived.
+  const applied = useRef(null);
+  useEffect(() => {
+    const res = job?.status === 'done' ? job.result : null;
+    if (!res || applied.current === res) return;
+    applied.current = res;
+    setSegments(res.segments?.length ? res.segments : null);
+    const patch = { transcript_segments: res.segments, transcript_source: 'ai' };
+    if (!row.feedback) {
+      Object.assign(patch, { transcript: res.transcript, word_count: res.word_count, wpm: res.wpm, filler_count: res.filler_count });
       setTranscript(res.transcript);
-      setRow((r) => ({ ...r, ...patch }));
-      patchAttempt?.(row.id, patch);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy('');
+      setEditing(false);
+      if (!res.transcript) setError(translate('The AI could not hear any speech in this recording. Please try speaking louder or closer to the microphone.'));
     }
+    setRow((r) => ({ ...r, ...patch }));
+    patchAttempt?.(row.id, patch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [job]);
+
+  const hasRecording = !!(row.localBlob || row.recording_path);
+  const canTranscribe = aiEnabled && saved && hasRecording && (row.duration_sec || 0) >= 2;
+
+  function startCheck(force = false) {
+    setError('');
+    transcriber.enqueue(
+      row.id,
+      {
+        blob: row.localBlob,
+        loadBlob: async () => {
+          const signed = await api.getRecordingUrl(row);
+          return signed ? (await fetch(signed)).blob() : null;
+        },
+        browserTranscript: liveText,
+      },
+      { force },
+    );
   }
 
+  // Answers that were never checked (older ones, or the page was reloaded): check them when opened.
   useEffect(() => {
-    if (open && canTranscribe && !transcript.trim() && !triedAuto.current) {
-      triedAuto.current = true;
-      transcribeRecording();
-    }
+    if (!open || !canTranscribe || job || segments || row.feedback || row.transcript_source === 'ai') return;
+    const recent = Date.now() - new Date(row.created_at || 0).getTime() < RECENT_MS;
+    if (!transcript.trim() || recent) startCheck();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, canTranscribe]);
+
+  function playFrom(sec) {
+    const a = audioRef.current;
+    if (!a) return;
+    try {
+      a.currentTime = Math.max(0, (sec || 0) - 0.3);
+    } catch {
+      /* not ready yet */
+    }
+    a.play().catch(() => {});
+  }
 
   async function getFeedback() {
     setBusy('feedback');
@@ -113,6 +154,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
       const patch = { feedback: res.feedback, scores: res.scores, transcript };
       setRow((r) => ({ ...r, ...patch }));
       patchAttempt?.(row.id, patch);
+      setEditing(false);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -132,8 +174,19 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
     }
   }
 
-  const t = useT();
   const title = step?.label ? `${t(part.name)} · ${stepLabel(t, step.label)}` : t(part.name);
+  const edited = !!segments && transcript.trim() !== segmentsText(segments);
+  const showChecked = !!segments && !editing && !edited;
+  const locked = readOnly || !!row.feedback;
+  const source = checking
+    ? { cls: 'checking', text: t('Live draft · the AI is checking…') }
+    : showChecked
+      ? { cls: 'ai', text: t('Checked by AI ✓') }
+      : edited
+        ? { cls: 'edited', text: t('Fixed by you ✎') }
+        : transcript.trim()
+          ? { cls: 'draft', text: t('Live draft') }
+          : null;
 
   return (
     <div className="card review" style={{ borderTopColor: part.color }}>
@@ -148,28 +201,62 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
 
       {open && (
         <div className="review__body">
-          {url ? <audio controls src={url} className="audio" /> : row.recording_path || row.localBlob ? <p className="muted">{t('Loading recording…')}</p> : null}
+          {url ? (
+            <audio ref={audioRef} controls preload="auto" src={url} className="audio" onLoadedMetadata={fixDuration} />
+          ) : hasRecording ? (
+            <p className="muted">{t('Loading recording…')}</p>
+          ) : null}
 
           <MetricChips attempt={{ ...row, transcript }} />
 
-          <label className="transcript">
-            <span>{readOnly ? t('What they said') : <>{t('What you said')} ({recognitionSupported() ? t('you can fix any words that were misheard') : t('type what you said')})</>}</span>
-            <textarea
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-              rows={Math.min(8, Math.max(3, Math.ceil(transcript.length / 90)))}
-              placeholder={busy === 'transcribe' ? t('Listening to your recording…') : t('No text yet. You can type what you said here.')}
-              readOnly={readOnly || !!row.feedback || busy === 'transcribe'}
-            />
-          </label>
+          <div className="transcript">
+            <div className="transcript__head">
+              <span>{readOnly ? t('What they said') : t('What you said')}</span>
+              {source && <span className={`tsource tsource--${source.cls}`}>{source.text}</span>}
+            </div>
 
-          {busy === 'transcribe' && <p className="notice">✍️ {t('The AI is listening to your recording and writing down what you said…')}</p>}
-          {canTranscribe && busy !== 'transcribe' && (
-            <button className="btn btn--ghost btn--small transcribe-btn" onClick={transcribeRecording}>
-              ✍️ {transcript.trim() ? t('Rewrite the text from my recording') : t('Write down what I said (AI)')}
-            </button>
-          )}
+            {checking && <p className="notice">✍️ {t('The AI is listening carefully to your recording and writing down every word…')}</p>}
 
+            {showChecked ? (
+              <TranscriptView segments={segments} compareWith={liveText} onPlayFrom={url ? playFrom : undefined} />
+            ) : (
+              <textarea
+                value={transcript}
+                onChange={(e) => setTranscript(e.target.value)}
+                rows={Math.min(8, Math.max(3, Math.ceil(transcript.length / 90)))}
+                placeholder={checking ? t('Listening to your recording…') : t('No text yet. You can type what you said here.')}
+                readOnly={locked || checking}
+              />
+            )}
+
+            {!locked && (
+              <div className="transcript__actions">
+                {showChecked && (
+                  <button className="btn btn--ghost btn--small" onClick={() => setEditing(true)}>
+                    ✏️ {t('Fix the text')}
+                  </button>
+                )}
+                {segments && !showChecked && (
+                  <button
+                    className="btn btn--ghost btn--small"
+                    onClick={() => {
+                      setTranscript(segmentsText(segments));
+                      setEditing(false);
+                    }}
+                  >
+                    {edited ? `↩ ${t('Back to the AI text')}` : `✓ ${t('Done')}`}
+                  </button>
+                )}
+                {canTranscribe && !checking && (
+                  <button className="btn btn--ghost btn--small" onClick={() => startCheck(true)}>
+                    ✍️ {segments ? t('Check my recording again') : t('Write down what I said (AI)')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {job?.status === 'error' && <p className="notice notice--warn">{job.error}</p>}
           {error && <p className="notice notice--warn">{error}</p>}
 
           {row.feedback ? (
@@ -182,8 +269,8 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
             <p className="notice">✨ {t('Sign up for free to get AI feedback on your answers.')}</p>
           ) : (
             saved && (
-              <button className="btn btn--ai" disabled={busy === 'feedback' || transcript.trim().split(/\s+/).length < 5} onClick={getFeedback}>
-                {busy === 'feedback' ? t('The coach is listening…') : `✨ ${t('Get AI feedback')}`}
+              <button className="btn btn--ai" disabled={busy === 'feedback' || checking || transcript.trim().split(/\s+/).length < 5} onClick={getFeedback}>
+                {busy === 'feedback' ? t('The coach is listening…') : checking ? t('Wait for the checked text…') : `✨ ${t('Get AI feedback')}`}
               </button>
             )
           )}

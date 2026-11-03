@@ -98,10 +98,22 @@ const remote = {
     if (error) throw new Error(await readFunctionError(error));
     return data;
   },
-  async transcribe(attemptId, audio, mime = 'audio/wav') {
-    const { data, error } = await invokeCoach({ body: { mode: 'transcribe', attempt_id: attemptId, audio, mime } }, 90000);
+  async transcribe(attemptId, audio, mime = 'audio/wav', browserTranscript) {
+    const body = { mode: 'transcribe', attempt_id: attemptId, audio, mime };
+    if (typeof browserTranscript === 'string') body.browser_transcript = browserTranscript;
+    const { data, error } = await invokeCoach({ body }, 90000);
     if (error) throw new Error(await readFunctionError(error));
     return data;
+  },
+  // Live captions for a ~10 s piece of sound (when the phone cannot write speech itself).
+  async liveTranscribe(audio, previous = '') {
+    const { data, error } = await invokeCoach({ body: { mode: 'live', audio, previous } }, 15000);
+    if (error) {
+      const e = new Error(await readFunctionError(error));
+      e.status = error.context?.status;
+      throw e;
+    }
+    return data?.text || '';
   },
   async chat(messages) {
     const { data, error } = await invokeCoach({ body: { mode: 'chat', messages } });
@@ -394,6 +406,11 @@ const local = {
   },
   async transcribe() {
     throw new Error('Automatic transcripts need the online server. You can type what you said instead.');
+  },
+  async liveTranscribe() {
+    const e = new Error('Live text needs the online server.');
+    e.status = 429;
+    throw e;
   },
   async listBookmarks() {
     return ls.get(`su_bm_${ls.get('su_session', '')}`, []);

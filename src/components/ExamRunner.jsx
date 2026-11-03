@@ -5,9 +5,12 @@ import TimerRing from './TimerRing.jsx';
 import AnswerReview from './AnswerReview.jsx';
 import useCountdown from './useCountdown.js';
 import { PARTS } from '../data/parts.js';
-import { beep, createSpeakingSession, recognitionSupported, speak, stopSpeaking } from '../lib/speech.js';
+import MicMeter from './MicMeter.jsx';
+import MicHelp, { InAppWarning } from './MicHelp.jsx';
+import { beep, checkMicrophone, createSpeakingSession, speak, stopSpeaking, unlockAudio } from '../lib/speech.js';
 import { analyse, countWords } from '../lib/metrics.js';
-import { api } from '../lib/api.js';
+import { aiEnabled, api } from '../lib/api.js';
+import { transcriber } from '../lib/transcriber.js';
 import { useApp } from '../state.jsx';
 import { duckMusic, sfx } from '../lib/sound.js';
 import { stepLabel, translate, useT } from '../i18n/index.js';
@@ -25,8 +28,14 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
   const [results, setResults] = useState([]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [mic, setMic] = useState({ level: 0, silent: 0 });
+  const [liveSource, setLiveSource] = useState('none');
+  const [micProblem, setMicProblem] = useState(''); // '' | blocked | no-mic | busy | unsupported | error
+  const [checkingMic, setCheckingMic] = useState(false);
   const sessionRef = useRef(null);
   const cancelled = useRef(false);
+  const liveBoxRef = useRef(null);
+  const useAi = aiEnabled && mode !== 'guest';
 
   const step = steps[index];
   const part = PARTS[step.part];
@@ -56,22 +65,61 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     setPhase('prep');
   }
 
+  // Keep the newest live words in view.
+  useEffect(() => {
+    const el = liveBoxRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [live]);
+
+  // "Start": unlock sound and ask for the microphone now, not in the middle of the first answer.
+  async function begin() {
+    sfx('start');
+    unlockAudio();
+    setCheckingMic(true);
+    const status = await checkMicrophone();
+    setCheckingMic(false);
+    if (cancelled.current) return;
+    if (status !== 'ok') {
+      setMicProblem(status);
+      return;
+    }
+    setMicProblem('');
+    beginStep(0);
+  }
+
   function startSpeaking() {
     if (phase !== 'prep') return;
     stopSpeaking();
     beep(880);
     setLive({ final: '', interim: '' });
-    const s = createSpeakingSession({ onTranscript: (final, interim) => setLive({ final, interim }) });
+    setMic({ level: 0, silent: 0 });
+    setLiveSource('none');
+    setMicProblem('');
+    let lastLevelAt = 0;
+    const s = createSpeakingSession({
+      onTranscript: (final, interim) => setLive({ final, interim }),
+      onLevel: (level, silent) => {
+        const now = Date.now();
+        if (now - lastLevelAt < 90) return; // ~11 updates a second is plenty
+        lastLevelAt = now;
+        setMic({ level, silent });
+      },
+      onLiveSource: setLiveSource,
+      liveTranscribe: useAi ? (audio, previous) => api.liveTranscribe(audio, previous) : undefined,
+    });
     sessionRef.current = s;
-    s.start();
     setPhase('speak');
+    s.start().then(({ status }) => {
+      if (cancelled.current || sessionRef.current !== s) return;
+      if (status !== 'ok' && status !== 'cancelled') setMicProblem(status);
+    });
   }
 
   async function finishSpeaking() {
     if (phase !== 'speak') return;
     beep(520, 260);
     setPhase('saving');
-    const { blob, transcript, duration } = await sessionRef.current.stop();
+    const { blob, wav, transcript, duration } = await sessionRef.current.stop();
     sessionRef.current = null;
     if (cancelled.current) return;
     const m = analyse(transcript, duration, step.speak);
@@ -98,15 +146,35 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
         setError(`${translate('Could not save this answer:')} ${e.message}`);
         row = { ...attempt, id: `unsaved-${index}`, localBlob: blob, created_at: new Date().toISOString() };
       }
-      if (blob && row.recording_path) row = { ...row, localBlob: blob };
+      if (blob) row = { ...row, localBlob: blob };
+      row = { ...row, browser_transcript: transcript };
+      // The careful AI transcript starts now, in the background, while the next question runs.
+      if (useAi && !String(row.id).startsWith('unsaved') && (wav || blob) && duration >= 2) {
+        transcriber.enqueue(row.id, { wav, blob, browserTranscript: transcript });
+      }
     }
     const next = [...results, { step, row }];
     setResults(next);
     if (index + 1 < steps.length) beginStep(index + 1);
-    else {
-      setPhase('done');
-      onComplete?.(next);
+    else finishAll(next);
+  }
+
+  // Games score the words you used, so they wait for the careful transcript (live text as backup).
+  async function finishAll(list) {
+    let final = list;
+    if (mode === 'game' && useAi && list.some(({ row }) => transcriber.get(row.id))) {
+      setPhase('checking');
+      final = await Promise.all(
+        list.map(async (r) => {
+          const res = await transcriber.wait(r.row.id, 40000);
+          return res?.transcript ? { ...r, row: { ...r.row, transcript: res.transcript, transcript_segments: res.segments, transcript_source: 'ai' } } : r;
+        }),
+      );
+      if (cancelled.current) return;
+      setResults(final);
     }
+    setPhase('done');
+    onComplete?.(final);
   }
 
   const prepLeft = useCountdown(step.prep, phase === 'prep', startSpeaking);
@@ -128,15 +196,22 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
             </li>
           ))}
         </ol>
-        {!recognitionSupported() && (
-          <p className="notice notice--warn">
-            {t('Your browser can record you but cannot turn speech into text. For transcripts and AI feedback, please use Google Chrome or Microsoft Edge.')}
-          </p>
+        <InAppWarning />
+        {micProblem && (
+          <MicHelp
+            status={micProblem}
+            onRetry={begin}
+            onSkip={() => {
+              setMicProblem('');
+              beginStep(0);
+            }}
+          />
         )}
         <p className="muted">🎧 {t('Find a quiet place. The examiner voice will read each question, then the timer starts.')}</p>
-        <button className="btn btn--big" style={{ background: part.color }} onClick={() => { sfx('start'); beginStep(0); }}>
-          ▶ {t('Start')}
+        <button className="btn btn--big" style={{ background: part.color }} disabled={checkingMic} onClick={begin}>
+          {checkingMic ? `🎙️ ${t('Checking the microphone…')}` : `▶ ${t('Start')}`}
         </button>
+        {checkingMic && <p className="notice">👆 {t('If your browser asks to use the microphone, tap “Allow”.')}</p>}
       </div>
     );
   }
@@ -210,11 +285,46 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
           {phase === 'speak' && (
             <div className="runner__state">
               <TimerRing remaining={speakLeft} total={step.speak} color={part.color} label={t('speak')} />
-              <div className="rec-dot">● {t('Recording')}</div>
-              <p className="live-words">{t('{n} words', { n: words })}</p>
-              <p className="live-transcript">
-                {live.final} <i>{live.interim}</i>
-              </p>
+              {micProblem ? (
+                <MicHelp status={micProblem} />
+              ) : (
+                <>
+                  <div className="rec-row">
+                    <span className="rec-dot">● {t('Recording')}</span>
+                    <MicMeter level={mic.level} silent={mic.silent > 6} />
+                  </div>
+                  {mic.silent > 6 && <p className="notice notice--warn mic-silent">🔇 {t('We can’t hear you. Speak louder, or check that your microphone is not muted or covered.')}</p>}
+                </>
+              )}
+              <div className="live-box">
+                <div className="live-box__head">
+                  <span className="live-words">{t('{n} words', { n: words })}</span>
+                  <span className={`live-source live-source--${liveSource}`}>
+                    {liveSource === 'browser'
+                      ? t('Live text')
+                      : liveSource === 'ai'
+                        ? t('Live text (AI, every few seconds)')
+                        : liveSource === 'paused'
+                          ? t('Live text paused')
+                          : t('Listening…')}
+                  </span>
+                </div>
+                <p className="live-transcript" ref={liveBoxRef}>
+                  {live.final || live.interim ? (
+                    <>
+                      {live.final} <i>{live.interim}</i>
+                    </>
+                  ) : (
+                    <span className="live-transcript__empty">
+                      {liveSource === 'ai'
+                        ? t('Keep talking — your words will appear here in a few seconds.')
+                        : liveSource === 'paused' || (liveSource === 'none' && !useAi)
+                          ? t('Keep talking — your full text will appear after you finish.')
+                          : t('Start talking — your words will appear here.')}
+                    </span>
+                  )}
+                </p>
+              </div>
               <button className="btn btn--ghost" onClick={finishSpeaking}>
                 ■ {t('I’ve finished')}
               </button>
@@ -225,6 +335,13 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
             <div className="runner__state">
               <div className="spinner" />
               <p>{t('Saving your answer…')}</p>
+            </div>
+          )}
+
+          {phase === 'checking' && (
+            <div className="runner__state">
+              <div className="spinner" />
+              <p>{t('Checking your words carefully…')}</p>
             </div>
           )}
 
