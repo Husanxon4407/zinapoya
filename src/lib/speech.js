@@ -261,13 +261,19 @@ export function createSpeakingSession({ onLevel } = {}) {
       const finish = () => {
         stream?.getTracks().forEach((t) => t.stop());
         const blob = chunks.length ? new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' }) : null;
-        let wav = null;
-        try {
-          if (pcm && pcm.seconds() >= 1) wav = wavBase64(pcm.slice());
-        } catch (e) {
-          console.warn('Could not prepare audio for the AI', e);
-        }
-        resolve({ blob, wav, transcript: '', duration, heardSound: pcm ? loudSeconds >= 1 : true, loudSeconds, maxRms, measured: !!pcm });
+        // The big WAV copy is only made if the AI ever needs it (usually it reads the small saved file).
+        const samples = pcm && pcm.seconds() >= 1 ? pcm : null;
+        const getWav = samples
+          ? () => {
+              try {
+                return wavBase64(samples.slice());
+              } catch (e) {
+                console.warn('Could not prepare audio for the AI', e);
+                return null;
+              }
+            }
+          : null;
+        resolve({ blob, getWav, transcript: '', duration, heardSound: pcm ? loudSeconds >= 1 : true, loudSeconds, maxRms, measured: !!pcm });
       };
       if (recorder && recorder.state !== 'inactive') {
         recorder.onstop = finish;

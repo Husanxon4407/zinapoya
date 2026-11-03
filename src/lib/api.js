@@ -58,10 +58,10 @@ const remote = {
     if (error) throw error;
   },
 
-  async saveAttempt(attempt, blob) {
-    const { data: auth } = await supabase.auth.getUser();
-    const uid = auth.user.id;
-    const id = uuid();
+  async saveAttempt(attempt, blob, id = uuid()) {
+    // Local session check (no network round trip): saving starts at once.
+    const uid = await currentUid();
+    if (!uid) throw new Error('Please log in again.');
     let recording_path = null;
     if (blob) {
       const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
@@ -430,8 +430,8 @@ const local = {
     throw new Error('Not available in local demo mode.');
   },
 
-  async saveAttempt(attempt, blob) {
-    const row = { ...attempt, id: uuid(), user_id: ls.get('su_session'), created_at: new Date().toISOString(), recording_path: null, feedback: null, scores: null };
+  async saveAttempt(attempt, blob, id = uuid()) {
+    const row = { ...attempt, id, user_id: ls.get('su_session'), created_at: new Date().toISOString(), recording_path: null, feedback: null, scores: null };
     if (blob) {
       await idbDo('readwrite', (s) => s.put(blob, row.id));
       row.recording_path = row.id;

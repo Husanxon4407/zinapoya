@@ -33,6 +33,8 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
   const [micProblem, setMicProblem] = useState(''); // '' | blocked | no-mic | busy | unsupported | error
   const [checkingMic, setCheckingMic] = useState(false);
   const sessionRef = useRef(null);
+  const resultsRef = useRef([]); // same as `results`, readable from background saves
+  const savesRef = useRef([]); // answers still being saved
   const cancelled = useRef(false);
   const useAi = aiEnabled && mode !== 'guest';
 
@@ -114,7 +116,7 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     if (phase !== 'speak') return;
     beep(520, 260);
     setPhase('saving');
-    const { blob, wav, transcript, duration } = await sessionRef.current.stop();
+    const { blob, getWav, transcript, duration } = await sessionRef.current.stop();
     sessionRef.current = null;
     if (cancelled.current) return;
     const m = analyse(transcript, duration, step.speak);
@@ -130,53 +132,65 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
       wpm: m.wpm,
       filler_count: m.fillers,
     };
-    let row;
+    const created_at = new Date().toISOString();
+    let item;
     if (mode === 'guest') {
-      row = { ...attempt, id: `guest-${index}`, localBlob: blob, created_at: new Date().toISOString() };
+      item = { key: `guest-${index}`, step, row: { ...attempt, id: `guest-${index}`, localBlob: blob, created_at } };
     } else {
-      try {
-        row = await api.saveAttempt(attempt, blob);
-        addAttempt?.(row);
-      } catch (e) {
-        row = { ...attempt, id: `unsaved-${index}`, localBlob: blob, created_at: new Date().toISOString() };
-        // No internet: keep the answer on this phone and upload it automatically later.
-        if (isOfflineError(e)) {
-          try {
-            await queueAttempt(attempt, blob, wav);
-            row.offline = true;
-          } catch {
-            setError(`${translate('Could not save this answer:')} ${e.message}`);
-          }
-        } else setError(`${translate('Could not save this answer:')} ${e.message}`);
-      }
-      if (blob) row = { ...row, localBlob: blob };
-      // The AI transcript starts now, in the background, while the next question runs.
-      if (useAi && !String(row.id).startsWith('unsaved') && (wav || blob) && duration >= 2) {
-        transcriber.enqueue(row.id, { wav, blob });
-      }
+      // Go on at once; the answer is saved (and then written down by the AI) in the background.
+      const id = crypto.randomUUID();
+      item = { key: id, step, row: { ...attempt, id, created_at, localBlob: blob, saving: true } };
+      savesRef.current.push(saveInBackground(id, attempt, blob, getWav, duration));
     }
-    const next = [...results, { step, row }];
-    setResults(next);
+    resultsRef.current = [...resultsRef.current, item];
+    setResults(resultsRef.current);
     if (index + 1 < steps.length) beginStep(index + 1);
-    else finishAll(next);
+    else finishAll();
   }
 
-  // Games score the words you used, so they wait for the AI transcript.
-  async function finishAll(list) {
-    let final = list;
-    if (mode === 'game' && useAi && list.some(({ row }) => transcriber.get(row.id))) {
+  function patchResult(key, patch) {
+    resultsRef.current = resultsRef.current.map((it) => (it.key === key ? { ...it, row: { ...it.row, ...patch } } : it));
+    if (!cancelled.current) setResults(resultsRef.current);
+  }
+
+  async function saveInBackground(id, attempt, blob, getWav, duration) {
+    try {
+      const saved = await api.saveAttempt(attempt, blob, id);
+      addAttempt?.(saved);
+      if (useAi && (blob || getWav) && duration >= 2) transcriber.enqueue(id, { getWav, blob });
+      patchResult(id, { ...saved, saving: false });
+    } catch (e) {
+      const patch = { saving: false, id: `unsaved-${id}` };
+      // No internet: keep the answer on this phone and upload it automatically later.
+      if (isOfflineError(e)) {
+        try {
+          await queueAttempt(attempt, blob, null);
+          patch.offline = true;
+        } catch {
+          setError(`${translate('Could not save this answer:')} ${e.message}`);
+        }
+      } else setError(`${translate('Could not save this answer:')} ${e.message}`);
+      patchResult(id, patch);
+    }
+  }
+
+  // Games score the words you used, so they wait for the saves and the AI transcript.
+  async function finishAll() {
+    if (mode === 'game' && useAi) {
       setPhase('checking');
-      final = await Promise.all(
-        list.map(async (r) => {
-          const res = await transcriber.wait(r.row.id, 40000);
+      await Promise.all(savesRef.current);
+      const final = await Promise.all(
+        resultsRef.current.map(async (r) => {
+          const res = transcriber.get(r.row.id) ? await transcriber.wait(r.row.id, 40000) : null;
           return res?.transcript ? { ...r, row: { ...r.row, transcript: res.transcript, transcript_segments: res.segments, transcript_source: 'ai' } } : r;
         }),
       );
       if (cancelled.current) return;
+      resultsRef.current = final;
       setResults(final);
     }
     setPhase('done');
-    onComplete?.(final);
+    onComplete?.(resultsRef.current);
   }
 
   const prepLeft = useCountdown(step.prep, phase === 'prep', startSpeaking);
@@ -255,8 +269,8 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
         </div>
         {error && <p className="notice notice--warn">{error}</p>}
         {renderExtra?.(results)}
-        {results.map(({ step: s, row }, i) => (
-          <AnswerReview key={i} step={s} attempt={row} guest={mode === 'guest'} />
+        {results.map(({ step: s, row, key }) => (
+          <AnswerReview key={key} step={s} attempt={row} guest={mode === 'guest'} />
         ))}
       </div>
     );

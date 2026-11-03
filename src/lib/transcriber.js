@@ -20,14 +20,14 @@ function update(id, patch) {
 async function work(id) {
   const job = jobs.get(id);
   update(id, { status: 'working', error: '' });
-  const { wav, blob, loadBlob } = job.input;
+  const { wav, getWav, blob, loadBlob } = job.input;
   // Fastest: the server reads the small saved recording itself, so nothing is uploaded twice.
   try {
     return await api.transcribe(id);
   } catch (e) {
     if (e.code !== 'need_audio') throw e;
   }
-  let audio = wav;
+  let audio = wav || getWav?.();
   let mime = 'audio/wav';
   if (!audio) {
     const b = blob || (await loadBlob?.());

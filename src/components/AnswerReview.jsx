@@ -81,7 +81,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
   const audioRef = useRef(null);
   const url = useRecordingUrl(row, open);
   const part = PARTS[row.part];
-  const saved = !guest && !readOnly && !/^(unsaved|guest)/.test(String(row.id));
+  const saved = !guest && !readOnly && !row.saving && !/^(unsaved|guest)/.test(String(row.id));
   const job = useTranscription(saved ? row.id : null);
   const checking = job?.status === 'waiting' || job?.status === 'working';
 
@@ -218,6 +218,11 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
             {checking && (
               <p className="notice transcript__wait">
                 <span className="spinner spinner--small" /> {t('The AI is listening to your recording and writing down every word. This takes about 10–15 seconds…')}
+              </p>
+            )}
+            {row.saving && (
+              <p className="notice transcript__wait">
+                <span className="spinner spinner--small" /> {t('Saving your answer…')}
               </p>
             )}
             {row.offline && <p className="notice">📴 {t('No internet: this answer is saved on your phone. It will be uploaded and written down automatically when you are online again — you will find it in History.')}</p>}

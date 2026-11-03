@@ -44,6 +44,7 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let fallbackModels: string[] | null = null; // discovered once per function instance
 const noThinkingModels = new Set<string>(); // models that rejected thinkingConfig
+const noMinimalModels = new Set<string>(); // models that need 'low' instead of 'minimal'
 
 // Ask Google which fast "flash" text models this key can use, so a busy or
 // retired model never breaks the coach.
@@ -69,6 +70,7 @@ async function discoverFallbacks(): Promise<string[]> {
 
 function makeBody(model: string, { system, turns, schema, temperature, thinking, maxTokens }: { system: string; turns: Turn[]; schema?: unknown; temperature: number; thinking: Thinking; maxTokens: number }) {
   const useThinking = thinking !== 'none' && !noThinkingModels.has(model);
+  if (thinking === 'minimal' && noMinimalModels.has(model)) thinking = 'low';
   return {
     systemInstruction: { parts: [{ text: system }] },
     contents: turns.map((t) => ({ role: t.role, parts: t.audio ? [{ inlineData: { mimeType: t.audio.mime, data: t.audio.data } }, { text: t.text }] : [{ text: t.text }] })),
@@ -95,7 +97,7 @@ async function post(url: string, body: unknown, timeoutMs: number) {
  * A busy model (503) gets one quick second try first — that is usually enough.
  */
 async function openGemini(
-  opts: { system: string; turns: Turn[]; schema?: unknown; temperature?: number; thinking?: Thinking; maxTokens?: number; models?: string[]; timeoutMs?: number; budgetMs?: number },
+  opts: { system: string; turns: Turn[]; schema?: unknown; temperature?: number; thinking?: Thinking; maxTokens?: number; models?: string[]; timeoutMs?: number; budgetMs?: number; fallbacks?: boolean },
   stream = false,
 ): Promise<{ res: Response; model: string }> {
   if (!GEMINI_KEY) throw new CoachError('The AI coach is not set up yet. Ask your teacher to add the Gemini key.', 503);
@@ -106,7 +108,7 @@ async function openGemini(
   let lastStatus = 0;
   let addedFallbacks = false;
   const addFallbacks = async () => {
-    if (addedFallbacks) return;
+    if (addedFallbacks || opts.fallbacks === false) return;
     addedFallbacks = true;
     queue.push(...(await discoverFallbacks()), MODEL);
   };
@@ -134,6 +136,11 @@ async function openGemini(
       lastStatus = res.status;
       console.error('Gemini error', model, res.status, text.slice(0, 400));
       // This model does not know thinkingConfig: same model again without it.
+      // 'minimal' not supported: same model with 'low' (still fast).
+      if (res.status === 400 && /minimal/i.test(text) && /thinking/i.test(text) && !noMinimalModels.has(model)) {
+        noMinimalModels.add(model);
+        continue;
+      }
       if (res.status === 400 && /thinking/i.test(text) && !noThinkingModels.has(model)) {
         noThinkingModels.add(model);
         continue;
@@ -153,6 +160,41 @@ async function openGemini(
   }
   if (lastStatus === 429) throw new CoachError('The AI has reached Google’s free limit for a moment. Please try again in a minute.', 429);
   throw new CoachError('The AI is very busy right now. Please try again in a few seconds.', 503);
+}
+
+/** Start `first`; if it has not finished after `delayMs` (or fails), also start `second`. First success wins. */
+function hedged<T>(first: () => Promise<T>, second: () => Promise<T>, delayMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    let done = false;
+    let failures = 0;
+    let secondStarted = false;
+    const ok = (v: T) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      resolve(v);
+    };
+    const fail = (e: unknown) => {
+      failures++;
+      // A file Gemini cannot read will fail on every model: stop at once.
+      if ((e instanceof CoachError && e.code === 'bad_audio') || failures >= 2 || (secondStarted && failures >= 2)) {
+        if (!done) {
+          done = true;
+          clearTimeout(timer);
+          reject(e);
+        }
+        return;
+      }
+      startSecond();
+    };
+    const startSecond = () => {
+      if (secondStarted || done) return;
+      secondStarted = true;
+      second().then(ok, fail);
+    };
+    const timer = setTimeout(startSecond, delayMs);
+    first().then(ok, fail);
+  });
 }
 
 async function callGemini(opts: Parameters<typeof openGemini>[0] & { allowEmpty?: boolean }) {
@@ -542,25 +584,28 @@ async function transcribe(body: { attempt_id: string; audio?: string; mime?: str
   if (audio.length < 1000) return json({ error: 'The recording is empty. Please record your answer again.' }, 400);
   if (audio.length > 14_000_000) return json({ error: 'The recording is too long to transcribe.' }, 413);
 
+  const request = {
+    system: TRANSCRIBE_SYSTEM,
+    schema: TRANSCRIBE_SCHEMA,
+    temperature: 0,
+    allowEmpty: true,
+    turns: [
+      {
+        role: 'user' as const,
+        text: `A student is answering this English speaking exam question:\n<question>\n${String(attempt.question_text ?? '').slice(0, 1500)}\n</question>\nTranscribe the recording.`,
+        audio: { mime, data: audio },
+      },
+    ],
+  };
   let raw: string;
   try {
-    raw = await callGemini({
-      system: TRANSCRIBE_SYSTEM,
-      schema: TRANSCRIBE_SCHEMA,
-      temperature: 0,
-      thinking: 'minimal',
-      timeoutMs: 18000,
-      budgetMs: 35000,
-      allowEmpty: true,
-      models: [TRANSCRIBE_MODEL, MODEL],
-      turns: [
-        {
-          role: 'user',
-          text: `A student is answering this English speaking exam question:\n<question>\n${String(attempt.question_text ?? '').slice(0, 1500)}\n</question>\nTranscribe the recording.`,
-          audio: { mime, data: audio },
-        },
-      ],
-    });
+    // The careful model first; if it is slow or busy (it often is), the fast model starts after
+    // 6 s and the first good answer wins. Students never wait for a stuck model.
+    raw = await hedged(
+      () => callGemini({ ...request, models: [TRANSCRIBE_MODEL], thinking: 'low', timeoutMs: 20000, budgetMs: 22000, fallbacks: false }),
+      () => callGemini({ ...request, models: [MODEL], thinking: 'minimal', timeoutMs: 15000, budgetMs: 25000 }),
+      6000,
+    );
   } catch (e) {
     // Gemini could not read this file type: ask the browser for a WAV.
     if (e instanceof CoachError && e.code === 'bad_audio' && !body.audio) return json({ error: 'Please send the recording as WAV.', code: 'need_audio' }, 422);
