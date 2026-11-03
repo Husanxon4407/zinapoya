@@ -1,38 +1,88 @@
-// Browser speech helpers: text-to-speech, speech recognition, recording and beeps.
-import { PcmCollector, RATE, wavBase64 } from './audio.js';
+// Browser speech helpers: text-to-speech, recording, microphone checks, beeps and one-phrase listening.
+import { PcmCollector, wavBase64 } from './audio.js';
 
+/**
+ * The examiner voice. Never makes the student wait:
+ * - prefers voices that live on the phone/computer (they start at once and work offline);
+ * - if speech has not started after 2.5 s (blocked, no voice, slow internet voice), it gives up
+ *   and the exam goes on — the question is on the screen anyway.
+ */
 export function speak(text, { rate = 0.95 } = {}) {
   return new Promise((resolve) => {
-    if (!('speechSynthesis' in window)) return resolve();
-    window.speechSynthesis.cancel();
+    if (!text || typeof window === 'undefined' || !('speechSynthesis' in window)) return resolve();
+    const synth = window.speechSynthesis;
+    synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'en-GB';
     u.rate = rate;
     const voice = pickVoice();
-    if (voice) u.voice = voice;
-    // Some browsers never fire onend; never block the exam on it.
-    const fallback = setTimeout(resolve, Math.max(3000, text.length * 90));
-    u.onend = u.onerror = () => {
-      clearTimeout(fallback);
+    if (voice) {
+      u.voice = voice;
+      u.lang = voice.lang;
+    }
+    let done = false;
+    let started = false;
+    let endTimer = null;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(startTimer);
+      clearTimeout(endTimer);
       resolve();
     };
-    window.speechSynthesis.speak(u);
+    const begin = () => {
+      if (started) return;
+      started = true;
+      // Some browsers never fire onend; never block the exam on it.
+      endTimer = setTimeout(finish, (text.length * 85) / rate + 3000);
+    };
+    const startTimer = setTimeout(() => {
+      if (synth.speaking) return begin(); // speaking, just no onstart event
+      synth.cancel();
+      finish();
+    }, 2500);
+    u.onstart = begin;
+    u.onend = finish;
+    u.onerror = finish;
+    synth.speak(u);
   });
 }
 
 export function stopSpeaking() {
-  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+/**
+ * iPhones only allow speech that starts from a tap. Call this inside a click handler
+ * (the exam "Start" button) and later questions can be read aloud automatically.
+ */
+export function primeSpeech() {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  } catch {
+    /* speech is optional */
+  }
 }
 
 function pickVoice() {
   const voices = window.speechSynthesis.getVoices();
+  const en = voices.filter((v) => /^en/i.test(v.lang));
+  const local = en.filter((v) => v.localService);
   return (
-    voices.find((v) => /en-GB/i.test(v.lang) && /female|google|natural/i.test(v.name)) ||
-    voices.find((v) => /en-GB/i.test(v.lang)) ||
-    voices.find((v) => /^en/i.test(v.lang)) ||
+    local.find((v) => /en[-_]GB/i.test(v.lang) && /female|natural|serena|kate|daniel|libby|sonia/i.test(v.name)) ||
+    local.find((v) => /en[-_]GB/i.test(v.lang)) ||
+    local.find((v) => /en[-_]US/i.test(v.lang)) ||
+    local[0] ||
+    en.find((v) => /en[-_]GB/i.test(v.lang)) ||
+    en[0] ||
     null
   );
 }
+// Voices load a moment after the page opens in Chrome.
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.getVoices();
 
 // One shared AudioContext for beeps and the microphone meter. Browsers only allow sound after a tap,
 // so call unlockAudio() from a click (the exam "Start" button) before it is needed.
@@ -118,190 +168,27 @@ export async function checkMicrophone() {
 }
 
 const LOUD = 0.012; // RMS above this counts as "the student is making sound"
-const LIVE_EVERY_SEC = 10; // AI live text: send a new piece of sound this often
-const LIVE_MIN_SEC = 2.5;
 
 /**
- * Records one answer.
- * - The microphone is opened once; the same sound feeds the recording file, the level meter and
- *   the raw 16 kHz copy the AI uses for the accurate transcript.
- * - Live words come from the browser's speech recognition. If it does not exist or stops working
- *   (common on phones and in Telegram), `liveTranscribe(wavBase64, previousText)` is used instead:
- *   a new piece of sound is sent to the AI about every 10 seconds.
+ * Records one answer. The microphone is opened once; the same sound feeds the recording file,
+ * the level meter (so students see they are heard) and a raw 16 kHz copy for the AI transcript.
+ * No live speech-to-text runs at the same time: on phones it fights with the recording.
  *
- * Callbacks:
- *   onTranscript(finalText, interimText)
- *   onLevel(level 0..1, silentSeconds)
- *   onLiveSource('browser' | 'ai' | 'none' | 'paused')
+ * onLevel(level 0..1, silentSeconds)
  */
-export function createSpeakingSession({ onTranscript, onLevel, onLiveSource, liveTranscribe } = {}) {
-  let stream, recorder, recognition, source, processor, sink, pcm;
+export function createSpeakingSession({ onLevel } = {}) {
+  let stream, recorder, source, processor, sink, pcm;
   const chunks = [];
-  let browserFinal = '';
-  let browserInterim = '';
-  let aiText = '';
   let active = false;
   let startedAt = 0;
-  let liveSource = 'none';
   let lastLoudAt = 0;
   let loudSeconds = 0;
-  let browserResults = 0;
-  let browserErrors = 0;
-  let restarts = 0;
-  let liveOffset = 0;
-  let livePending = false;
-  let liveFailures = 0;
-  let healthTimer = null;
-  let liveTimer = null;
-
-  const usingAi = () => liveSource === 'ai' || (liveSource === 'paused' && aiText);
-  const shownText = () => (usingAi() ? aiText : browserFinal).trim();
-  const emit = () => onTranscript?.(shownText(), liveSource === 'browser' ? browserInterim.trim() : '');
-  const setSource = (s) => {
-    if (liveSource === s) return;
-    liveSource = s;
-    onLiveSource?.(s);
-    emit();
-  };
-
-  // ---------- browser speech recognition ----------
-  function startRecognition() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return false;
-    try {
-      recognition = new SR();
-    } catch {
-      return false;
-    }
-    recognition.lang = 'en-US';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = (e) => {
-      let interim = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const r = e.results[i];
-        if (r.isFinal) browserFinal += r[0].transcript.trim() + ' ';
-        else interim += r[0].transcript;
-      }
-      browserInterim = interim;
-      browserResults++;
-      browserErrors = 0;
-      if (liveSource === 'none') setSource('browser');
-      emit();
-    };
-    recognition.onerror = (e) => {
-      browserErrors++;
-      // These never fix themselves during this answer: stop trying and use the AI live text.
-      if (['not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'].includes(e.error)) failBrowser();
-      else if (e.error === 'network' && browserErrors >= 2) failBrowser();
-    };
-    // Chrome stops after a pause. Keep the words it was still working on, then listen again.
-    recognition.onend = () => {
-      if (browserInterim.trim()) {
-        browserFinal += browserInterim.trim() + ' ';
-        browserInterim = '';
-        emit();
-      }
-      if (!active || !recognition) return;
-      restarts++;
-      if (restarts > 60 || browserErrors > 6) return failBrowser();
-      const r = recognition;
-      setTimeout(() => {
-        if (!active || recognition !== r) return;
-        try {
-          r.start();
-        } catch {
-          /* already running */
-        }
-      }, Math.min(1500, 150 * browserErrors));
-    };
-    try {
-      recognition.start();
-      return true;
-    } catch {
-      recognition = null;
-      return false;
-    }
-  }
-
-  function failBrowser() {
-    const r = recognition;
-    recognition = null;
-    clearInterval(healthTimer);
-    try {
-      r?.abort();
-    } catch {
-      /* ignore */
-    }
-    if (active && !usingAi()) startAiLive();
-  }
-
-  // ---------- AI live text (fallback) ----------
-  function startAiLive() {
-    if (!liveTranscribe || !pcm) {
-      setSource(browserFinal ? 'browser' : 'none');
-      return;
-    }
-    // Words the browser already wrote stay on screen; the AI continues from here.
-    if (browserInterim.trim()) browserFinal += browserInterim.trim() + ' ';
-    browserInterim = '';
-    aiText = browserFinal.trim();
-    liveOffset = pcm.length;
-    setSource('ai');
-    clearInterval(liveTimer);
-    liveTimer = setInterval(sendLivePiece, 1000);
-  }
-
-  async function sendLivePiece() {
-    if (!active || livePending || !pcm || liveSource !== 'ai') return;
-    const available = (pcm.length - liveOffset) / RATE;
-    if (available < LIVE_EVERY_SEC) return;
-    const cut = pcm.quietCut(1.5);
-    const samples = pcm.slice(liveOffset, cut);
-    if (samples.length / RATE < LIVE_MIN_SEC) return;
-    liveOffset = cut;
-    // Skip silent pieces: no request for nothing.
-    let sq = 0;
-    for (let i = 0; i < samples.length; i++) sq += samples[i] * samples[i];
-    if (Math.sqrt(sq / samples.length) < LOUD / 3) return;
-    livePending = true;
-    try {
-      const text = await liveTranscribe(wavBase64(samples), aiText.split(/\s+/).slice(-25).join(' '));
-      liveFailures = 0;
-      if (text) {
-        aiText = `${aiText} ${text}`.trim();
-        emit();
-      }
-    } catch (e) {
-      liveFailures++;
-      console.warn('Live text failed', e);
-      // Daily limit or Google's limit: stop sending for this answer, the full text comes after.
-      if (e?.status === 429 || liveFailures >= 3) {
-        clearInterval(liveTimer);
-        setSource('paused');
-      }
-    } finally {
-      livePending = false;
-    }
-  }
-
-  // Browser recognition "works" only if it writes something while the student is talking.
-  function checkHealth() {
-    if (!active || liveSource !== 'none' && liveSource !== 'browser') return;
-    if (browserResults > 0) return;
-    if (loudSeconds >= 4) failBrowser();
-  }
 
   async function start() {
     active = true;
     startedAt = Date.now();
     lastLoudAt = Date.now();
-    if (!recordingSupported()) {
-      // Very old browsers: no recording, maybe browser text only.
-      startRecognition();
-      return { status: 'unsupported' };
-    }
+    if (!recordingSupported()) return { status: 'unsupported' };
     try {
       stream = await navigator.mediaDevices.getUserMedia(MIC_CONSTRAINTS);
     } catch (err) {
@@ -315,10 +202,11 @@ export function createSpeakingSession({ onTranscript, onLevel, onLiveSource, liv
       return { status: 'cancelled' };
     }
     startedAt = Date.now();
+    lastLoudAt = Date.now();
 
     try {
       const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'].find((m) => MediaRecorder.isTypeSupported?.(m));
-      recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      recorder = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined);
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       recorder.start(1000);
     } catch (err) {
@@ -354,25 +242,12 @@ export function createSpeakingSession({ onTranscript, onLevel, onLiveSource, liv
       console.warn('Level meter unavailable', err);
       pcm = null;
     }
-
-    if (startRecognition()) healthTimer = setInterval(checkHealth, 1000);
-    else startAiLive();
     return { status: recorder || pcm ? 'ok' : 'error' };
   }
 
   function stop() {
-    const wasRecognising = !!recognition;
     active = false;
-    clearInterval(healthTimer);
-    clearInterval(liveTimer);
     const duration = Math.round((Date.now() - startedAt) / 1000);
-    const r = recognition;
-    recognition = null;
-    try {
-      r?.stop();
-    } catch {
-      /* ignore */
-    }
     try {
       processor?.disconnect();
       source?.disconnect();
@@ -384,21 +259,13 @@ export function createSpeakingSession({ onTranscript, onLevel, onLiveSource, liv
       const finish = () => {
         stream?.getTracks().forEach((t) => t.stop());
         const blob = chunks.length ? new Blob(chunks, { type: recorder?.mimeType || 'audio/webm' }) : null;
-        // Give the browser a moment to deliver its last words.
-        setTimeout(
-          () => {
-            const browserText = `${browserFinal} ${browserInterim}`.trim();
-            const transcript = usingAi() ? aiText.trim() : browserText;
-            let wav = null;
-            try {
-              if (pcm && pcm.seconds() >= 1) wav = wavBase64(pcm.slice());
-            } catch (e) {
-              console.warn('Could not prepare audio for the AI', e);
-            }
-            resolve({ blob, wav, transcript, duration, liveSource, heardSound: pcm ? loudSeconds >= 1 : true });
-          },
-          wasRecognising ? 700 : 50,
-        );
+        let wav = null;
+        try {
+          if (pcm && pcm.seconds() >= 1) wav = wavBase64(pcm.slice());
+        } catch (e) {
+          console.warn('Could not prepare audio for the AI', e);
+        }
+        resolve({ blob, wav, transcript: '', duration, heardSound: pcm ? loudSeconds >= 1 : true });
       };
       if (recorder && recorder.state !== 'inactive') {
         recorder.onstop = finish;

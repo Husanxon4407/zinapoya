@@ -525,4 +525,12 @@ export default {
   "another app": "другого приложения",
   "Continue without recording": "Продолжить без записи",
   "If your browser asks to use the microphone, tap “Allow”.": "Если браузер спросит разрешение на микрофон, нажмите «Разрешить».",
+  "Your voice is being recorded and saved. Just keep talking!": "Ваш голос записывается и сохраняется. Просто продолжайте говорить!",
+  "Your text will appear about 10–15 seconds after you finish.": "Ваш текст появится примерно через 10–15 секунд после окончания.",
+  "You can listen to your recording after you finish.": "После окончания вы сможете прослушать свою запись.",
+  "Writing down what you said…": "Записываем, что вы сказали…",
+  "The AI is listening to your recording and writing down every word. This takes about 10–15 seconds…": "AI слушает вашу запись и записывает каждое слово. Это займёт около 10–15 секунд…",
+  "No internet: this answer is saved on your phone. It will be uploaded and written down automatically when you are online again — you will find it in History.": "Нет интернета: ответ сохранён на телефоне. Он загрузится и будет расшифрован автоматически, когда появится интернет — вы найдёте его в Истории.",
+  "How your answer was organised": "Как построен ваш ответ",
+  "Practise this today": "Потренируйте это сегодня",
 };

@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { api } from './lib/api.js';
 import { computeStats, computeXp } from './lib/progress.js';
 import { dataUrlToBlob } from './lib/image.js';
+import { flushQueue } from './lib/offline.js';
 
 export const PENDING_AVATAR = 'su_pending_avatar';
 
@@ -70,6 +71,15 @@ export function AppProvider({ children }) {
   }, [user]);
 
   const addAttempt = useCallback((row) => setAttempts((list) => [row, ...list]), []);
+
+  // Answers recorded offline: upload them now and whenever the internet comes back.
+  useEffect(() => {
+    if (!user || !attemptsReady) return undefined;
+    const flush = () => flushQueue(addAttempt);
+    flush();
+    window.addEventListener('online', flush);
+    return () => window.removeEventListener('online', flush);
+  }, [user, attemptsReady, addAttempt]);
   const patchAttempt = useCallback((id, patch) => setAttempts((list) => list.map((a) => (a.id === id ? { ...a, ...patch } : a))), []);
 
   // Save a finished game and return the best previous score for that game.

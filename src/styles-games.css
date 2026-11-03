@@ -104,6 +104,13 @@
 .bubble p:last-of-type {
   margin-bottom: 0;
 }
+.bubble__li {
+  padding-left: 14px;
+  text-indent: -12px;
+}
+.bubble__gap {
+  height: 6px;
+}
 .bubble--user {
   align-self: flex-end;
   background: var(--primary);

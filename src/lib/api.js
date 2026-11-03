@@ -98,27 +98,75 @@ const remote = {
     if (error) throw new Error(await readFunctionError(error));
     return data;
   },
-  async transcribe(attemptId, audio, mime = 'audio/wav', browserTranscript) {
-    const body = { mode: 'transcribe', attempt_id: attemptId, audio, mime };
-    if (typeof browserTranscript === 'string') body.browser_transcript = browserTranscript;
-    const { data, error } = await invokeCoach({ body }, 90000);
-    if (error) throw new Error(await readFunctionError(error));
-    return data;
-  },
-  // Live captions for a ~10 s piece of sound (when the phone cannot write speech itself).
-  async liveTranscribe(audio, previous = '') {
-    const { data, error } = await invokeCoach({ body: { mode: 'live', audio, previous } }, 15000);
+  // Without `audio` the server reads the saved recording from storage (no second upload from the phone).
+  // If it needs the sound from the browser, the error has code 'need_audio'.
+  async transcribe(attemptId, audio, mime = 'audio/wav') {
+    const body = { mode: 'transcribe', attempt_id: attemptId };
+    if (audio) Object.assign(body, { audio, mime });
+    const { data, error } = await invokeCoach({ body }, 60000);
     if (error) {
-      const e = new Error(await readFunctionError(error));
-      e.status = error.context?.status;
+      const info = await readFunctionInfo(error);
+      const e = new Error(info.error);
+      e.code = info.code;
       throw e;
     }
-    return data?.text || '';
+    return data;
   },
-  async chat(messages) {
-    const { data, error } = await invokeCoach({ body: { mode: 'chat', messages } });
-    if (error) throw new Error(await readFunctionError(error));
-    return data.reply;
+  // The coach answer arrives word by word: onText(fullTextSoFar) is called as it grows.
+  async chat(messages, onText) {
+    const { data: auth } = await supabase.auth.getSession();
+    const token = auth.session?.access_token;
+    if (!token) throw new Error('Please log in again.');
+    const controller = new AbortController();
+    let timer = setTimeout(() => controller.abort(), 30000);
+    let res;
+    try {
+      res = await fetch(`${URL}/functions/v1/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, apikey: KEY },
+        body: JSON.stringify({ mode: 'chat', messages, stream: true }),
+        signal: controller.signal,
+      });
+    } catch {
+      clearTimeout(timer);
+      throw new Error(navigator.onLine === false ? 'You are offline. Connect to the internet to talk to the coach.' : 'The coach could not be reached. Please try again.');
+    }
+    if (!res.ok || !res.body) {
+      clearTimeout(timer);
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || 'The coach could not answer. Please try again.');
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let text = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        clearTimeout(timer);
+        timer = setTimeout(() => controller.abort(), 20000); // stalled stream
+        buffer += decoder.decode(value, { stream: true });
+        let nl;
+        while ((nl = buffer.indexOf('\n')) >= 0) {
+          const line = buffer.slice(0, nl).trim();
+          buffer = buffer.slice(nl + 1);
+          if (!line) continue;
+          const msg = JSON.parse(line);
+          if (msg.error) throw new Error(msg.error);
+          if (msg.t) {
+            text += msg.t;
+            onText?.(text);
+          }
+        }
+      }
+    } catch (e) {
+      if (!text) throw e.name === 'AbortError' ? new Error('The coach is taking too long. Please try again.') : e;
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!text.trim()) throw new Error('The coach could not answer that. Try asking in a different way.');
+    return text;
   },
   async getModelAnswer({ question_id, part, question_text }) {
     const { data: cached } = await supabase.from('model_answers').select('answer').eq('question_id', question_id).maybeSingle();
@@ -245,6 +293,16 @@ async function invokeCoach(options, ms = 60000) {
     setTimeout(() => resolve({ data: null, error: { message: 'The coach is taking too long to answer. Please try again in a minute.' } }), ms),
   );
   return Promise.race([supabase.functions.invoke('feedback', options), timeout]);
+}
+
+async function readFunctionInfo(error) {
+  try {
+    const body = await error.context?.json();
+    if (body?.error) return { error: body.error, code: body.code };
+  } catch {
+    /* fall through */
+  }
+  return { error: error.message || 'Something went wrong', code: '' };
 }
 
 async function readFunctionError(error) {
@@ -406,11 +464,6 @@ const local = {
   },
   async transcribe() {
     throw new Error('Automatic transcripts need the online server. You can type what you said instead.');
-  },
-  async liveTranscribe() {
-    const e = new Error('Live text needs the online server.');
-    e.status = 429;
-    throw e;
   },
   async listBookmarks() {
     return ls.get(`su_bm_${ls.get('su_session', '')}`, []);

@@ -525,4 +525,12 @@ export default {
   "another app": "boshqa ilova",
   "Continue without recording": "Yozuvsiz davom etish",
   "If your browser asks to use the microphone, tap “Allow”.": "Brauzer mikrofondan foydalanishni so‘rasa, “Ruxsat berish” (Allow) tugmasini bosing.",
+  "Your voice is being recorded and saved. Just keep talking!": "Ovozingiz yozilmoqda va saqlanmoqda. Gapirishda davom eting!",
+  "Your text will appear about 10–15 seconds after you finish.": "Matningiz tugatganingizdan keyin taxminan 10–15 soniyada chiqadi.",
+  "You can listen to your recording after you finish.": "Tugatganingizdan keyin yozuvingizni tinglashingiz mumkin.",
+  "Writing down what you said…": "Aytganlaringiz yozilmoqda…",
+  "The AI is listening to your recording and writing down every word. This takes about 10–15 seconds…": "AI yozuvingizni tinglab, har bir so‘zni yozmoqda. Bu taxminan 10–15 soniya davom etadi…",
+  "No internet: this answer is saved on your phone. It will be uploaded and written down automatically when you are online again — you will find it in History.": "Internet yo‘q: bu javob telefoningizda saqlandi. Internet qaytganda u avtomatik yuklanadi va yozib olinadi — uni Tarix bo‘limida topasiz.",
+  "How your answer was organised": "Javobingiz qanday tuzilgan",
+  "Practise this today": "Bugun buni mashq qiling",
 };

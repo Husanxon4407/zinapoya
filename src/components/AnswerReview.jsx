@@ -179,7 +179,7 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
   const showChecked = !!segments && !editing && !edited;
   const locked = readOnly || !!row.feedback;
   const source = checking
-    ? { cls: 'checking', text: t('Live draft · the AI is checking…') }
+    ? { cls: 'checking', text: t('Writing down what you said…') }
     : showChecked
       ? { cls: 'ai', text: t('Checked by AI ✓') }
       : edited
@@ -215,7 +215,12 @@ export default function AnswerReview({ step, attempt, guest = false, defaultOpen
               {source && <span className={`tsource tsource--${source.cls}`}>{source.text}</span>}
             </div>
 
-            {checking && <p className="notice">✍️ {t('The AI is listening carefully to your recording and writing down every word…')}</p>}
+            {checking && (
+              <p className="notice transcript__wait">
+                <span className="spinner spinner--small" /> {t('The AI is listening to your recording and writing down every word. This takes about 10–15 seconds…')}
+              </p>
+            )}
+            {row.offline && <p className="notice">📴 {t('No internet: this answer is saved on your phone. It will be uploaded and written down automatically when you are online again — you will find it in History.')}</p>}
 
             {showChecked ? (
               <TranscriptView segments={segments} compareWith={liveText} onPlayFrom={url ? playFrom : undefined} />

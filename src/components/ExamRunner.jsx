@@ -7,10 +7,11 @@ import useCountdown from './useCountdown.js';
 import { PARTS } from '../data/parts.js';
 import MicMeter from './MicMeter.jsx';
 import MicHelp, { InAppWarning } from './MicHelp.jsx';
-import { beep, checkMicrophone, createSpeakingSession, speak, stopSpeaking, unlockAudio } from '../lib/speech.js';
-import { analyse, countWords } from '../lib/metrics.js';
+import { beep, checkMicrophone, createSpeakingSession, primeSpeech, speak, stopSpeaking, unlockAudio } from '../lib/speech.js';
+import { analyse } from '../lib/metrics.js';
 import { aiEnabled, api } from '../lib/api.js';
 import { transcriber } from '../lib/transcriber.js';
+import { isOfflineError, queueAttempt } from '../lib/offline.js';
 import { useApp } from '../state.jsx';
 import { duckMusic, sfx } from '../lib/sound.js';
 import { stepLabel, translate, useT } from '../i18n/index.js';
@@ -24,17 +25,14 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
   const { addAttempt } = useApp() || {};
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState('ready'); // ready | listen | prep | speak | saving | done
-  const [live, setLive] = useState({ final: '', interim: '' });
   const [results, setResults] = useState([]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [mic, setMic] = useState({ level: 0, silent: 0 });
-  const [liveSource, setLiveSource] = useState('none');
   const [micProblem, setMicProblem] = useState(''); // '' | blocked | no-mic | busy | unsupported | error
   const [checkingMic, setCheckingMic] = useState(false);
   const sessionRef = useRef(null);
   const cancelled = useRef(false);
-  const liveBoxRef = useRef(null);
   const useAi = aiEnabled && mode !== 'guest';
 
   const step = steps[index];
@@ -65,16 +63,11 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     setPhase('prep');
   }
 
-  // Keep the newest live words in view.
-  useEffect(() => {
-    const el = liveBoxRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [live]);
-
   // "Start": unlock sound and ask for the microphone now, not in the middle of the first answer.
   async function begin() {
     sfx('start');
     unlockAudio();
+    primeSpeech(); // must happen inside the tap, or iPhones stay silent
     setCheckingMic(true);
     const status = await checkMicrophone();
     setCheckingMic(false);
@@ -91,21 +84,16 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     if (phase !== 'prep') return;
     stopSpeaking();
     beep(880);
-    setLive({ final: '', interim: '' });
     setMic({ level: 0, silent: 0 });
-    setLiveSource('none');
     setMicProblem('');
     let lastLevelAt = 0;
     const s = createSpeakingSession({
-      onTranscript: (final, interim) => setLive({ final, interim }),
       onLevel: (level, silent) => {
         const now = Date.now();
         if (now - lastLevelAt < 90) return; // ~11 updates a second is plenty
         lastLevelAt = now;
         setMic({ level, silent });
       },
-      onLiveSource: setLiveSource,
-      liveTranscribe: useAi ? (audio, previous) => api.liveTranscribe(audio, previous) : undefined,
     });
     sessionRef.current = s;
     setPhase('speak');
@@ -143,14 +131,21 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
         row = await api.saveAttempt(attempt, blob);
         addAttempt?.(row);
       } catch (e) {
-        setError(`${translate('Could not save this answer:')} ${e.message}`);
         row = { ...attempt, id: `unsaved-${index}`, localBlob: blob, created_at: new Date().toISOString() };
+        // No internet: keep the answer on this phone and upload it automatically later.
+        if (isOfflineError(e)) {
+          try {
+            await queueAttempt(attempt, blob, wav);
+            row.offline = true;
+          } catch {
+            setError(`${translate('Could not save this answer:')} ${e.message}`);
+          }
+        } else setError(`${translate('Could not save this answer:')} ${e.message}`);
       }
       if (blob) row = { ...row, localBlob: blob };
-      row = { ...row, browser_transcript: transcript };
-      // The careful AI transcript starts now, in the background, while the next question runs.
+      // The AI transcript starts now, in the background, while the next question runs.
       if (useAi && !String(row.id).startsWith('unsaved') && (wav || blob) && duration >= 2) {
-        transcriber.enqueue(row.id, { wav, blob, browserTranscript: transcript });
+        transcriber.enqueue(row.id, { wav, blob });
       }
     }
     const next = [...results, { step, row }];
@@ -159,7 +154,7 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     else finishAll(next);
   }
 
-  // Games score the words you used, so they wait for the careful transcript (live text as backup).
+  // Games score the words you used, so they wait for the AI transcript.
   async function finishAll(list) {
     let final = list;
     if (mode === 'game' && useAi && list.some(({ row }) => transcriber.get(row.id))) {
@@ -245,7 +240,6 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     );
   }
 
-  const words = countWords(live.final + ' ' + live.interim);
   const showNotes = step.prep >= 30;
 
   return (
@@ -296,35 +290,11 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
                   {mic.silent > 6 && <p className="notice notice--warn mic-silent">🔇 {t('We can’t hear you. Speak louder, or check that your microphone is not muted or covered.')}</p>}
                 </>
               )}
-              <div className="live-box">
-                <div className="live-box__head">
-                  <span className="live-words">{t('{n} words', { n: words })}</span>
-                  <span className={`live-source live-source--${liveSource}`}>
-                    {liveSource === 'browser'
-                      ? t('Live text')
-                      : liveSource === 'ai'
-                        ? t('Live text (AI, every few seconds)')
-                        : liveSource === 'paused'
-                          ? t('Live text paused')
-                          : t('Listening…')}
-                  </span>
-                </div>
-                <p className="live-transcript" ref={liveBoxRef}>
-                  {live.final || live.interim ? (
-                    <>
-                      {live.final} <i>{live.interim}</i>
-                    </>
-                  ) : (
-                    <span className="live-transcript__empty">
-                      {liveSource === 'ai'
-                        ? t('Keep talking — your words will appear here in a few seconds.')
-                        : liveSource === 'paused' || (liveSource === 'none' && !useAi)
-                          ? t('Keep talking — your full text will appear after you finish.')
-                          : t('Start talking — your words will appear here.')}
-                    </span>
-                  )}
-                </p>
-              </div>
+              <p className="rec-saved">
+                💾 {t('Your voice is being recorded and saved. Just keep talking!')}
+                <br />
+                <small>{useAi ? t('Your text will appear about 10–15 seconds after you finish.') : t('You can listen to your recording after you finish.')}</small>
+              </p>
               <button className="btn btn--ghost" onClick={finishSpeaking}>
                 ■ {t('I’ve finished')}
               </button>
@@ -345,7 +315,7 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
             </div>
           )}
 
-          {liveExtra && (phase === 'prep' || phase === 'speak') && liveExtra(`${live.final} ${live.interim}`, phase)}
+          {liveExtra && (phase === 'prep' || phase === 'speak') && liveExtra('', phase)}
 
           {showNotes && !hideNotes && (phase === 'prep' || phase === 'speak' || phase === 'listen') && (
             <label className="notes">

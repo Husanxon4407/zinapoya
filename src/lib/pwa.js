@@ -5,7 +5,14 @@ import { api, isLocalMode } from './api.js';
 
 export function registerServiceWorker() {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('Service worker failed', e)));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      // Keep the offline copy of the site up to date (it downloads only when there is a new version).
+      .then(() => navigator.serviceWorker.ready)
+      .then((reg) => reg.active?.postMessage('precache'))
+      .catch((e) => console.warn('Service worker failed', e));
+  });
 }
 
 /* ---------- Install ---------- */

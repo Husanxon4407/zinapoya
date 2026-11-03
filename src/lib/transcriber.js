@@ -20,7 +20,13 @@ function update(id, patch) {
 async function work(id) {
   const job = jobs.get(id);
   update(id, { status: 'working', error: '' });
-  const { wav, blob, browserTranscript, loadBlob } = job.input;
+  const { wav, blob, loadBlob } = job.input;
+  // Fastest: the server reads the small saved recording itself, so nothing is uploaded twice.
+  try {
+    return await api.transcribe(id);
+  } catch (e) {
+    if (e.code !== 'need_audio') throw e;
+  }
   let audio = wav;
   let mime = 'audio/wav';
   if (!audio) {
@@ -28,7 +34,7 @@ async function work(id) {
     if (!b) throw new Error('The recording could not be loaded.');
     ({ audio, mime } = await recordingForAI(b));
   }
-  return api.transcribe(id, audio, mime, browserTranscript);
+  return api.transcribe(id, audio, mime);
 }
 
 function pump() {
@@ -62,7 +68,8 @@ function pump() {
 export const transcriber = {
   /**
    * Start the careful transcript for a saved answer.
-   * input: { wav?: base64, blob?: Blob, loadBlob?: () => Promise<Blob>, browserTranscript?: string }
+   * input: { wav?: base64, blob?: Blob, loadBlob?: () => Promise<Blob> } — only used when the server
+   * cannot read the saved recording itself.
    * Resolves with { transcript, segments, word_count, wpm, filler_count } or null on failure.
    */
   enqueue(id, input, { force = false } = {}) {

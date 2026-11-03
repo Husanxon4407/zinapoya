@@ -18,13 +18,24 @@ function load() {
   }
 }
 
-// Turn **bold** and line breaks into simple formatting.
+const bold = (line) => line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => (part.startsWith('**') && part.endsWith('**') ? <b key={j}>{part.slice(2, -2)}</b> : part));
+
+// Turn **bold**, "- " bullets, "1." lists, ### headings and line breaks into simple formatting.
 function Formatted({ text }) {
-  return text.split('\n').map((line, i) => (
-    <p key={i}>
-      {line.split(/(\*\*[^*]+\*\*)/g).map((part, j) => (part.startsWith('**') && part.endsWith('**') ? <b key={j}>{part.slice(2, -2)}</b> : part))}
-    </p>
-  ));
+  return text
+    .split('\n')
+    .filter((line, i, all) => line.trim() || (i > 0 && all[i - 1].trim()))
+    .map((raw, i) => {
+      const line = raw.trimEnd();
+      if (!line.trim()) return <div key={i} className="bubble__gap" />;
+      const bullet = line.match(/^\s*[-*•]\s+(.*)$/);
+      if (bullet) return <p key={i} className="bubble__li">• {bold(bullet[1])}</p>;
+      const num = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+      if (num) return <p key={i} className="bubble__li">{num[1]}. {bold(num[2])}</p>;
+      const head = line.match(/^\s*#{1,4}\s+(.*)$/);
+      if (head) return <p key={i}><b>{head[1].replace(/\*\*/g, '')}</b></p>;
+      return <p key={i}>{bold(line)}</p>;
+    });
 }
 
 export default function CoachChat() {
@@ -52,10 +63,21 @@ export default function CoachChat() {
     const next = [...messages, { role: 'user', text: q }];
     setMessages(next);
     setBusy(true);
+    let started = false;
     try {
-      // The greeting is local only; send the real conversation.
-      const reply = await api.chat(next.filter((m) => m !== GREETING && m.text !== GREETING.text));
-      setMessages((m) => [...m, { role: 'model', text: reply }]);
+      // The greeting is local only; send the real conversation. The answer appears word by word.
+      const reply = await api.chat(
+        next.filter((m) => m !== GREETING && m.text !== GREETING.text),
+        (text) => {
+          if (!started) {
+            started = true;
+            setBusy(false);
+            setMessages((m) => [...m, { role: 'model', text }]);
+          } else setMessages((m) => [...m.slice(0, -1), { role: 'model', text }]);
+        },
+      );
+      if (started) setMessages((m) => [...m.slice(0, -1), { role: 'model', text: reply }]);
+      else setMessages((m) => [...m, { role: 'model', text: reply }]);
       sfx('pop');
     } catch (e) {
       setError(e.message);
