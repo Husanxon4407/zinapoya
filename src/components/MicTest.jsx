@@ -176,7 +176,7 @@ export default function MicTest({ onDone, onSkip, onCancel }) {
                 <li>{t('Bluetooth earphones are connected? Their microphone may be off or far away — disconnect them or speak into them.')}</li>
                 <li>{t('A call, Zoom, Telegram voice chat or another recording app may be using the microphone — close it.')}</li>
                 <li>{t('On a computer: the right microphone is chosen and not muted in the sound settings.')}</li>
-                {app && <li>{t('You are inside {app}: open SpeakUp in Chrome or Safari.', { app: app === 'app' ? t('another app') : app })}</li>}
+                {app && <li>{t('You are inside {app}: open Zinapoya in Chrome or Safari.', { app: app === 'app' ? t('another app') : app })}</li>}
                 <li>{t('Speak a little louder and closer to the phone.')}</li>
               </ul>
               <div className="open-browser">

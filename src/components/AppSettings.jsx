@@ -14,7 +14,7 @@ export function InstallSteps() {
         {t('Choose “Add to Home Screen”.')}
       </li>
       <li>
-        {t('Tap “Add”. SpeakUp now opens like an app!')}
+        {t('Tap “Add”. Zinapoya now opens like an app!')}
       </li>
     </ol>
   );
@@ -64,7 +64,7 @@ export default function AppSettings() {
 
       <div className="setting">
         <div>
-          <strong>{t('Install SpeakUp on your phone')}</strong>
+          <strong>{t('Install Zinapoya on your phone')}</strong>
           <small>{t('Opens full screen from your home screen, like a real app.')}</small>
         </div>
         {state === 'installed' && <span className="setting__ok">✅ {t('Installed')}</span>}

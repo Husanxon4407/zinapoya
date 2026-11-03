@@ -10,7 +10,7 @@ export default function TryIt() {
     <div className="guest-page">
       <header className="landing__top">
         <Link to="/" className="logo">
-          <span className="logo__mark">🎤</span> SpeakUp
+          <span className="logo__mark">🪜</span> Zinapoya
         </Link>
         <Link to="/signup" className="btn btn--small">
           Sign up free

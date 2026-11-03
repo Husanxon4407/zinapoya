@@ -38,7 +38,7 @@ function InstallBanner() {
       <button className="icon-btn install-card__hide" aria-label={t('Hide')} title={t('Hide')} onClick={hide}>
         ✕
       </button>
-      <h3>📲 {t('Put SpeakUp on your home screen')}</h3>
+      <h3>📲 {t('Put Zinapoya on your home screen')}</h3>
       <p className="muted small">{t('Practise in one tap, like a real app.')}</p>
       {steps && <InstallSteps />}
       {state === 'prompt' ? (

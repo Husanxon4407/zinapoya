@@ -13,7 +13,7 @@ function AuthShell({ title, subtitle, children }) {
     <div className="auth">
       <div className="auth__top">
         <Link to="/" className="logo auth__logo">
-          <span className="logo__mark">🎤</span> SpeakUp
+          <span className="logo__mark">🪜</span> Zinapoya
         </Link>
         <LangSwitch full />
       </div>

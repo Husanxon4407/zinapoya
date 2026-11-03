@@ -238,6 +238,23 @@ remote.weeklyLeaderboard = async () => {
   return data;
 };
 
+// Public usage numbers for the main page (works logged-out). Returns zeros if not set up yet.
+remote.publicStats = async () => {
+  const { data, error } = await supabase.rpc('public_stats');
+  if (error) {
+    console.warn('public_stats unavailable', error.message);
+    return { students: 0, answers: 0, active_week: 0 };
+  }
+  return data || { students: 0, answers: 0, active_week: 0 };
+};
+
+// A question asked from the main page → saved + Telegram alert (via the "contact" function).
+remote.submitQuestion = async ({ name, contact, message }) => {
+  const { data, error } = await supabase.functions.invoke('contact', { body: { name, contact, message } });
+  if (error) throw new Error(await readFunctionError(error));
+  if (data?.error) throw new Error(data.error);
+};
+
 // Daily reminder notifications.
 remote.savePushSubscription = async (sub) => {
   // A shared phone moves the reminder to whoever turned it on last.
@@ -276,6 +293,15 @@ remote.teacher = {
     const { data, error } = await supabase.from('attempts').select('*').eq('user_id', id).order('created_at', { ascending: false }).limit(300);
     if (error) throw error;
     return data;
+  },
+  async listQuestions() {
+    const { data, error } = await supabase.from('site_questions').select('*').order('created_at', { ascending: false }).limit(500);
+    if (error) throw notSetUp(error) ? new Error('Questions are not set up yet. Run the latest database update.') : error;
+    return data;
+  },
+  async answerQuestion(id, answer) {
+    const { error } = await supabase.from('site_questions').update({ answered: true, answer: answer || null }).eq('id', id);
+    if (error) throw error;
   },
 };
 
@@ -520,6 +546,21 @@ local.teacher = {
   listStudents: async () => localStudents(),
   listAttempts: async () => localStudents().flatMap((u) => ls.get(`su_attempts_${u.id}`, [])).sort((x, y) => (x.created_at < y.created_at ? 1 : -1)),
   listStudentAttempts: async (id) => ls.get(`su_attempts_${id}`, []),
+  listQuestions: async () => ls.get('su_questions', []),
+  answerQuestion: async (id, answer) => ls.set('su_questions', ls.get('su_questions', []).map((q) => (q.id === id ? { ...q, answered: true, answer } : q))),
+};
+
+local.publicStats = async () => {
+  const students = localStudents();
+  const answers = students.reduce((n, u) => n + ls.get(`su_attempts_${u.id}`, []).length, 0);
+  const weekAgo = Date.now() - 7 * 864e5;
+  const active = students.filter((u) => ls.get(`su_attempts_${u.id}`, []).some((a) => new Date(a.created_at).getTime() > weekAgo)).length;
+  return { students: students.length, answers, active_week: active };
+};
+
+local.submitQuestion = async ({ name, contact, message }) => {
+  const row = { id: uuid(), name, contact, message, answered: false, answer: null, created_at: new Date().toISOString() };
+  ls.set('su_questions', [row, ...ls.get('su_questions', [])].slice(0, 200));
 };
 
 // Local demo mode: a leaderboard of the accounts in this browser.

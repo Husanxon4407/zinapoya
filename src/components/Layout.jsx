@@ -29,7 +29,7 @@ export default function Layout() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="logo">
-          <span className="logo__mark">🎤</span> <span className="logo__text">SpeakUp</span>
+          <span className="logo__mark">🪜</span> <span className="logo__text">Zinapoya</span>
         </NavLink>
         <nav className="topnav">
           {links.map(([to, icon, label]) => (

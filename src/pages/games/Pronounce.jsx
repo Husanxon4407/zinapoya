@@ -211,7 +211,7 @@ export default function Pronounce() {
 
       {!supported && (
         <p className="notice notice--warn">
-          {t('This browser cannot check your pronunciation. Please open SpeakUp in Chrome, Edge or Safari. You can still listen to the words here.')}
+          {t('This browser cannot check your pronunciation. Please open Zinapoya in Chrome, Edge or Safari. You can still listen to the words here.')}
         </p>
       )}
 

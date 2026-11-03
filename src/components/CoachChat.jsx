@@ -6,7 +6,7 @@ import { speak } from '../lib/speech.js';
 const KEY = 'su_coach_chat';
 const GREETING = {
   role: 'model',
-  text: 'Hi! I’m your SpeakUp Coach 🎤 Ask me anything about the speaking exam, useful phrases, idioms or how to improve your answers.',
+  text: 'Hi! I’m your Zinapoya Coach 🎤 Ask me anything about the speaking exam, useful phrases, idioms or how to improve your answers.',
 };
 const QUICK = ['How do I start a Part 3 answer?', 'Explain “burn the midnight oil”', 'Give me tips for Part 1.1', 'Ask me a Part 2 question'];
 
@@ -101,11 +101,11 @@ export default function CoachChat() {
       </button>
 
       {open && (
-        <div className="coach" role="dialog" aria-label="SpeakUp Coach">
+        <div className="coach" role="dialog" aria-label="Zinapoya Coach">
           <header className="coach__head">
             <span className="coach__avatar">🎓</span>
             <div>
-              <strong>SpeakUp Coach</strong>
+              <strong>Zinapoya Coach</strong>
               <small>Only English speaking & exam questions</small>
             </div>
             <button

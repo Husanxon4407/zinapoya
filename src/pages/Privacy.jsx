@@ -7,7 +7,7 @@ export default function Privacy({ inApp = false }) {
     <div className="privacy">
       {!inApp && (
         <Link to="/" className="logo">
-          <span className="logo__mark">🎤</span> SpeakUp
+          <span className="logo__mark">🪜</span> Zinapoya
         </Link>
       )}
       <div className="card">
@@ -15,7 +15,7 @@ export default function Privacy({ inApp = false }) {
         <p className="muted">Last updated: 17 October 2026</p>
 
         <p>
-          SpeakUp is a free website made by an English teacher to help students practise for the Multilevel (CEFR) speaking exam. This page
+          Zinapoya is a free website made by an English teacher to help students practise for the Multilevel (CEFR) speaking exam. This page
           explains what we save and why.
         </p>
 
@@ -34,7 +34,7 @@ export default function Privacy({ inApp = false }) {
         </ul>
 
         <h2>Why</h2>
-        <p>Only to run SpeakUp: to keep your progress, show your history, give you feedback and send the reminders you asked for. We never sell your data and we show no ads.</p>
+        <p>Only to run Zinapoya: to keep your progress, show your history, give you feedback and send the reminders you asked for. We never sell your data and we show no ads.</p>
 
         <h2>Who can see it</h2>
         <ul>

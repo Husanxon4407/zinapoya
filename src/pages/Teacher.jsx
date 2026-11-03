@@ -14,10 +14,10 @@ const SITE_URL = 'https://speakup-multilevel.vercel.app';
 function ShareLink() {
   const [done, setDone] = useState('');
   async function share() {
-    const text = 'SpeakUp — practise for the Multilevel speaking exam';
+    const text = 'Zinapoya — practise for the Multilevel exam';
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'SpeakUp', text, url: SITE_URL });
+        await navigator.share({ title: 'Zinapoya', text, url: SITE_URL });
         return;
       } catch (e) {
         if (e?.name === 'AbortError') return;
@@ -33,7 +33,7 @@ function ShareLink() {
   return (
     <div className="card share-link">
       <div>
-        <b>📣 Share SpeakUp with students</b>
+        <b>📣 Share Zinapoya with students</b>
         <p className="muted">
           Always send the full link <code>{SITE_URL}</code> (with https://) so it can be tapped on iPhones too.
         </p>
@@ -81,6 +81,67 @@ const SORTS = {
   score: ['Highest score', (a, b) => (b.avg ?? -1) - (a.avg ?? -1)],
   name: ['Name A–Z', (a, b) => a.name.localeCompare(b.name)],
 };
+
+function QuestionsPanel() {
+  const [list, setList] = useState(null);
+  const [error, setError] = useState('');
+  const [openId, setOpenId] = useState(null);
+  const [reply, setReply] = useState('');
+
+  useEffect(() => {
+    api.teacher.listQuestions().then(setList).catch((e) => setError(e.message));
+  }, []);
+
+  async function answer(q) {
+    try {
+      await api.teacher.answerQuestion(q.id, reply.trim() || null);
+      setList((l) => l.map((x) => (x.id === q.id ? { ...x, answered: true, answer: reply.trim() || null } : x)));
+      setOpenId(null);
+      setReply('');
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  if (error) return <p className="notice notice--warn">{error}</p>;
+  if (!list) return null;
+  const unanswered = list.filter((q) => !q.answered).length;
+
+  return (
+    <div className="card questions-panel">
+      <h2>
+        💬 Questions from the website {unanswered > 0 && <span className="q-badge">{unanswered}</span>}
+      </h2>
+      {list.length === 0 && <p className="muted">No questions yet.</p>}
+      <div className="q-list">
+        {list.map((q) => (
+          <div key={q.id} className={`q-item ${q.answered ? 'q-item--done' : ''}`}>
+            <div className="q-item__head">
+              <strong>{q.name || 'Someone'}</strong>
+              {q.contact && <span className="q-item__contact">{q.contact}</span>}
+              <span className="q-item__time">{ago(new Date(q.created_at))}</span>
+              {q.answered && <span className="q-item__tag">✓ answered</span>}
+            </div>
+            <p className="q-item__msg">{q.message}</p>
+            {q.answered ? (
+              q.answer && <p className="q-item__answer">↳ {q.answer}</p>
+            ) : openId === q.id ? (
+              <div className="q-item__reply">
+                <textarea rows={2} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Write a note (optional) and mark as answered" />
+                <div className="open-browser">
+                  <button className="btn btn--small" onClick={() => answer(q)}>✓ Mark answered</button>
+                  <button className="btn btn--ghost btn--small" onClick={() => { setOpenId(null); setReply(''); }}>Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <button className="btn btn--ghost btn--small" onClick={() => { setOpenId(q.id); setReply(''); }}>Reply / mark done</button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Teacher() {
   const guard = useTeacherGuard();
@@ -137,6 +198,7 @@ export default function Teacher() {
     <div className="teacher">
       <h1>🧑‍🏫 My class</h1>
       <ShareLink />
+      <QuestionsPanel />
       {error && <p className="notice notice--warn">{error}</p>}
       {!students && !error && <div className="spinner" />}
 

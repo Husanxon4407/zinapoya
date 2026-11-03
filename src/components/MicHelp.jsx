@@ -50,7 +50,7 @@ export function InAppWarning() {
   if (!app) return null;
   return (
     <div className="notice notice--warn mic-help">
-      <b>⚠️ {app === 'app' ? t('You opened SpeakUp inside another app.') : t('You opened SpeakUp inside {app}.', { app })}</b>{' '}
+      <b>⚠️ {app === 'app' ? t('You opened Zinapoya inside another app.') : t('You opened Zinapoya inside {app}.', { app })}</b>{' '}
       {t('The microphone often does not work here.')}{' '}
       {isIOS() ? t('Tap ••• or the compass icon and choose “Open in Safari”.') : t('Tap ⋮ (top right) and choose “Open in Chrome” or “Open in browser”.')}
       <OpenInBrowser />
@@ -79,10 +79,10 @@ export default function MicHelp({ status, onRetry, onSkip }) {
     how = t('Close calls, Zoom, Telegram voice chats or other recording apps, then try again.');
   } else if (status === 'unsupported') {
     title = t('This browser cannot record your voice.');
-    how = t('Please open SpeakUp in Google Chrome (Android, computer) or Safari (iPhone).');
+    how = t('Please open Zinapoya in Google Chrome (Android, computer) or Safari (iPhone).');
   } else {
     title = t('The microphone could not be started.');
-    how = t('Reload the page and try again. If it still does not work, open SpeakUp in Google Chrome or Safari.');
+    how = t('Reload the page and try again. If it still does not work, open Zinapoya in Google Chrome or Safari.');
   }
   return (
     <div className="notice notice--warn mic-help">
