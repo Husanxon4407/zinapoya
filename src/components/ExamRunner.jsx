@@ -7,6 +7,7 @@ import useCountdown from './useCountdown.js';
 import { PARTS } from '../data/parts.js';
 import MicMeter from './MicMeter.jsx';
 import MicHelp, { InAppWarning } from './MicHelp.jsx';
+import MicTest, { micTestedToday } from './MicTest.jsx';
 import { beep, checkMicrophone, createSpeakingSession, primeSpeech, speak, stopSpeaking, unlockAudio } from '../lib/speech.js';
 import { analyse } from '../lib/metrics.js';
 import { aiEnabled, api } from '../lib/api.js';
@@ -68,6 +69,12 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
     sfx('start');
     unlockAudio();
     primeSpeech(); // must happen inside the tap, or iPhones stay silent
+    // First exam of the day: the "say this sentence" microphone check.
+    if (!micTestedToday()) {
+      setMicProblem('');
+      setPhase('mictest');
+      return;
+    }
     setCheckingMic(true);
     const status = await checkMicrophone();
     setCheckingMic(false);
@@ -175,6 +182,18 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
   const prepLeft = useCountdown(step.prep, phase === 'prep', startSpeaking);
   const speakLeft = useCountdown(step.speak, phase === 'speak', finishSpeaking);
 
+  if (phase === 'mictest') {
+    return (
+      <div className="card runner-ready">
+        <MicTest
+          onDone={() => beginStep(0)}
+          onSkip={() => beginStep(0)}
+          onCancel={() => setPhase('ready')}
+        />
+      </div>
+    );
+  }
+
   if (phase === 'ready') {
     return (
       <div className="card runner-ready">
@@ -205,6 +224,9 @@ export default function ExamRunner({ steps, mode = 'practice', title, intro, onC
         <p className="muted">🎧 {t('Find a quiet place. The examiner voice will read each question, then the timer starts.')}</p>
         <button className="btn btn--big" style={{ background: part.color }} disabled={checkingMic} onClick={begin}>
           {checkingMic ? `🎙️ ${t('Checking the microphone…')}` : `▶ ${t('Start')}`}
+        </button>
+        <button className="btn btn--ghost btn--small mictest-link" onClick={() => setPhase('mictest')}>
+          🎙️ {t('Test my microphone')}
         </button>
         {checkingMic && <p className="notice">👆 {t('If your browser asks to use the microphone, tap “Allow”.')}</p>}
       </div>

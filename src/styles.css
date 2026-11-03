@@ -1678,6 +1678,65 @@ textarea:focus {
 .next-steps li + li {
   margin-top: 4px;
 }
+.mictest {
+  text-align: center;
+}
+.mictest h2 {
+  margin-top: 0;
+}
+.mictest__phrase {
+  font-size: 1.25rem;
+  font-weight: 800;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--tint-indigo);
+  color: var(--ink-indigo);
+  margin: 12px 0;
+}
+.mictest__phrase--live {
+  outline: 3px solid var(--primary);
+}
+.mictest__meter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.mictest__left {
+  font-weight: 800;
+  color: var(--muted);
+}
+.mictest__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.mictest__ok {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--good);
+}
+.mictest__play {
+  margin: 10px 0;
+}
+.mictest__play p {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+.mictest__causes {
+  margin: 6px 0;
+  padding-left: 20px;
+  line-height: 1.5;
+  font-weight: 400;
+  text-align: left;
+}
+.mictest-link {
+  display: block;
+  margin: 10px auto 0;
+}
 .rec-saved {
   margin: 4px 0;
   padding: 10px 14px;

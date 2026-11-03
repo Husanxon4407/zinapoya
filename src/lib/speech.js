@@ -183,6 +183,7 @@ export function createSpeakingSession({ onLevel } = {}) {
   let startedAt = 0;
   let lastLoudAt = 0;
   let loudSeconds = 0;
+  let maxRms = 0;
 
   async function start() {
     active = true;
@@ -228,6 +229,7 @@ export function createSpeakingSession({ onLevel } = {}) {
           if (!active) return;
           const input = e.inputBuffer.getChannelData(0);
           const rms = pcm.push(input);
+          if (rms > maxRms) maxRms = rms;
           const now = Date.now();
           if (rms > LOUD) {
             lastLoudAt = now;
@@ -265,7 +267,7 @@ export function createSpeakingSession({ onLevel } = {}) {
         } catch (e) {
           console.warn('Could not prepare audio for the AI', e);
         }
-        resolve({ blob, wav, transcript: '', duration, heardSound: pcm ? loudSeconds >= 1 : true });
+        resolve({ blob, wav, transcript: '', duration, heardSound: pcm ? loudSeconds >= 1 : true, loudSeconds, maxRms, measured: !!pcm });
       };
       if (recorder && recorder.state !== 'inactive') {
         recorder.onstop = finish;
