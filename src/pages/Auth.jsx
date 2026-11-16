@@ -6,6 +6,7 @@ import AvatarPicker from '../components/AvatarPicker.jsx';
 import { blobToDataUrl } from '../lib/image.js';
 import LangSwitch from '../components/LangSwitch.jsx';
 import { useT } from '../i18n/index.js';
+import Logo from '../components/Logo.jsx';
 
 function AuthShell({ title, subtitle, children }) {
   const t = useT();
@@ -13,7 +14,7 @@ function AuthShell({ title, subtitle, children }) {
     <div className="auth">
       <div className="auth__top">
         <Link to="/" className="logo auth__logo">
-          <span className="logo__mark">🪜</span> Zinapoya
+          <Logo />
         </Link>
         <LangSwitch full />
       </div>

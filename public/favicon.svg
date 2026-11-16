@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="zg" x1="12" y1="52" x2="52" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="zb" cx="0.72" cy="0.28" r="0.95">
+      <stop offset="0" stop-color="#16345f"/>
+      <stop offset="0.55" stop-color="#071328"/>
+      <stop offset="1" stop-color="#020914"/>
+    </radialGradient>
+    <filter id="zglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="2.6"/></filter>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#zb)"/>
+  <path d="M12 52V44H21V36H30V28H39V20H52V52Z" fill="url(#zg)" stroke="url(#zg)" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M12 44H21M21 36H30M30 28H39M39 20H52" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="45.5" cy="11.5" r="4.6" fill="#fbbf24" filter="url(#zglow)" opacity=".8"/>
+  <circle cx="45.5" cy="11.5" r="3.8" fill="#fcd34d"/>
+</svg>

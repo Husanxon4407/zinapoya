@@ -249,8 +249,9 @@ remote.publicStats = async () => {
 };
 
 // A question asked from the main page → saved + Telegram alert (via the "contact" function).
-remote.submitQuestion = async ({ name, contact, message }) => {
-  const { data, error } = await supabase.functions.invoke('contact', { body: { name, contact, message } });
+// `website` (hidden trap field) and `elapsed` (ms the form was open) help the server spot bots.
+remote.submitQuestion = async ({ name, contact, message, website = '', elapsed }) => {
+  const { data, error } = await supabase.functions.invoke('contact', { body: { name, contact, message, website, elapsed } });
   if (error) throw new Error(await readFunctionError(error));
   if (data?.error) throw new Error(data.error);
 };

@@ -15,9 +15,9 @@ registerServiceWorker();
 
 // Vercel also serves every version on its own long address (…-abc123-….vercel.app).
 // Logins are stored per address, so always send people to the one main address.
-const MAIN_HOST = 'speakup-multilevel.vercel.app';
+const MAIN_HOST = 'zinapoya.vercel.app';
 if (window.location.hostname.endsWith('.vercel.app') && window.location.hostname !== MAIN_HOST) {
-  window.location.replace(`https://${MAIN_HOST}${window.location.pathname}${window.location.search}`);
+  window.location.replace(`https://${MAIN_HOST}${window.location.pathname}${window.location.search}${window.location.hash}`);
 }
 
 // Fetch the student's language first, so the very first screen is already translated.

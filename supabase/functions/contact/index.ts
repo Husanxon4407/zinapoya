@@ -18,6 +18,38 @@ const json = (body: unknown, status = 200) =>
 
 const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
+// ---- Spam protection -------------------------------------------------------------------------
+// Bots get a quiet "ok" (so they don't learn what stopped them); real people who send too much
+// get a clear message. Nothing here needs a database change.
+const OK = () => json({ ok: true });
+const TOO_MANY = 'Too many questions right now. Please try again later or write to us on Telegram.';
+const PER_IP_LIMIT = 3; // questions per person (IP address) ...
+const PER_IP_WINDOW = 10 * 60_000; // ... per 10 minutes
+const GLOBAL_HOURLY_LIMIT = 30; // all visitors together, so the teacher's Telegram is never flooded
+const MIN_FILL_MS = 3000; // nobody reads the form and types a question in under 3 seconds
+const MAX_LINKS = 2;
+
+// Per-IP counter kept in memory: resets when Supabase restarts the function, which is fine for this.
+const recent = new Map<string, number[]>();
+function ipAllowed(ip: string) {
+  if (!ip) return true;
+  const now = Date.now();
+  const times = (recent.get(ip) ?? []).filter((t) => now - t < PER_IP_WINDOW);
+  if (times.length >= PER_IP_LIMIT) {
+    recent.set(ip, times);
+    return false;
+  }
+  times.push(now);
+  recent.set(ip, times);
+  if (recent.size > 5000) recent.clear(); // never grow without limit
+  return true;
+}
+
+const clientIp = (req: Request) =>
+  (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || req.headers.get('cf-connecting-ip') || '';
+
+const linkCount = (s: string) => (s.match(/https?:\/\/|www\.|t\.me\//gi) ?? []).length;
+
 async function alertTeacher(name: string, contact: string, message: string) {
   if (!BOT || !CHAT) return; // not set up yet: the row is still saved
   const text = `🆕 New question on Zinapoya\n\n👤 ${name || '—'}\n📞 ${contact || '—'}\n\n💬 ${message}`;
@@ -43,16 +75,32 @@ Deno.serve(async (req) => {
     const message = clean(body.message, 2000);
     if (message.length < 3) return json({ error: 'Please write your question.' }, 400);
 
-    // Light anti-spam: ignore a repeat from the same contact/message within 30 seconds.
-    if (contact) {
-      const since = new Date(Date.now() - 30_000).toISOString();
-      const { count } = await admin
-        .from('site_questions')
-        .select('id', { count: 'exact', head: true })
-        .eq('contact', contact)
-        .gte('created_at', since);
-      if ((count ?? 0) > 0) return json({ ok: true }); // pretend success, don't store twice
-    }
+    // 1. Bot traps. "website" is a hidden field people never see; "elapsed" is how long the form
+    //    was open. Older copies of the page don't send them, so missing values are allowed.
+    if (clean(body.website, 200)) return OK();
+    const elapsed = Number(body.elapsed);
+    if (Number.isFinite(elapsed) && elapsed < MIN_FILL_MS) return OK();
+    if (linkCount(`${name} ${message}`) > MAX_LINKS) return OK();
+
+    // 2. One person sending too many.
+    if (!ipAllowed(clientIp(req))) return json({ error: TOO_MANY }, 429);
+
+    // 3. The same question again (double click, resend) within a day: don't store it twice.
+    const dayAgo = new Date(Date.now() - 864e5).toISOString();
+    const { count: same } = await admin
+      .from('site_questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('message', message)
+      .gte('created_at', dayAgo);
+    if ((same ?? 0) > 0) return OK();
+
+    // 4. A flood from many addresses at once.
+    const hourAgo = new Date(Date.now() - 3_600_000).toISOString();
+    const { count: lastHour } = await admin
+      .from('site_questions')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', hourAgo);
+    if ((lastHour ?? 0) >= GLOBAL_HOURLY_LIMIT) return json({ error: TOO_MANY }, 429);
 
     const { error } = await admin.from('site_questions').insert({ name, contact, message });
     if (error) {

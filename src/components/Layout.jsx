@@ -8,6 +8,7 @@ import { aiEnabled, api, isLocalMode } from '../lib/api.js';
 import SoundControls from './SoundControls.jsx';
 import CoachChat from './CoachChat.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
+import Logo from './Logo.jsx';
 
 const LINKS = [
   ['/', '🏠', 'Home'],
@@ -29,7 +30,7 @@ export default function Layout() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="logo">
-          <span className="logo__mark">🪜</span> <span className="logo__text">Zinapoya</span>
+          <Logo />
         </NavLink>
         <nav className="topnav">
           {links.map(([to, icon, label]) => (

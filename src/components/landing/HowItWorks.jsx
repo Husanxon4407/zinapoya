@@ -1,28 +1,27 @@
-import { STEPS, RULES } from '../../data/site.js';
+import { STEPS } from '../../data/site.js';
 import { useT } from '../../i18n/index.js';
 
 export default function HowItWorks() {
   const t = useT();
   return (
-    <section className="how" id="how">
-      <h2 className="section-title">{t('How it works')}</h2>
-      <div className="how-steps">
+    <section className="home-sec" id="how" aria-labelledby="how-title">
+      <div className="home-sec__head reveal">
+        <span className="eyebrow">{t('How it works')}</span>
+        <h2 id="how-title">{t('Four steps to your next level')}</h2>
+      </div>
+      <div className="how-grid">
         {STEPS.map((step, i) => (
-          <div className="how-step" key={step.title}>
-            <span className="how-step__num">{i + 1}</span>
-            <span className="how-step__emoji">{step.emoji}</span>
+          <div className="how-card reveal" key={step.title} style={{ '--d': i }}>
+            <div className="how-card__head">
+              <span className="how-card__emoji" aria-hidden="true">
+                {step.emoji}
+              </span>
+              <span className="how-card__num">{i + 1}</span>
+            </div>
             <h3>{t(step.title)}</h3>
             <p>{t(step.text)}</p>
           </div>
         ))}
-      </div>
-      <div className="card rules">
-        <h3>📋 {t('Exam rules (Speaking)')}</h3>
-        <ul>
-          {RULES.map((r) => (
-            <li key={r}>{t(r)}</li>
-          ))}
-        </ul>
       </div>
     </section>
   );

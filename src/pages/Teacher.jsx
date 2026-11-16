@@ -8,7 +8,7 @@ import Avatar from '../components/Avatar.jsx';
 import AnswerReview from '../components/AnswerReview.jsx';
 import { Calendar, PartBars, ScoreChart } from './Progress.jsx';
 
-const SITE_URL = 'https://speakup-multilevel.vercel.app';
+const SITE_URL = 'https://zinapoya.vercel.app';
 
 // Share the site with the full https:// address: Telegram on iPhone only makes it tappable then.
 function ShareLink() {

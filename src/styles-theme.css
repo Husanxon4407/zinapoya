@@ -274,9 +274,6 @@ body {
 }
 
 /* Colourful accents (a calm mix rather than one colour) */
-.logo__mark {
-  background: linear-gradient(135deg, #5561e8, #a855f7 55%, #ec4899);
-}
 .xp-card {
   background: linear-gradient(120deg, #5561e8, #8b5cf6 55%, #d946ef);
 }

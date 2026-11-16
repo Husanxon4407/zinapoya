@@ -11,12 +11,17 @@ function embed(url) {
   return { type: 'iframe', src: url };
 }
 
+// Hidden until a video link is set in site.js (an empty placeholder looks unfinished).
 export default function VideoBox() {
   const t = useT();
+  if (!VIDEO_URL) return null;
   return (
-    <section className="video-sec" id="video">
-      <h2 className="section-title">{t('A quick tour')}</h2>
-      <div className="video-frame">
+    <section className="home-sec" id="video" aria-labelledby="video-title">
+      <div className="home-sec__head reveal">
+        <span className="eyebrow">{t('Video')}</span>
+        <h2 id="video-title">{t('A quick tour')}</h2>
+      </div>
+      <div className="video-frame reveal">
         {VIDEO_URL ? (
           embed(VIDEO_URL).type === 'video' ? (
             <video controls src={embed(VIDEO_URL).src} />

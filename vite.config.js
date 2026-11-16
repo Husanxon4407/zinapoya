@@ -39,6 +39,8 @@ export default defineConfig({
         // cached when only our own code is updated.
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
+          // Three.js is only for the 3D staircase on the main page: let it load with that scene.
+          if (/[\\/]node_modules[\\/]three[\\/]/.test(id)) return undefined;
           if (id.includes('@supabase')) return 'supabase';
           if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'react';
           return 'vendor';

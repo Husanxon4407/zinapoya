@@ -4,15 +4,16 @@ import { QUESTION_COUNT } from '../../data/site.js';
 import { useCountUp } from '../../lib/useCountUp.js';
 import { useT } from '../../i18n/index.js';
 
-function Stat({ value, label, suffix = '' }) {
+function Stat({ value, label, note, suffix = '', i }) {
   const [ref, n] = useCountUp(value);
   return (
-    <div className="stat-tile" ref={ref}>
-      <strong className="stat-tile__num">
+    <div className="stat-card reveal" ref={ref} style={{ '--d': i }}>
+      <span className="stat-card__label">{label}</span>
+      <strong className="stat-card__num">
         {n.toLocaleString('en-US')}
         {suffix}
       </strong>
-      <span className="stat-tile__label">{label}</span>
+      <span className="stat-card__note">{note}</span>
     </div>
   );
 }
@@ -33,11 +34,17 @@ export default function Stats() {
   }, []);
 
   return (
-    <section className="stats-row" aria-label={t('Our results so far')}>
-      <Stat value={s.students} label={t('Students learning')} suffix="+" />
-      <Stat value={s.answers} label={t('Answers practised')} suffix="+" />
-      <Stat value={s.active_week} label={t('Active this week')} />
-      <Stat value={QUESTION_COUNT} label={t('Exam questions')} />
+    <section className="home-sec" aria-labelledby="stats-title">
+      <div className="home-sec__head reveal">
+        <span className="eyebrow">{t('In numbers')}</span>
+        <h2 id="stats-title">{t('Our results so far')}</h2>
+      </div>
+      <div className="stats-grid">
+        <Stat i={0} value={s.students} label={t('Students learning')} note={t('with a free account')} suffix="+" />
+        <Stat i={1} value={s.answers} label={t('Answers practised')} note={t('recorded and checked')} suffix="+" />
+        <Stat i={2} value={s.active_week} label={t('Active this week')} note={t('practised in the last 7 days')} />
+        <Stat i={3} value={QUESTION_COUNT} label={t('Exam questions')} note={t('in the Speaking bank')} />
+      </div>
     </section>
   );
 }

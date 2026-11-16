@@ -7,45 +7,87 @@ import { PART3 } from './part3.js';
 export const BRAND = 'Zinapoya';
 export const TAGLINE = 'Step up to your level.';
 
-// Put a short intro/guide video here later (YouTube, Vimeo or an .mp4 URL). Empty = placeholder.
+// Put a short intro/guide video here later (YouTube, Vimeo or an .mp4 URL). Empty = the section is hidden.
 export const VIDEO_URL = '';
 
 // Total speaking questions in the bank (shown in the stats).
 export const QUESTION_COUNT = PART1_1.length + PART1_2.length + PART2.length + PART3.length;
 
-// The four Multilevel exam sections. Only Speaking is ready; the others come later.
-export const SECTIONS = [
-  { id: 'speaking', emoji: '🎤', name: 'Speaking', color: '#6366f1', soft: '#eef0ff', ink: '#4338ca', ready: true,
-    text: 'Answer real exam questions out loud, record yourself and get instant AI feedback on all four parts.' },
-  { id: 'listening', emoji: '🎧', name: 'Listening', color: '#0891b2', soft: '#cffafe', ink: '#0e7490', ready: false,
-    text: 'Train your ear with exam-style audio and questions. Coming soon.' },
-  { id: 'reading', emoji: '📖', name: 'Reading', color: '#16a34a', soft: '#dcfce7', ink: '#166534', ready: false,
-    text: 'Practise reading passages and question types against the clock. Coming soon.' },
-  { id: 'writing', emoji: '✍️', name: 'Writing', color: '#d97706', soft: '#fef3c7', ink: '#854d0e', ready: false,
-    text: 'Write exam answers and get feedback on grammar, vocabulary and structure. Coming soon.' },
+// The labels on the six 3D steps of the main page. Students pick a track (or it cycles by itself).
+// Scores and words are the same in every language; names like "Start" are translated.
+export const TRACKS = [
+  { id: 'cefr', name: 'CEFR', steps: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] },
+  { id: 'ielts', name: 'IELTS', steps: ['4.0', '5.0', '5.5', '6.5', '7.5', '8.0+'] },
+  { id: 'sat', name: 'SAT', steps: ['800', '1000', '1150', '1300', '1450', '1550+'] },
+  { id: 'lang', name: 'Languages', steps: ['Hello', 'Salom', 'Привет', 'Merhaba', '안녕', 'Hallo'] },
+  { id: 'school', name: 'School', steps: ['1 + 1', 'x²', 'π', 'H₂O', 'E = mc²', '</>'] },
+];
+
+// Everything the platform will teach. `ready` items work today; the rest are shown as "Coming soon".
+// `to` is where a ready item leads.
+export const CATALOG = [
+  {
+    id: 'exams',
+    emoji: '🎓',
+    name: 'Exam prep',
+    text: 'International English certificates, practised the way the real exam works.',
+    color: '#6366f1',
+    items: [
+      { name: 'CEFR Multilevel', note: 'Speaking is ready', ready: true, to: '/try' },
+      { name: 'IELTS' },
+      { name: 'TOEFL' },
+    ],
+  },
+  {
+    id: 'admission',
+    emoji: '🏛️',
+    name: 'University admission',
+    text: 'Prepare for the tests universities ask for, at home and abroad.',
+    color: '#0891b2',
+    items: [{ name: 'SAT Math' }, { name: 'SAT Reading & Writing' }, { name: 'University entrance tests' }],
+  },
+  {
+    id: 'languages',
+    emoji: '🌍',
+    name: 'Languages',
+    text: 'Speak, listen, read and write — from your first words to fluency.',
+    color: '#16a34a',
+    items: [{ name: 'English' }, { name: 'Russian' }, { name: 'Korean' }, { name: 'Turkish' }, { name: 'German' }, { name: 'Arabic' }],
+  },
+  {
+    id: 'school',
+    emoji: '📐',
+    name: 'School subjects',
+    text: 'Clear lessons and practice for the subjects that matter at school.',
+    color: '#d97706',
+    items: [{ name: 'Math' }, { name: 'Physics' }, { name: 'Chemistry' }, { name: 'Biology' }, { name: 'IT & programming' }],
+  },
+];
+
+// What already works today (CEFR Multilevel Speaking), shown in the "Available now" spotlight.
+export const SPOTLIGHT = [
+  { emoji: '🎙️', text: 'Real exam questions for all four Speaking parts' },
+  { emoji: '⏱️', text: 'Examiner voice, preparation time and a real timer' },
+  { emoji: '✨', text: 'AI feedback: your level, your exact words and how to fix them' },
+  { emoji: '🎮', text: 'Mock exams, word games and daily challenges' },
+  { emoji: '📴', text: 'Works offline — answers upload when you are back online' },
 ];
 
 export const STEPS = [
   { emoji: '📝', title: 'Create a free account', text: 'Sign up in seconds. Your progress is saved on any device.' },
-  { emoji: '🧭', title: 'Choose a part', text: 'Pick Part 1.1, 1.2, 2 or 3 — or run a full mock exam.' },
-  { emoji: '🎙️', title: 'Speak & record', text: 'The examiner voice reads each question, then you answer against the timer.' },
-  { emoji: '✨', title: 'Get AI feedback', text: 'See your level, your exact words, fixes with simple rules and better phrases.' },
-];
-
-export const RULES = [
-  'Speaking has 4 parts: 1.1 short questions, 1.2 compare pictures, 2 a 2-minute talk, 3 a 2-minute discussion.',
-  'Each question is read aloud, you get preparation time, then a timer for your answer.',
-  'Find a quiet place and use Chrome or Safari so your microphone works.',
-  'Speak until the timer ends — longer, clear answers score higher.',
+  { emoji: '🧭', title: 'Choose your goal', text: 'An exam, a language or a school subject — start from your own level.' },
+  { emoji: '🪜', title: 'Climb step by step', text: 'Short daily practice with real tasks, timers and games.' },
+  { emoji: '✨', title: 'Get AI feedback', text: 'See your level, what to fix and how to say it better.' },
 ];
 
 export const FAQ = [
-  { q: 'Is Zinapoya free?', a: 'Yes. All speaking practice, recordings and AI feedback are free for our students.' },
+  { q: 'Is Zinapoya free?', a: 'Yes. Creating an account and practising is free.' },
+  { q: 'What can I learn today?', a: 'CEFR Multilevel Speaking is ready now, with real exam questions, recordings and AI feedback. IELTS, SAT, languages and school subjects are being added step by step.' },
   { q: 'Do I need to install anything?', a: 'No. It works in your browser. You can also add it to your home screen to use it like an app.' },
   { q: 'Which phone or browser should I use?', a: 'Any phone or computer. Use Google Chrome (Android, computer) or Safari (iPhone) so the microphone works. Avoid opening links inside Telegram.' },
   { q: 'Will it work without internet?', a: 'After your first visit the exam and pictures work offline. Answers you record offline are saved and uploaded automatically when you are back online.' },
   { q: 'Is my voice private?', a: 'Yes. Only you and your teacher can hear your recordings. We never sell your data and show no ads.' },
-  { q: 'When are Listening, Reading and Writing ready?', a: 'We are finishing Speaking first, then building the other sections. Follow us on Telegram for updates.' },
+  { q: 'When will new subjects open?', a: 'We add them one by one. Follow us on Telegram to hear first when a new subject opens.' },
 ];
 
 export const CONTACTS = [

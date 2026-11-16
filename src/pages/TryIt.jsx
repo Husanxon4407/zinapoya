@@ -4,6 +4,7 @@ import ExamRunner from '../components/ExamRunner.jsx';
 import { PART1_1 } from '../data/part1_1.js';
 import { pick, stepsP11 } from '../lib/steps.js';
 import { useT } from '../i18n/index.js';
+import Logo from '../components/Logo.jsx';
 
 export default function TryIt() {
   const t = useT();
@@ -12,7 +13,7 @@ export default function TryIt() {
     <div className="guest-page">
       <header className="landing__top">
         <Link to="/" className="logo">
-          <span className="logo__mark">🪜</span> Zinapoya
+          <Logo />
         </Link>
         <Link to="/signup" className="btn btn--small">
           {t('Sign up free')}
