@@ -2,7 +2,7 @@
 // so they are light, sharp on every screen and follow the area colours.
 import { useEffect, useRef } from 'react';
 import { useCanvasLoop, rgba, reducedMotion } from './useCanvasLoop.js';
-import { useT } from '../../i18n/index.js';
+import { skillName, useT } from '../../i18n/index.js';
 
 /* ---------- CEFR: a live voice ---------- */
 function VoiceVisual({ theme }) {
@@ -198,7 +198,7 @@ function GaugeVisual({ theme }) {
             {/* undo the item's own angle, then keep turning backwards so the text stays upright */}
             <span className="avis-orbit__fix">
               <span className="avis-orbit__spin">
-                <span className="avis-orbit__label">{t(s)}</span>
+                <span className="avis-orbit__label">{skillName(t, s)}</span>
               </span>
             </span>
           </span>

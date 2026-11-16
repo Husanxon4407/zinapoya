@@ -7,7 +7,7 @@ import { AREAS, areaById } from '../data/areas.js';
 import { SPOTLIGHT } from '../data/site.js';
 import { useReveal } from '../lib/useReveal.js';
 import { useApp } from '../state.jsx';
-import { useT } from '../i18n/index.js';
+import { skillName, useT } from '../i18n/index.js';
 import '../styles-home.css';
 import '../styles-areas.css';
 
@@ -155,7 +155,7 @@ export default function AreaLanding() {
                   </span>
                   {s.ready ? <span className="askill__tag askill__tag--live">{t('Open now')}</span> : <span className="askill__tag">{t('Coming soon')}</span>}
                 </div>
-                <h3>{t(s.name)}</h3>
+                <h3>{skillName(t, s.name)}</h3>
                 <p>{t(s.text)}</p>
               </article>
             ))}

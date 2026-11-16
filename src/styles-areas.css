@@ -67,6 +67,10 @@
   color: #f2f6fb;
   background: radial-gradient(ellipse at 70% 40%, var(--a-bg2) 0%, var(--a-bg) 62%);
 }
+.ahero .logo,
+.amain .logo {
+  color: #f2f6fb;
+}
 .ahero__top {
   display: flex;
   align-items: center;
@@ -823,7 +827,11 @@
   }
 }
 @media (max-width: 700px) {
-  .ahero__top {
+  .ahero .logo,
+.amain .logo {
+  color: #f2f6fb;
+}
+.ahero__top {
     padding: 14px 16px;
   }
   .ahero__text > p {

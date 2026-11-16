@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import AreaVisual from '../components/areas/AreaVisual.jsx';
 import { AREAS, areaById } from '../data/areas.js';
 import { useApp } from '../state.jsx';
-import { useT } from '../i18n/index.js';
+import { skillName, useT } from '../i18n/index.js';
 import { areaStyle } from './AreaLanding.jsx';
 import '../styles-areas.css';
 
@@ -56,7 +56,7 @@ export default function AreaMain() {
                 </span>
                 <span className="askill__tag">{t('Coming soon')}</span>
               </div>
-              <h3>{t(s.name)}</h3>
+              <h3>{skillName(t, s.name)}</h3>
               <p>{t(s.text)}</p>
             </article>
           ))}

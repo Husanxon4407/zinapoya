@@ -788,4 +788,6 @@ export default {
   "Atoms, reactions and the periodic table.": "Атомы, реакции и таблица Менделеева.",
   "Cells, the human body and nature.": "Клетки, тело человека и природа.",
   "Computers, algorithms and your first code.": "Компьютеры, алгоритмы и ваш первый код.",
+  // Skill name (not the "Listening…" recording status)
+  "Skill: Listening": "Listening (Аудирование)",
 };

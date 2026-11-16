@@ -788,4 +788,6 @@ export default {
   "Atoms, reactions and the periodic table.": "Atomlar, reaksiyalar va davriy jadval.",
   "Cells, the human body and nature.": "Hujayralar, inson tanasi va tabiat.",
   "Computers, algorithms and your first code.": "Kompyuterlar, algoritmlar va ilk kodingiz.",
+  // Skill name (not the "Listening…" recording status)
+  "Skill: Listening": "Listening (Tinglash)",
 };

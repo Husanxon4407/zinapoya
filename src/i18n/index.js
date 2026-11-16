@@ -72,6 +72,14 @@ export function useT() {
   return useCallback((text, vars) => translate(text, vars, id), [id]);
 }
 
+// A skill or subject name ("Listening", "Math"…). Uses the "Skill: …" translation when there is
+// one, because a plain word like "Listening" is also the app's "Listening…" recording status.
+export function skillName(t, name) {
+  const key = `Skill: ${name}`;
+  const out = t(key);
+  return out === key ? t(name) : out;
+}
+
 // Step labels such as "Question 4" have a number inside.
 export function stepLabel(t, label = '') {
   const m = /^Question (\d+)$/.exec(label);
