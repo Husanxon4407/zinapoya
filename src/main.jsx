@@ -6,6 +6,7 @@ import App from './App.jsx';
 import './styles.css';
 import './styles-games.css';
 import './styles-theme.css';
+import './styles-areas.css';
 import { applyTheme } from './lib/theme.js';
 import { registerServiceWorker } from './lib/pwa.js';
 import { getLang, loadLang } from './i18n/index.js';

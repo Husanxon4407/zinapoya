@@ -80,92 +80,51 @@
 }
 
 /* ---------- Hero ---------- */
+/* Text and the 3D staircase each get their own column, so longer Uzbek/Russian lines can
+   never run into the picture. */
 .hero3d {
+  --hero-accent: #2dd4bf;
+  --hero-accent2: #bef264;
   position: relative;
-  height: 100svh;
-  min-height: 600px;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   isolation: isolate;
   color: var(--space-text);
-  background: radial-gradient(ellipse at 68% 42%, var(--space-glow) 0%, var(--space-navy) 45%, var(--space-deep) 80%);
+  background: radial-gradient(ellipse at 70% 45%, var(--space-glow) 0%, var(--space-navy) 45%, var(--space-deep) 80%);
 }
-.hero3d__canvas {
+/* Colour glow that follows the chosen area, plus faint stars. */
+.hero3d__sky {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  animation: hero-in 1.2s ease both;
-}
-@keyframes hero-in {
-  from {
-    opacity: 0;
-  }
-}
-.hero3d__fallback {
-  position: absolute;
-  right: 9%;
-  top: 50%;
-  transform: translateY(-50%);
-  opacity: 0.9;
-  transition: opacity 0.8s ease;
+  z-index: -1;
   pointer-events: none;
-  filter: drop-shadow(0 0 40px rgba(34, 211, 238, 0.25));
-}
-.hero3d__fallback.is-hidden {
-  opacity: 0;
-}
-
-/* Labels on the steps (positioned every frame by the 3D scene). */
-.hero3d__labels {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 0.5s;
-}
-.hero3d__labels.is-hidden {
-  opacity: 0;
-}
-.step-label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(5, 15, 32, 0.62);
-  border: 1px solid rgba(165, 180, 252, 0.28);
-  color: var(--space-text);
-  font: 700 0.78rem/1.2 var(--home-font);
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  backdrop-filter: blur(6px);
-  opacity: 0;
-  will-change: transform;
-  transition: filter 0.22s;
-}
-.step-label--top {
-  background: rgba(251, 191, 36, 0.16);
-  border-color: rgba(251, 191, 36, 0.6);
-  color: #fde68a;
-}
-.hero3d__labels.is-swapping .step-label {
-  filter: blur(6px) opacity(0);
+  background:
+    radial-gradient(circle at 72% 52%, color-mix(in srgb, var(--hero-accent) 22%, transparent), transparent 42%),
+    radial-gradient(circle at 15% 85%, color-mix(in srgb, var(--hero-accent2) 10%, transparent), transparent 40%),
+    radial-gradient(1px 1px at 12% 18%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 32% 72%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 48% 12%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 88%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 86% 22%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 92% 64%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 52%, #9fb6d6 50%, transparent 51%);
+  transition: background 0.8s ease;
 }
 
 .hero3d__top {
-  position: absolute;
-  inset: 0 0 auto;
+  position: relative;
   z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 26px 4.5%;
+  padding: 24px 4.5%;
 }
 /* The hero is always dark, whatever the page theme. */
 .hero3d .logo,
-.hero3d .logo--light {
+.logo--light {
   color: var(--space-text);
   font-size: 1.6rem;
 }
@@ -182,48 +141,131 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  white-space: nowrap;
 }
 .hero3d__link:hover {
   color: var(--accent);
 }
-.hero3d .lang-switch {
+.hero3d .lang-switch,
+.ahero .lang-switch {
   background: rgba(255, 255, 255, 0.06);
   border-color: rgba(255, 255, 255, 0.14);
   color: var(--space-text);
 }
-.hero3d .lang-switch select {
+.hero3d .lang-switch select,
+.ahero .lang-switch select {
   color: var(--space-text);
   background: transparent;
 }
-.hero3d .lang-switch option {
+.hero3d .lang-switch option,
+.ahero .lang-switch option {
   color: #101e30;
 }
 
-.hero3d__text {
-  position: absolute;
+.hero3d__grid {
+  position: relative;
   z-index: 2;
-  left: 7%;
-  top: 50%;
-  transform: translateY(-47%);
-  width: 40%;
-  max-width: 580px;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: 2%;
+  padding: 0 4.5% 0 7%;
 }
-.hero3d h1 {
+.hero3d__text {
+  min-width: 0;
+  max-width: 600px;
+}
+.hero3d__title {
   margin: 0;
-  font-size: clamp(44px, 5.6vw, 92px);
+  font-size: 92px; /* refined by useFitText to fit the column */
   font-weight: 600;
   line-height: 1.02;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.055em;
   color: var(--space-text);
+}
+.fit-line {
+  display: block;
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
 }
 .hero3d__dot {
   color: var(--gold);
 }
-.hero3d__text p {
-  margin: 26px 0 30px;
+.hero3d__text > p {
+  margin: 22px 0 26px;
+  max-width: 460px;
   font-size: 15px;
-  line-height: 1.8;
+  line-height: 1.75;
   color: var(--space-muted);
+}
+
+/* Area picker */
+.tracks__label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--space-faint);
+}
+.tracks__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.track {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--space-muted);
+  font: 600 0.82rem/1 var(--home-font);
+  cursor: pointer;
+  transition:
+    background 0.25s,
+    color 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+.track:hover {
+  color: var(--space-text);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+.track.is-on {
+  background: color-mix(in srgb, var(--ac) 20%, transparent);
+  border-color: var(--ac);
+  color: #fff;
+  box-shadow: 0 0 24px -6px var(--ac);
+}
+
+.hero3d__area {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transition:
+    opacity 0.22s,
+    transform 0.22s;
+}
+.hero3d__area.is-swapping {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.hero3d__area-text {
+  margin: 0 0 18px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--space-muted);
+}
+.hero3d__area-text strong {
+  color: var(--hero-accent);
+  transition: color 0.4s;
 }
 .hero3d__cta {
   display: flex;
@@ -244,47 +286,92 @@
   border-color: var(--accent);
 }
 
-/* Track switcher: changes what the steps say. */
-.tracks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 34px;
+/* The 3D stage (its own column) */
+.stairs3d {
+  position: relative;
+  height: min(72svh, 640px);
+  min-height: 340px;
+  min-width: 0;
 }
-.track {
-  min-height: 34px;
-  padding: 6px 14px;
+.stairs3d__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: hero-in 1.2s ease both;
+  /* Soft edges: the glowing stage fades out instead of ending in a straight line. */
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 70%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 70%, transparent 100%);
+}
+@keyframes hero-in {
+  from {
+    opacity: 0;
+  }
+}
+.stairs3d__fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0.9;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+  filter: drop-shadow(0 0 40px rgba(34, 211, 238, 0.25));
+}
+.stairs3d__fallback.is-hidden {
+  opacity: 0;
+}
+.stairs3d__labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.stairs3d__labels.is-hidden {
+  opacity: 0;
+}
+.step-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--space-muted);
-  font: 600 0.78rem/1 var(--home-font);
-  cursor: pointer;
+  background: rgba(5, 15, 32, 0.66);
+  border: 1px solid color-mix(in srgb, var(--hero-accent) 40%, transparent);
+  color: var(--space-text);
+  font: 700 0.78rem/1.2 var(--home-font);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  will-change: transform;
   transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
+    filter 0.22s,
+    background 0.3s,
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
-.track:hover {
-  color: var(--space-text);
-  border-color: rgba(255, 255, 255, 0.3);
+.step-label.is-on {
+  background: color-mix(in srgb, var(--hero-accent) 30%, rgba(5, 15, 32, 0.8));
+  border-color: var(--hero-accent);
+  box-shadow: 0 0 18px -2px var(--hero-accent);
 }
-.track.is-on {
-  background: rgba(165, 180, 252, 0.16);
-  border-color: rgba(165, 180, 252, 0.6);
-  color: var(--space-text);
+.step-label--top {
+  background: rgba(251, 191, 36, 0.16);
+  border-color: rgba(251, 191, 36, 0.6);
+  color: #fde68a;
+}
+.stairs3d__labels.is-swapping .step-label {
+  filter: blur(6px) opacity(0);
 }
 
 .hero3d__foot {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  left: 4.5%;
-  right: 4.5%;
-  bottom: 18px;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 16px;
+  padding: 8px 4.5% 14px;
   font-size: 11px;
   color: var(--space-muted);
 }
@@ -768,6 +855,129 @@
   font-size: 0.78rem;
 }
 
+
+/* Area cards on the main page */
+.areas-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+}
+.area-card {
+  position: relative;
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 300px;
+  padding: 24px;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  text-decoration: none;
+  color: #fff;
+  background: radial-gradient(ellipse at 80% 0%, var(--a-bg2), var(--a-bg) 70%);
+  border: 1px solid color-mix(in srgb, var(--a-accent) 25%, transparent);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.3s,
+    opacity 0.7s ease;
+}
+/* Two big cards on top (the ready area first), three below. */
+.area-card:nth-child(-n + 2) {
+  grid-column: span 3;
+}
+.area-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 50px -24px var(--a-accent);
+}
+.area-card .abg {
+  opacity: 0.55;
+  transition: opacity 0.3s;
+}
+.area-card:hover .abg {
+  opacity: 0.9;
+}
+.area-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.area-card__emoji {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  font-size: 1.5rem;
+  background: color-mix(in srgb, var(--a-accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--a-accent) 35%, transparent);
+}
+.area-card__live,
+.area-card__soon {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.area-card__live {
+  background: rgba(22, 163, 74, 0.2);
+  color: #86efac;
+}
+.area-card__soon {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+}
+.area-card__name {
+  margin-top: 14px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.area-card__title {
+  max-width: 34ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.72);
+}
+.area-card__steps {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+.area-card__steps span {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: calc(22px + var(--k) * 9px);
+  padding-bottom: 5px;
+  border-radius: 8px 8px 3px 3px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.92);
+  background: linear-gradient(to top, color-mix(in srgb, var(--a-accent) 30%, transparent), color-mix(in srgb, var(--a-accent) 70%, transparent));
+  transform-origin: bottom;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--k) * 40ms);
+}
+.area-card:hover .area-card__steps span {
+  transform: scaleY(1.12);
+}
+.area-card__go {
+  margin-top: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--a-accent);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px) {
   .catalog,
@@ -775,19 +985,40 @@
   .how-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .areas-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .area-card,
+  .area-card:nth-child(-n + 2) {
+    grid-column: span 1;
+  }
+  .area-card:first-child {
+    grid-column: span 2;
+  }
+}
+
+/* Tablets and phones: text first, the staircase underneath. */
+@media (max-width: 900px) {
+  .hero3d__grid {
+    grid-template-columns: 1fr;
+    padding: 8px 20px 0;
+    gap: 8px;
+  }
   .hero3d__text {
-    width: 46%;
+    max-width: none;
+  }
+  .stairs3d {
+    height: 46svh;
+    min-height: 300px;
   }
 }
 
 @media (max-width: 700px) {
-  .hero3d {
-    min-height: 680px;
-  }
   .hero3d__top {
-    padding: 16px 16px;
+    padding: 14px 16px;
   }
-  .hero3d .logo {
+  .hero3d .logo,
+  .logo--light {
     font-size: 1.3rem;
   }
   .hero3d__nav {
@@ -796,40 +1027,38 @@
   .hero3d__signup {
     display: none;
   }
-  .hero3d__text {
-    top: 13%;
-    left: 16px;
-    right: 16px;
-    width: auto;
-    transform: none;
+  .hero3d__grid {
+    padding: 4px 16px 0;
   }
-  .hero3d h1 {
-    font-size: 42px;
-  }
-  .hero3d__text p {
+  .hero3d__text > p {
     margin: 14px 0 18px;
     font-size: 13px;
     line-height: 1.6;
   }
-  .tracks {
-    margin-top: 18px;
+  .track {
+    min-height: 36px;
+    padding: 6px 12px;
+    font-size: 0.78rem;
   }
-  .hero3d__fallback {
-    right: 50%;
-    top: auto;
-    bottom: 70px;
-    transform: translateX(50%) scale(0.55);
-    transform-origin: bottom center;
+  .hero3d__area {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+  .hero3d__area-text {
+    font-size: 0.86rem;
+    margin-bottom: 14px;
+  }
+  .stairs3d {
+    height: 40svh;
+    min-height: 260px;
   }
   .step-label {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     padding: 3px 8px;
   }
   .hero3d__foot {
-    left: 16px;
-    right: 16px;
-    bottom: 8px;
     grid-template-columns: 1fr auto;
+    padding: 4px 16px 10px;
     font-size: 10px;
   }
   .hero3d__sub,
@@ -845,8 +1074,15 @@
   .catalog,
   .stats-grid,
   .how-grid,
-  .spotlight {
+  .spotlight,
+  .areas-grid {
     grid-template-columns: 1fr;
+  }
+  .area-card,
+  .area-card:first-child,
+  .area-card:nth-child(-n + 2) {
+    grid-column: span 1;
+    min-height: 260px;
   }
   .spotlight {
     padding: 26px 20px;
@@ -859,22 +1095,23 @@
   }
 }
 
-@media (min-width: 701px) and (max-height: 640px) {
-  .hero3d h1 {
-    font-size: 46px;
-  }
-  .hero3d__text p {
-    margin: 14px 0;
+@media (min-width: 901px) and (max-height: 680px) {
+  .hero3d__text > p {
+    margin: 12px 0 16px;
     font-size: 13px;
   }
-  .tracks {
-    margin-top: 18px;
+  .hero3d__area {
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+  .stairs3d {
+    height: 64svh;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rise,
-  .hero3d__canvas,
+  .stairs3d__canvas,
   .hero3d__scroll span,
   .cat-item__dot,
   .badge-live__dot {

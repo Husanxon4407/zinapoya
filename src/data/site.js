@@ -13,56 +13,7 @@ export const VIDEO_URL = '';
 // Total speaking questions in the bank (shown in the stats).
 export const QUESTION_COUNT = PART1_1.length + PART1_2.length + PART2.length + PART3.length;
 
-// The labels on the six 3D steps of the main page. Students pick a track (or it cycles by itself).
-// Scores and words are the same in every language; names like "Start" are translated.
-export const TRACKS = [
-  { id: 'cefr', name: 'CEFR', steps: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] },
-  { id: 'ielts', name: 'IELTS', steps: ['4.0', '5.0', '5.5', '6.5', '7.5', '8.0+'] },
-  { id: 'sat', name: 'SAT', steps: ['800', '1000', '1150', '1300', '1450', '1550+'] },
-  { id: 'lang', name: 'Languages', steps: ['Hello', 'Salom', 'Привет', 'Merhaba', '안녕', 'Hallo'] },
-  { id: 'school', name: 'School', steps: ['1 + 1', 'x²', 'π', 'H₂O', 'E = mc²', '</>'] },
-];
-
-// Everything the platform will teach. `ready` items work today; the rest are shown as "Coming soon".
-// `to` is where a ready item leads.
-export const CATALOG = [
-  {
-    id: 'exams',
-    emoji: '🎓',
-    name: 'Exam prep',
-    text: 'International English certificates, practised the way the real exam works.',
-    color: '#6366f1',
-    items: [
-      { name: 'CEFR Multilevel', note: 'Speaking is ready', ready: true, to: '/try' },
-      { name: 'IELTS' },
-      { name: 'TOEFL' },
-    ],
-  },
-  {
-    id: 'admission',
-    emoji: '🏛️',
-    name: 'University admission',
-    text: 'Prepare for the tests universities ask for, at home and abroad.',
-    color: '#0891b2',
-    items: [{ name: 'SAT Math' }, { name: 'SAT Reading & Writing' }, { name: 'University entrance tests' }],
-  },
-  {
-    id: 'languages',
-    emoji: '🌍',
-    name: 'Languages',
-    text: 'Speak, listen, read and write — from your first words to fluency.',
-    color: '#16a34a',
-    items: [{ name: 'English' }, { name: 'Russian' }, { name: 'Korean' }, { name: 'Turkish' }, { name: 'German' }, { name: 'Arabic' }],
-  },
-  {
-    id: 'school',
-    emoji: '📐',
-    name: 'School subjects',
-    text: 'Clear lessons and practice for the subjects that matter at school.',
-    color: '#d97706',
-    items: [{ name: 'Math' }, { name: 'Physics' }, { name: 'Chemistry' }, { name: 'Biology' }, { name: 'IT & programming' }],
-  },
-];
+// The learning areas (CEFR, IELTS, SAT, Languages, School) live in ./areas.js.
 
 // What already works today (CEFR Multilevel Speaking), shown in the "Available now" spotlight.
 export const SPOTLIGHT = [

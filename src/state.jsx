@@ -3,6 +3,8 @@ import { api } from './lib/api.js';
 import { computeStats, computeXp } from './lib/progress.js';
 import { dataUrlToBlob } from './lib/image.js';
 import { flushQueue } from './lib/offline.js';
+import { takePendingArea } from './lib/area.js';
+import { DEFAULT_AREA, isArea } from './data/areas.js';
 
 export const PENDING_AVATAR = 'su_pending_avatar';
 
@@ -70,6 +72,28 @@ export function AppProvider({ children }) {
     };
   }, [user]);
 
+  // An area picked before logging in (area page, sign-up, Google) is saved on the account now.
+  const userId = user?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const pending = takePendingArea();
+    if (pending && pending !== user.area) {
+      api
+        .setArea(pending)
+        .then((u) => u && setUser(u))
+        .catch((e) => console.warn('Could not save the chosen area', e));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  // Students from before areas existed (and anyone without a choice) are in CEFR Multilevel.
+  const area = isArea(user?.area) ? user.area : DEFAULT_AREA;
+  const chooseArea = useCallback(async (id) => {
+    if (!isArea(id)) return;
+    const u = await api.setArea(id);
+    if (u) setUser(u);
+  }, []);
+
   const addAttempt = useCallback((row) => setAttempts((list) => [row, ...list]), []);
 
   // Answers recorded offline: upload them now and whenever the internet comes back.
@@ -100,7 +124,7 @@ export function AppProvider({ children }) {
   const stats = useMemo(() => computeStats(attempts), [attempts]);
   const xp = useMemo(() => computeXp(attempts, gameScores), [attempts, gameScores]);
 
-  const value = { user, profile, setProfile, authReady, attempts, attemptsReady, loadError, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
+  const value = { user, area, chooseArea, profile, setProfile, authReady, attempts, attemptsReady, loadError, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

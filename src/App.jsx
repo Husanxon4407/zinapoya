@@ -12,6 +12,8 @@ import Home from './pages/Home.jsx';
 // all of them in the background, so later visits and offline use are instant.
 const page = (load, name = 'default') => lazy(() => load().then((m) => ({ default: m[name] })));
 const TryIt = page(() => import('./pages/TryIt.jsx'));
+const AreaLanding = page(() => import('./pages/AreaLanding.jsx'));
+const AreaMain = page(() => import('./pages/AreaMain.jsx'));
 const PartPage = page(() => import('./pages/PartPage.jsx'));
 const Practice = page(() => import('./pages/Practice.jsx'));
 const MockExam = page(() => import('./pages/MockExam.jsx'), 'MockExam');
@@ -70,6 +72,12 @@ export default function App() {
   );
 }
 
+// After login, "/" is the main page of the student's area: CEFR practice, or that area's own page.
+function MainPage() {
+  const { area } = useApp();
+  return area === 'cefr' ? <Home /> : <AreaMain />;
+}
+
 function Screens() {
   const { user, authReady, recovering } = useApp();
 
@@ -95,6 +103,7 @@ function Screens() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot" element={<ForgotPassword />} />
             <Route path="/try" element={<TryIt />} />
+            <Route path="/learn/:id" element={<AreaLanding />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
@@ -107,8 +116,16 @@ function Screens() {
     <>
       <ScrollToTop />
       <Routes>
+        <Route
+          path="/learn/:id"
+          element={
+            <Suspense fallback={<PageLoading />}>
+              <AreaLanding />
+            </Suspense>
+          }
+        />
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<MainPage />} />
           <Route path="/part/:key" element={<PartPage />} />
           <Route path="/practice/:key/:id" element={<Practice />} />
           <Route path="/mock" element={<MockExam />} />

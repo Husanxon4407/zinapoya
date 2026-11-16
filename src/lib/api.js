@@ -17,7 +17,9 @@ const uuid = () => crypto.randomUUID();
 /* ------------------------------------------------------------------ */
 /* Supabase implementation                                             */
 /* ------------------------------------------------------------------ */
-const toUser = (u) => u && { id: u.id, email: u.email, name: u.user_metadata?.full_name || u.email.split('@')[0] };
+// `area` = the learning area the student chose (cefr, ielts, …); saved on the account itself.
+const toUser = (u) =>
+  u && { id: u.id, email: u.email, name: u.user_metadata?.full_name || u.email.split('@')[0], area: u.user_metadata?.area || null };
 
 const remote = {
   async getUser() {
@@ -28,11 +30,11 @@ const remote = {
     const { data } = supabase.auth.onAuthStateChange((event, session) => cb(toUser(session?.user), event));
     return () => data.subscription.unsubscribe();
   },
-  async signUp({ name, email, password }) {
+  async signUp({ name, email, password, area }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: name, ...(area ? { area } : {}) }, emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
     return { user: toUser(data.user), needsConfirmation: !data.session };
@@ -48,6 +50,12 @@ const remote = {
   },
   async signOut() {
     await supabase.auth.signOut();
+  },
+  // Choose (or switch) the learning area. The auth listener then delivers the updated user.
+  async setArea(area) {
+    const { data, error } = await supabase.auth.updateUser({ data: { area } });
+    if (error) throw error;
+    return toUser(data.user);
   },
   async resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
@@ -411,7 +419,7 @@ const currentLocalUser = () => {
   const id = ls.get('su_session', null);
   const users = ls.get('su_users', {});
   const u = Object.values(users).find((x) => x.id === id);
-  return u ? { id: u.id, email: u.email, name: u.name } : null;
+  return u ? { id: u.id, email: u.email, name: u.name, area: u.area || null } : null;
 };
 const emit = () => listeners.forEach((cb) => cb(currentLocalUser()));
 const attemptsKey = () => `su_attempts_${ls.get('su_session', '')}`;
@@ -426,11 +434,11 @@ const local = {
       listeners.delete(cb);
     };
   },
-  async signUp({ name, email, password }) {
+  async signUp({ name, email, password, area }) {
     const users = ls.get('su_users', {});
     const key = email.trim().toLowerCase();
     if (users[key]) throw new Error('An account with this email already exists on this device.');
-    users[key] = { id: uuid(), email: key, name, password: await hash(password) };
+    users[key] = { id: uuid(), email: key, name, password: await hash(password), area: area || null };
     ls.set('su_users', users);
     ls.set('su_session', users[key].id);
     emit();
@@ -449,6 +457,15 @@ const local = {
   async signOut() {
     ls.set('su_session', null);
     emit();
+  },
+  async setArea(area) {
+    const users = ls.get('su_users', {});
+    const u = Object.values(users).find((x) => x.id === ls.get('su_session', null));
+    if (!u) throw new Error('Please log in again.');
+    u.area = area;
+    ls.set('su_users', users);
+    emit();
+    return currentLocalUser();
   },
   async resetPassword() {
     throw new Error('Password reset emails work after the site is connected to Supabase.');

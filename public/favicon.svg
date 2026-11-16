@@ -1,19 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="zg" x1="12" y1="52" x2="52" y2="20" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#6366f1"/>
-      <stop offset="1" stop-color="#22d3ee"/>
+    <linearGradient id="g" x1="12" y1="54" x2="52" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366f1"/><stop offset=".55" stop-color="#3b9cf5"/><stop offset="1" stop-color="#22d3ee"/>
     </linearGradient>
-    <radialGradient id="zb" cx="0.72" cy="0.28" r="0.95">
-      <stop offset="0" stop-color="#16345f"/>
-      <stop offset="0.55" stop-color="#071328"/>
-      <stop offset="1" stop-color="#020914"/>
-    </radialGradient>
-    <filter id="zglow" x="-1" y="-1" width="3" height="3"><feGaussianBlur stdDeviation="2.6"/></filter>
+    <linearGradient id="d" x1="12" y1="54" x2="52" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2a2580"/><stop offset="1" stop-color="#0b5f7a"/>
+    </linearGradient>
+    <radialGradient id="b" cx=".72" cy=".25" r="1"><stop offset="0" stop-color="#173a66"/><stop offset=".55" stop-color="#081530"/><stop offset="1" stop-color="#030a18"/></radialGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#zb)"/>
-  <path d="M12 52V44H21V36H30V28H39V20H52V52Z" fill="url(#zg)" stroke="url(#zg)" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M12 44H21M21 36H30M30 28H39M39 20H52" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>
-  <circle cx="45.5" cy="11.5" r="4.6" fill="#fbbf24" filter="url(#zglow)" opacity=".8"/>
-  <circle cx="45.5" cy="11.5" r="3.8" fill="#fcd34d"/>
+  <rect width="64" height="64" rx="15" fill="url(#b)"/>
+  <path transform="translate(1.6 2.2)" d="M13 21H51V27H45V33H39V39H33V45H51V51H13V45H19V39H25V33H31V27H13Z" fill="url(#d)" stroke="url(#d)" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M13 21H51V27H45V33H39V39H33V45H51V51H13V45H19V39H25V33H31V27H13Z" fill="url(#g)" stroke="url(#g)" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M13.5 45H19M19.5 39H25M25.5 33H31M31.5 27H38M13.5 21H50.5" stroke="#fff" stroke-opacity=".65" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="44" cy="13.5" r="5.8" fill="#fbbf24" opacity=".28"/>
+  <circle cx="44" cy="13.5" r="3.8" fill="#fcd34d"/>
 </svg>
