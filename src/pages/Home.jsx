@@ -4,7 +4,7 @@ import { useApp } from '../state.jsx';
 import { PARTS, PART_KEYS } from '../data/parts.js';
 import { PART_TOTALS } from '../lib/steps.js';
 import ProgressRing from '../components/ProgressRing.jsx';
-import { useMistakes } from './Mistakes.jsx';
+import { useMistakes } from '../components/useMistakes.js';
 import { dailyDoneToday, dailyQuestion } from '../lib/daily.js';
 import { TopThree, useLeaderboard } from '../components/Leaderboard.jsx';
 import { InstallSteps } from '../components/AppSettings.jsx';

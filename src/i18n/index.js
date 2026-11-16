@@ -2,15 +2,24 @@
 // The English text is the key, so anything without a translation simply stays in English.
 // Exam questions, vocabulary and AI feedback are not translated: students practise those in English.
 import { useCallback, useSyncExternalStore } from 'react';
-import uz from './uz.js';
-import ru from './ru.js';
 
 export const LANGS = [
   { id: 'en', label: 'EN', name: 'English' },
   { id: 'uz', label: 'O‘Z', name: 'O‘zbekcha' },
   { id: 'ru', label: 'РУ', name: 'Русский' },
 ];
-const DICTS = { uz, ru };
+// Each translation file is downloaded only when that language is used (keeps the first load small).
+const DICTS = {};
+const LOADERS = { uz: () => import('./uz.js'), ru: () => import('./ru.js') };
+
+export async function loadLang(id) {
+  if (!LOADERS[id] || DICTS[id]) return;
+  try {
+    DICTS[id] = (await LOADERS[id]()).default;
+  } catch {
+    /* offline and not cached yet: the text stays in English */
+  }
+}
 const KEY = 'su_lang';
 
 function readSaved() {
@@ -29,7 +38,8 @@ if (typeof document !== 'undefined') document.documentElement.lang = lang;
 
 export const getLang = () => lang;
 
-export function setLang(id) {
+export async function setLang(id) {
+  await loadLang(id); // switch only once the words are here, so the page never flashes English
   lang = id;
   try {
     localStorage.setItem(KEY, id);

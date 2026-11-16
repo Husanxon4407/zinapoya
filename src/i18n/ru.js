@@ -629,4 +629,9 @@ export default {
   "Instagram": "Instagram",
   "Email": "Email",
   "Try one speaking question": "Попробовать один вопрос Speaking",
+
+  // Try-one-question page
+  'Sign up free': 'Зарегистрироваться бесплатно',
+  'Try one Part 1.1 question': 'Попробуйте один вопрос из части 1.1',
+  'Just like the real exam: 5 seconds to think, 30 seconds to answer.': 'Как на настоящем экзамене: 5 секунд на подготовку, 30 секунд на ответ.',
 };

@@ -32,4 +32,18 @@ function precacheList() {
 
 export default defineConfig({
   plugins: [react(), precacheList()],
+  build: {
+    rollupOptions: {
+      output: {
+        // React and Supabase rarely change: keep them in their own files so phones keep them
+        // cached when only our own code is updated.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('@supabase')) return 'supabase';
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) return 'react';
+          return 'vendor';
+        },
+      },
+    },
+  },
 });

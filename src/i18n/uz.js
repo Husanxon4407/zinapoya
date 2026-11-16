@@ -629,4 +629,9 @@ export default {
   "Instagram": "Instagram",
   "Email": "Email",
   "Try one speaking question": "Bitta speaking savolini sinab ko‘ring",
+
+  // Try-one-question page
+  'Sign up free': 'Bepul ro‘yxatdan o‘tish',
+  'Try one Part 1.1 question': '1.1-qismdan bitta savolni sinab ko‘ring',
+  'Just like the real exam: 5 seconds to think, 30 seconds to answer.': 'Xuddi haqiqiy imtihondagidek: o‘ylash uchun 5 soniya, javob uchun 30 soniya.',
 };

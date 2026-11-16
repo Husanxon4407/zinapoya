@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { Suspense, useRef } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import LangSwitch from './LangSwitch.jsx';
@@ -79,7 +79,15 @@ export default function Layout() {
       <main className="main">
         {loadError && <p className="notice notice--warn">{loadError}</p>}
         {attemptsReady ? (
-          <Outlet />
+          <Suspense
+            fallback={
+              <div className="loading-progress">
+                <div className="spinner" />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         ) : (
           <div className="loading-progress">
             <div className="spinner" />

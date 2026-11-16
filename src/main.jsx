@@ -8,6 +8,7 @@ import './styles-games.css';
 import './styles-theme.css';
 import { applyTheme } from './lib/theme.js';
 import { registerServiceWorker } from './lib/pwa.js';
+import { getLang, loadLang } from './i18n/index.js';
 
 applyTheme();
 registerServiceWorker();
@@ -19,12 +20,15 @@ if (window.location.hostname.endsWith('.vercel.app') && window.location.hostname
   window.location.replace(`https://${MAIN_HOST}${window.location.pathname}${window.location.search}`);
 }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <BrowserRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </BrowserRouter>
-  </StrictMode>,
-);
+// Fetch the student's language first, so the very first screen is already translated.
+loadLang(getLang()).finally(() => {
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <BrowserRouter>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </BrowserRouter>
+    </StrictMode>,
+  );
+});
