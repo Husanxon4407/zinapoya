@@ -28,7 +28,7 @@ export default function AskForm() {
   }
 
   return (
-    <section className="home-sec" id="ask" aria-labelledby="ask-title">
+    <section className="home-sec home-qa__ask" id="ask" aria-labelledby="ask-title">
       <div className="home-sec__head reveal">
         <span className="eyebrow">{t('Ask us')}</span>
         <h2 id="ask-title">{t('Have a question?')}</h2>

@@ -33,8 +33,10 @@ export default function Landing() {
         <Stats />
         <HowItWorks />
         <VideoBox />
-        <Faq />
-        <AskForm />
+        <div className="home-qa">
+          <Faq />
+          <AskForm />
+        </div>
         <Contacts />
 
         <section className="home-final reveal" aria-labelledby="final-title">

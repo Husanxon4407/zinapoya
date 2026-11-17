@@ -599,6 +599,7 @@ export default {
   "A quick tour": "Qisqa tanishuv",
   "Guide video coming soon": "Yo‘riqnoma video tez orada",
   "Frequently asked questions": "Ko‘p beriladigan savollar",
+  "Quick answers to what new students ask most.": "Yangi o‘quvchilar eng ko‘p so‘raydigan savollarga qisqa javoblar.",
   "Is Zinapoya free?": "Zinapoya bepulmi?",
   "Yes. All speaking practice, recordings and AI feedback are free for our students.": "Ha. Barcha gapirish mashqlari, yozuvlar va AI fikr-mulohazasi o‘quvchilarimiz uchun bepul.",
   "Do I need to install anything?": "Biror narsa o‘rnatishim kerakmi?",

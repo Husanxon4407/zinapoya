@@ -599,6 +599,7 @@ export default {
   "A quick tour": "Краткий обзор",
   "Guide video coming soon": "Обучающее видео скоро",
   "Frequently asked questions": "Часто задаваемые вопросы",
+  "Quick answers to what new students ask most.": "Короткие ответы на самые частые вопросы новых учеников.",
   "Is Zinapoya free?": "Zinapoya бесплатна?",
   "Yes. All speaking practice, recordings and AI feedback are free for our students.": "Да. Вся практика говорения, записи и отзывы AI бесплатны для наших учеников.",
   "Do I need to install anything?": "Нужно что-то устанавливать?",

@@ -431,8 +431,8 @@
 
 /* ---------- Dark → page fade ---------- */
 .home-fade {
-  height: 34svh;
-  min-height: 220px;
+  height: 22svh;
+  min-height: 140px;
   background: linear-gradient(
     to bottom,
     var(--space-deep) 0%,
@@ -451,6 +451,9 @@
 .home-sec {
   padding: 56px 0;
   scroll-margin-top: 24px;
+}
+.home-main > .home-sec:first-child {
+  padding-top: 8px;
 }
 .home-sec__head {
   max-width: 680px;
@@ -778,14 +781,130 @@
   color: var(--muted);
 }
 
-/* FAQ, form and contacts reuse their old markup with the new look */
+/* FAQ and the question form sit side by side: answers on the left, "ask us" on the right */
+.home-qa {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 0 56px;
+  align-items: start;
+  padding: 56px 0;
+}
+.home-qa > .home-sec {
+  padding: 0;
+}
+@supports (grid-template-rows: subgrid) {
+  /* Both headings share one row, so the answers and the form start on the same line. */
+  .home-qa {
+    grid-template-rows: auto auto;
+  }
+  .home-qa > .home-sec {
+    display: grid;
+    grid-row: span 2;
+    grid-template-rows: subgrid;
+    align-content: start;
+  }
+  .home-qa .home-sec__head {
+    align-self: start;
+  }
+}
+.home-qa .home-sec__head {
+  margin-bottom: 24px;
+}
+.home-qa .home-sec__head h2 {
+  font-size: clamp(28px, 3.2vw, 42px);
+}
+.home-qa__ask .ask-form,
+.home-qa__ask .ask-thanks {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+}
 .zhome .faq-list {
-  max-width: 820px;
+  max-width: none;
+  margin: 0;
+  gap: 10px;
+}
+.zhome .faq-item {
+  border-radius: 16px;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.zhome .faq-item.is-open {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.zhome .faq-item__q {
+  padding: 18px 20px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.zhome .faq-item__a {
+  padding: 0 20px 18px;
+  animation: rise 0.35s ease;
+}
+.zhome .faq-item__icon {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  transition: transform 0.3s, background 0.25s;
+}
+.zhome .faq-item__icon::before,
+.zhome .faq-item__icon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 2px;
+  margin: -1px 0 0 -5.5px;
+  border-radius: 2px;
+  background: var(--text);
+}
+.zhome .faq-item__icon::after {
+  transform: rotate(90deg);
+  transition: transform 0.3s;
+}
+.zhome .faq-item.is-open .faq-item__icon {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-color: transparent;
+}
+.zhome .faq-item.is-open .faq-item__icon::after {
+  transform: rotate(0deg);
 }
 .zhome .ask-form,
 .zhome .ask-thanks {
-  max-width: 820px;
+  max-width: none;
   margin: 0;
+  padding: 26px;
+  background:
+    radial-gradient(ellipse 80% 60% at 100% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    var(--card);
+}
+.zhome .ask-form__row {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 900px) {
+  .home-qa,
+  .home-qa > .home-sec {
+    grid-template-rows: none;
+    grid-row: auto;
+  }
+  .home-qa {
+    grid-template-columns: 1fr;
+    gap: 64px 0;
+    padding: 40px 0;
+  }
+  .home-qa__ask .ask-form,
+  .home-qa__ask .ask-thanks {
+    position: static;
+  }
+}
+@media (min-width: 560px) and (max-width: 900px) {
+  .zhome .ask-form__row {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 .zhome .contact-tile {
   transition: transform 0.25s, opacity 0.7s ease;
