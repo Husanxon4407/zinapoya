@@ -3,7 +3,7 @@
   "short_name": "Zinapoya",
   "description": "Learn languages, prepare for IELTS, TOEFL, CEFR Multilevel and SAT, and study school subjects — step by step with an AI coach.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/my",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

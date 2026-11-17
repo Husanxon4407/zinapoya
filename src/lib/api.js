@@ -17,9 +17,17 @@ const uuid = () => crypto.randomUUID();
 /* ------------------------------------------------------------------ */
 /* Supabase implementation                                             */
 /* ------------------------------------------------------------------ */
-// `area` = the learning area the student chose (cefr, ielts, …); saved on the account itself.
+// Learning areas live on the account itself: `areas` = the ones the student joined (cefr, ielts…),
+// `area` = the one opened last. Older accounts only have `area`.
+const joinedAreas = (meta = {}) => (Array.isArray(meta.areas) ? meta.areas : meta.area ? [meta.area] : []);
 const toUser = (u) =>
-  u && { id: u.id, email: u.email, name: u.user_metadata?.full_name || u.email.split('@')[0], area: u.user_metadata?.area || null };
+  u && {
+    id: u.id,
+    email: u.email,
+    name: u.user_metadata?.full_name || u.email.split('@')[0],
+    area: u.user_metadata?.area || null,
+    areas: joinedAreas(u.user_metadata),
+  };
 
 const remote = {
   async getUser() {
@@ -34,7 +42,7 @@ const remote = {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name, ...(area ? { area } : {}) }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: name, ...(area ? { area, areas: [area] } : {}) }, emailRedirectTo: window.location.origin },
     });
     if (error) throw error;
     return { user: toUser(data.user), needsConfirmation: !data.session };
@@ -51,9 +59,9 @@ const remote = {
   async signOut() {
     await supabase.auth.signOut();
   },
-  // Choose (or switch) the learning area. The auth listener then delivers the updated user.
-  async setArea(area) {
-    const { data, error } = await supabase.auth.updateUser({ data: { area } });
+  // Save the joined areas and the current one. The auth listener then delivers the updated user.
+  async saveAreas(areas, area) {
+    const { data, error } = await supabase.auth.updateUser({ data: { areas, area } });
     if (error) throw error;
     return toUser(data.user);
   },
@@ -197,14 +205,15 @@ const remote = {
     const { error } = await supabase.from('bookmarks').delete().eq('id', id);
     if (error) throw error;
   },
-  // Profile (name, photo, role). Falls back to the account data if the profiles table is not set up yet.
+  // Profile (name, photo, role and the "About you" answers). Falls back to the account data if the
+  // profiles table is not set up yet. ("About you" fields only exist after migration 09.)
   async getProfile(user) {
-    const { data } = await supabase.from('profiles').select('id, name, avatar_url, role').eq('id', user.id).maybeSingle();
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
     return data || { id: user.id, name: user.name, avatar_url: null, role: 'student' };
   },
   async updateProfile(patch) {
     const { data: auth } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('profiles').update(patch).eq('id', auth.user.id).select('id, name, avatar_url, role').single();
+    const { data, error } = await supabase.from('profiles').update(patch).eq('id', auth.user.id).select('*').single();
     if (error) throw error;
     if (patch.name) await supabase.auth.updateUser({ data: { full_name: patch.name } });
     return data;
@@ -312,7 +321,7 @@ remote.teacher = {
     const { error } = await supabase.from('site_questions').update({ answered: true, answer: answer || null }).eq('id', id);
     if (error) throw error;
   },
-  // [{ id, area, joined_at }] for every student (area comes from their login data).
+  // [{ id, areas, joined_at }] for every student (areas come from their login data).
   async studentAreas() {
     const { data, error } = await supabase.rpc('teacher_student_areas');
     if (error) throw notSetUp(error) ? new Error('Area numbers are not set up yet. Run the latest database update (08_student_areas.sql).') : error;
@@ -420,12 +429,15 @@ async function hash(s) {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+// The "About you" answers (profiles columns from migration 09).
+const ABOUT_FIELDS = ['goal', 'level', 'exam_date', 'age_range', 'phone', 'onboarded_at'];
+
 const listeners = new Set();
 const currentLocalUser = () => {
   const id = ls.get('su_session', null);
   const users = ls.get('su_users', {});
   const u = Object.values(users).find((x) => x.id === id);
-  return u ? { id: u.id, email: u.email, name: u.name, area: u.area || null } : null;
+  return u ? { id: u.id, email: u.email, name: u.name, area: u.area || null, areas: u.areas || (u.area ? [u.area] : []) } : null;
 };
 const emit = () => listeners.forEach((cb) => cb(currentLocalUser()));
 const attemptsKey = () => `su_attempts_${ls.get('su_session', '')}`;
@@ -444,7 +456,7 @@ const local = {
     const users = ls.get('su_users', {});
     const key = email.trim().toLowerCase();
     if (users[key]) throw new Error('An account with this email already exists on this device.');
-    users[key] = { id: uuid(), email: key, name, password: await hash(password), area: area || null };
+    users[key] = { id: uuid(), email: key, name, password: await hash(password), area: area || null, areas: area ? [area] : [] };
     ls.set('su_users', users);
     ls.set('su_session', users[key].id);
     emit();
@@ -464,10 +476,11 @@ const local = {
     ls.set('su_session', null);
     emit();
   },
-  async setArea(area) {
+  async saveAreas(areas, area) {
     const users = ls.get('su_users', {});
     const u = Object.values(users).find((x) => x.id === ls.get('su_session', null));
     if (!u) throw new Error('Please log in again.');
+    u.areas = areas;
     u.area = area;
     ls.set('su_users', users);
     emit();
@@ -530,7 +543,8 @@ const local = {
   },
   async getProfile(user) {
     const p = ls.get(`su_profile_${user.id}`, {});
-    return { id: user.id, name: p.name || user.name, avatar_url: p.avatar_url || null, role: p.role || 'student' };
+    const about = Object.fromEntries(ABOUT_FIELDS.map((k) => [k, p[k] ?? null]));
+    return { id: user.id, name: p.name || user.name, avatar_url: p.avatar_url || null, role: p.role || 'student', ...about };
   },
   async updateProfile(patch) {
     const u = currentLocalUser();
@@ -574,7 +588,7 @@ local.teacher = {
   answerQuestion: async (id, answer) => ls.set('su_questions', ls.get('su_questions', []).map((q) => (q.id === id ? { ...q, answered: true, answer } : q))),
   studentAreas: async () => {
     const byId = Object.fromEntries(Object.values(ls.get('su_users', {})).map((u) => [u.id, u]));
-    return localStudents().map((u) => ({ id: u.id, area: byId[u.id]?.area || 'cefr', joined_at: null }));
+    return localStudents().map((u) => ({ id: u.id, areas: byId[u.id]?.areas?.length ? byId[u.id].areas : [byId[u.id]?.area || 'cefr'], joined_at: null }));
   },
 };
 

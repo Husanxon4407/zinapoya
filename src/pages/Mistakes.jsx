@@ -152,7 +152,7 @@ export default function Mistakes() {
       {ready && all.length === 0 && (
         <div className="card">
           <p>{t('No mistakes collected yet. Record an answer and press “✨ Get AI feedback”. Your corrections will appear here.')}</p>
-          <Link className="btn" to="/">
+          <Link className="btn" to="/cefr">
             {t('Start practising')}
           </Link>
         </div>

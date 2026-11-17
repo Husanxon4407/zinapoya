@@ -150,7 +150,8 @@ function AreasPanel({ areas, error }) {
   if (!areas) return null;
   const weekAgo = Date.now() - 7 * DAY;
   const rows = AREAS.map((a) => {
-    const list = areas.filter((x) => x.area === a.id);
+    // A student can join several areas, so they count in each one.
+    const list = areas.filter((x) => (x.areas || [x.area]).includes(a.id));
     return { ...a, count: list.length, week: list.filter((x) => x.joined_at && new Date(x.joined_at).getTime() > weekAgo).length };
   }).sort((a, b) => b.count - a.count);
   const max = Math.max(1, ...rows.map((r) => r.count));
@@ -178,7 +179,7 @@ function AreasPanel({ areas, error }) {
       <p className="muted small">
         {wanted
           ? `Most wanted area that is not built yet: ${wanted.emoji} ${wanted.short} (${wanted.count} student${wanted.count === 1 ? '' : 's'}).`
-          : 'Students who joined before areas existed count as CEFR.'}
+          : 'Students can join several areas. Those who joined before areas existed count as CEFR.'}
       </p>
     </div>
   );
@@ -228,7 +229,7 @@ export default function Teacher() {
   }, [students, attempts]);
 
   if (guard === 'loading') return <div className="spinner" />;
-  if (guard === 'no') return <Navigate to="/" replace />;
+  if (guard === 'no') return <Navigate to="/my" replace />;
 
   const q = query.trim().toLowerCase();
   const shown = rows.filter((r) => r.name.toLowerCase().includes(q)).sort(SORTS[sort][1]);
@@ -344,7 +345,7 @@ export function TeacherStudent() {
   const stats = useMemo(() => computeStats(attempts || []), [attempts]);
 
   if (guard === 'loading') return <div className="spinner" />;
-  if (guard === 'no') return <Navigate to="/" replace />;
+  if (guard === 'no') return <Navigate to="/my" replace />;
 
   const avg = recentAvg(attempts || []);
   const list = (attempts || []).filter((a) => !onlyFeedback || a.feedback);

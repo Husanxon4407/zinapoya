@@ -13,7 +13,7 @@ export default function Privacy({ inApp = false }) {
       )}
       <div className="card">
         <h1>Privacy policy</h1>
-        <p className="muted">Last updated: 17 October 2026</p>
+        <p className="muted">Last updated: 17 November 2026</p>
 
         <p>
           Zinapoya is a free website made by an English teacher to help students practise for the Multilevel (CEFR) speaking exam. This page
@@ -24,6 +24,11 @@ export default function Privacy({ inApp = false }) {
         <ul>
           <li>
             <strong>Your account:</strong> your name, email address and profile photo (if you add one, or if you sign in with Google).
+          </li>
+          <li>
+            <strong>About you (all optional):</strong> the areas you study, your goal, your level, your exam date, your age range (not your
+            birthday) and your phone number. We use them to suggest the right practice, count down to your exam and, if you give your phone
+            number, to send reminders and important news about your lessons. Never for ads.
           </li>
           <li>
             <strong>Your practice:</strong> your voice recordings (only the newest 30), the text of what you said, your scores and the AI
@@ -40,7 +45,7 @@ export default function Privacy({ inApp = false }) {
         <h2>Who can see it</h2>
         <ul>
           <li>You.</li>
-          <li>Your teacher, who can see your answers, recordings and scores to help you improve.</li>
+          <li>Your teacher, who can see your answers, recordings, scores and your “About you” answers to help you improve.</li>
           <li>
             Other students only see your name, photo and weekly points if you are in this week’s top 10 on the leaderboard. They never see your
             answers or recordings.

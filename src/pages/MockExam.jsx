@@ -34,7 +34,7 @@ export function MockExam() {
   const t = useT();
   return (
     <div>
-      <Link to="/" className="back">
+      <Link to="/cefr" className="back">
         ← {t('Home')}
       </Link>
       <ExamRunner
@@ -71,7 +71,7 @@ export function Workout() {
   const t = useT();
   return (
     <div>
-      <Link to="/" className="back">
+      <Link to="/cefr" className="back">
         ← {t('Home')}
       </Link>
       <ExamRunner

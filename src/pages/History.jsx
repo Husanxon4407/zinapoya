@@ -114,7 +114,7 @@ export default function History() {
       ) : list.length === 0 ? (
         <div className="card empty">
           <p>{t('No answers yet. Your recordings, transcripts and feedback will appear here.')}</p>
-          <Link to="/" className="btn">
+          <Link to="/cefr" className="btn">
             {t('Start practising')}
           </Link>
         </div>

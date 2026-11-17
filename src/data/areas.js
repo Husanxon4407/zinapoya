@@ -106,3 +106,5 @@ export const AREAS = [
 export const DEFAULT_AREA = 'cefr';
 export const areaById = (id) => AREAS.find((a) => a.id === id) || null;
 export const isArea = (id) => AREAS.some((a) => a.id === id);
+// Each area's main page has its own address: /cefr, /ielts, /sat…
+export const areaPath = (id) => `/${id}`;

@@ -35,7 +35,7 @@ export default function PartPage() {
     return m;
   }, [attempts, key]);
 
-  if (!part) return <Navigate to="/" replace />;
+  if (!part) return <Navigate to="/cefr" replace />;
 
   const items = itemsFor(key).map((it) => {
     const hits = it.match.map((id) => best[id]).filter(Boolean);

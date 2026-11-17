@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../state.jsx';
+import JoinBar from '../components/JoinBar.jsx';
 import { PARTS, PART_KEYS } from '../data/parts.js';
 import { PART_TOTALS } from '../lib/steps.js';
 import ProgressRing from '../components/ProgressRing.jsx';
@@ -77,16 +78,17 @@ export default function Home() {
   return (
     <div className="home">
       <div className="home__main">
+        <JoinBar areaId="cefr" />
         <section className="welcome">
           <div>
             <h1>
-              {t(greeting())}, {(profile?.name || user.name).split(' ')[0]}! 👋
+              {user ? `${t(greeting())}, ${(profile?.name || user.name).split(' ')[0]}!` : t('CEFR Multilevel Speaking')} 👋
             </h1>
             <p className="muted">
               {stats.todayCount === 0 ? t('Ready for today’s speaking practice?') : t('Answers today: {n}. Keep going!', { n: stats.todayCount })}
             </p>
           </div>
-          <div className="welcome__stats">
+          {user && <div className="welcome__stats">
             <div className="stat">
               <strong>🔥 {stats.streak}</strong>
               <small>{t('day streak')}</small>
@@ -99,7 +101,7 @@ export default function Home() {
               <strong>⏱️ {stats.minutes}</strong>
               <small>{t('minutes')}</small>
             </div>
-          </div>
+          </div>}
         </section>
 
         <Link
@@ -203,7 +205,7 @@ export default function Home() {
       </aside>
 
       <aside className="home__side" aria-label={t('More')}>
-        <TopThree board={board} />
+        {user && <TopThree board={board} />}
 
         {mistakes.ready && mistakes.todo.length > 0 && (
           <Link to="/mistakes" className="card side-card mistakes-card">

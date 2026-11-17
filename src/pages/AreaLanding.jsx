@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Logo from '../components/Logo.jsx';
 import LangSwitch from '../components/LangSwitch.jsx';
 import AreaVisual from '../components/areas/AreaVisual.jsx';
-import { AREAS, areaById } from '../data/areas.js';
+import { AREAS, areaById, areaPath } from '../data/areas.js';
 import { SPOTLIGHT } from '../data/site.js';
 import { useReveal } from '../lib/useReveal.js';
 import { useApp } from '../state.jsx';
@@ -25,7 +25,7 @@ export default function AreaLanding() {
   const area = areaById(id);
   const t = useT();
   const navigate = useNavigate();
-  const { user, area: myArea, chooseArea } = useApp();
+  const { user, areas, joinArea } = useApp();
   const pageRef = useRef(null);
   const [busy, setBusy] = useState(false);
   useReveal(pageRef);
@@ -40,13 +40,14 @@ export default function AreaLanding() {
   if (!area) return <Navigate to="/" replace />;
 
   const name = t(area.name);
-  const mine = user && myArea === area.id;
+  const mine = user && areas.includes(area.id);
 
-  async function switchHere() {
+  // Already have an account? Joining another area is one tap — no new registration.
+  async function joinHere() {
     setBusy(true);
     try {
-      await chooseArea(area.id);
-      navigate('/');
+      await joinArea(area.id);
+      navigate(areaPath(area.id));
     } catch (e) {
       alert(e.message);
       setBusy(false);
@@ -58,12 +59,12 @@ export default function AreaLanding() {
       {t('Register for {name}', { name })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
     </Link>
   ) : mine ? (
-    <Link to="/" className="zbtn">
+    <Link to={areaPath(area.id)} className="zbtn">
       {t('Open my {name} page', { name })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
     </Link>
   ) : (
-    <button type="button" className="zbtn" onClick={switchHere} disabled={busy}>
-      {t('Switch to {name}', { name })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
+    <button type="button" className="zbtn" onClick={joinHere} disabled={busy}>
+      {busy ? t('Joining…') : t('Join {name} — free', { name })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
     </button>
   );
 
@@ -84,8 +85,8 @@ export default function AreaLanding() {
               </Link>
             )}
             {user && (
-              <Link to="/" className="hero3d__link">
-                {t('My page')}
+              <Link to="/my" className="hero3d__link">
+                {t('My learning')}
               </Link>
             )}
           </nav>
@@ -114,7 +115,12 @@ export default function AreaLanding() {
             </div>
             <div className="hero3d__cta rise" style={{ '--d': 4 }}>
               {primary}
-              {area.ready && (
+              {!mine && (
+                <Link to={areaPath(area.id)} className="hero3d__try">
+                  {t('Look inside first')} →
+                </Link>
+              )}
+              {!user && area.ready && (
                 <Link to="/try" className="hero3d__try">
                   🎤 {t('Try a speaking question')}
                 </Link>

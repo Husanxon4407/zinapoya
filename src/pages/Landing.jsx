@@ -14,11 +14,13 @@ import ThemeToggle from '../components/ThemeToggle.jsx';
 import { useReveal } from '../lib/useReveal.js';
 import { TAGLINE } from '../data/site.js';
 import { useT } from '../i18n/index.js';
+import { useApp } from '../state.jsx';
 import '../styles-home.css';
 
 // The public main page: a dark 3D opening screen, a fade into the page, then what Zinapoya offers.
 export default function Landing() {
   const t = useT();
+  const { user } = useApp();
   const pageRef = useRef(null);
   useReveal(pageRef);
 
@@ -40,10 +42,10 @@ export default function Landing() {
         <Contacts />
 
         <section className="home-final reveal" aria-labelledby="final-title">
-          <h2 id="final-title">{t('Ready for your first step?')}</h2>
-          <p>{t('It takes less than a minute to start, and it is free.')}</p>
-          <Link to="/signup" className="zbtn">
-            {t('Start learning free')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
+          <h2 id="final-title">{user ? t('Ready for your next step?') : t('Ready for your first step?')}</h2>
+          <p>{user ? t('Your areas and progress are waiting in My learning.') : t('It takes less than a minute to start, and it is free.')}</p>
+          <Link to={user ? '/my' : '/signup'} className="zbtn">
+            {user ? t('Go to My learning') : t('Start learning free')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
           </Link>
         </section>
       </main>

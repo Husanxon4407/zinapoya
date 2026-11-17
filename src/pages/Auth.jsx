@@ -7,8 +7,8 @@ import { blobToDataUrl } from '../lib/image.js';
 import LangSwitch from '../components/LangSwitch.jsx';
 import { useT } from '../i18n/index.js';
 import Logo from '../components/Logo.jsx';
-import { AREAS, isArea } from '../data/areas.js';
-import { setPendingArea } from '../lib/area.js';
+import { areaById, areaPath, isArea } from '../data/areas.js';
+import { safePath, setNextPath, setPendingArea } from '../lib/area.js';
 
 function AuthShell({ title, subtitle, children }) {
   const t = useT();
@@ -37,29 +37,25 @@ function useAreaFromUrl() {
   return isArea(fromUrl) ? fromUrl : null;
 }
 
-// "Which area do you want to study?" — big tappable choices.
-function AreaPicker({ value, onChange }) {
+// The page to open after logging in (?next=…, set by pages that need an account).
+function useNextFromUrl() {
+  const [params] = useSearchParams();
+  return safePath(params.get('next'));
+}
+
+// "You are joining IELTS" — shown when the visitor came from an area's Register button.
+function AreaNote({ area }) {
   const t = useT();
+  const a = areaById(area);
+  if (!a) return null;
   return (
-    <fieldset className="area-pick">
-      <legend>{t('What do you want to study?')}</legend>
-      <div className="area-pick__grid">
-        {AREAS.map((a) => (
-          <label key={a.id} className={`area-pick__item ${value === a.id ? 'is-on' : ''}`} style={{ '--ac': a.theme.accent, '--ab': a.theme.bg2 }}>
-            <input type="radio" name="area" value={a.id} checked={value === a.id} onChange={() => onChange(a.id)} />
-            <span className="area-pick__emoji" aria-hidden="true">
-              {a.emoji}
-            </span>
-            <span className="area-pick__name">{t(a.short)}</span>
-            {a.ready && <span className="area-pick__live">{t('Open now')}</span>}
-          </label>
-        ))}
-      </div>
-    </fieldset>
+    <p className="auth__area" style={{ '--ac': a.theme.accent }}>
+      <span aria-hidden="true">{a.emoji}</span> {t('You are joining {name}. One account works for every area.', { name: t(a.name) })}
+    </p>
   );
 }
 
-function GoogleButton({ area, requireArea = false, onMissingArea }) {
+function GoogleButton({ area, next }) {
   const t = useT();
   if (isLocalMode) return null;
   return (
@@ -68,12 +64,9 @@ function GoogleButton({ area, requireArea = false, onMissingArea }) {
         type="button"
         className="btn btn--outline btn--block"
         onClick={() => {
-          if (requireArea && !area) {
-            onMissingArea?.();
-            return;
-          }
-          // Google leaves the site; the area waits in this browser until we are back.
+          // Google leaves the site; the area and the page to open wait in this browser until we are back.
           setPendingArea(area); // (no area clears an old choice)
+          setNextPath(next || '/my');
           api.signInWithGoogle().catch((e) => alert(e.message));
         }}
       >
@@ -96,9 +89,9 @@ export function signInErrorFromUrl() {
 
 export function Login() {
   const t = useT();
-  const navigate = useNavigate();
-  // Logging in from an area page ("Log in" on /learn/ielts) opens that area afterwards.
+  // Logging in from an area page ("Log in" on /learn/ielts) joins and opens that area afterwards.
   const area = useAreaFromUrl();
+  const next = useNextFromUrl();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(signInErrorFromUrl);
@@ -110,8 +103,8 @@ export function Login() {
     setError('');
     try {
       setPendingArea(area);
-      await api.signIn({ email, password });
-      navigate('/');
+      setNextPath(next || (area ? areaPath(area) : '/my'));
+      await api.signIn({ email, password }); // then App sends the student on (see AuthFlow)
     } catch (err) {
       setError(err.message);
     } finally {
@@ -121,7 +114,7 @@ export function Login() {
 
   return (
     <AuthShell title="Welcome back 👋" subtitle="Log in to continue your practice.">
-      <GoogleButton area={area} />
+      <GoogleButton area={area} next={next || (area ? areaPath(area) : '/my')} />
       <form onSubmit={submit} className="form">
         <label>
           {t('Email')}
@@ -137,7 +130,7 @@ export function Login() {
         </button>
       </form>
       <p className="auth__links">
-        <Link to="/forgot">{t('Forgot password?')}</Link> · <Link to={area ? `/signup?area=${area}` : '/signup'}>{t('Create an account')}</Link>
+        <Link to="/forgot">{t('Forgot password?')}</Link> · <Link to={`/signup${window.location.search}`} replace>{t('Create an account')}</Link>
       </p>
     </AuthShell>
   );
@@ -145,7 +138,9 @@ export function Login() {
 
 export function Signup() {
   const t = useT();
-  const navigate = useNavigate();
+  const next = useNextFromUrl();
+  const area = useAreaFromUrl();
+  const after = next || (area ? areaPath(area) : '/my');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -153,24 +148,19 @@ export function Signup() {
   const [busy, setBusy] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
   const [photo, setPhoto] = useState(null); // data URL of the chosen photo
-  const [area, setArea] = useState(useAreaFromUrl() || '');
 
   async function submit(e) {
     e.preventDefault();
-    if (!area) {
-      setError('Please choose what you want to study.');
-      return;
-    }
     setBusy(true);
     setError('');
     try {
       setPendingArea(area);
+      setNextPath(after); // also used when they come back from the email confirmation link
       // The photo is uploaded right after the first login (see state.jsx).
       if (photo) localStorage.setItem(PENDING_AVATAR, photo);
       else localStorage.removeItem(PENDING_AVATAR);
       const { needsConfirmation } = await api.signUp({ name: name.trim(), email, password, area });
-      if (needsConfirmation) setCheckEmail(true);
-      else navigate('/');
+      if (needsConfirmation) setCheckEmail(true); // otherwise App sends them on (see AuthFlow)
     } catch (err) {
       localStorage.removeItem(PENDING_AVATAR);
       setError(err.message);
@@ -185,7 +175,7 @@ export function Signup() {
         <p>
           {t('We sent a confirmation link to')} <strong>{email}</strong>. {t('Click it, then come back and log in.')}
         </p>
-        <Link className="btn btn--block" to="/login">
+        <Link className="btn btn--block" to={`/login${window.location.search}`}>
           {t('Go to log in')}
         </Link>
       </AuthShell>
@@ -194,15 +184,8 @@ export function Signup() {
 
   return (
     <AuthShell title="Create your account" subtitle="Free. Your progress is saved and you can log in from any device.">
-      <AreaPicker
-        value={area}
-        onChange={(id) => {
-          setArea(id);
-          setError('');
-        }}
-      />
-      {error === 'Please choose what you want to study.' && <p className="notice notice--warn">{t(error)}</p>}
-      <GoogleButton area={area} requireArea onMissingArea={() => setError('Please choose what you want to study.')} />
+      <AreaNote area={area} />
+      <GoogleButton area={area} next={after} />
       <form onSubmit={submit} className="form">
         <AvatarPicker
           name={name}
@@ -223,13 +206,13 @@ export function Signup() {
           {t('Password')} <small className="muted">({t('at least 6 characters')})</small>
           <input type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
         </label>
-        {error && error !== 'Please choose what you want to study.' && <p className="notice notice--warn">{t(error)}</p>}
+        {error && <p className="notice notice--warn">{t(error)}</p>}
         <button className="btn btn--block" disabled={busy}>
           {busy ? t('Creating…') : t('Sign up')}
         </button>
       </form>
       <p className="auth__links">
-        {t('Already have an account?')} <Link to={area ? `/login?area=${area}` : '/login'}>{t('Log in')}</Link>
+        {t('Already have an account?')} <Link to={`/login${window.location.search}`} replace>{t('Log in')}</Link>
       </p>
       <p className="auth__links">
         <Link to="/privacy">{t('Privacy policy')}</Link>
@@ -288,7 +271,7 @@ export function ResetPassword() {
     try {
       await api.updatePassword(password);
       setRecovering(false);
-      navigate('/');
+      navigate('/my', { replace: true });
     } catch (err) {
       setError(err.message);
     }

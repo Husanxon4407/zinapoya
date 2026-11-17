@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo, { LogoMark } from '../Logo.jsx';
 import LangSwitch from '../LangSwitch.jsx';
-import { AREAS } from '../../data/areas.js';
+import { AREAS, areaPath } from '../../data/areas.js';
+import { useApp } from '../../state.jsx';
 import { useFitText } from '../../lib/useFitText.js';
 import { useLang, useT } from '../../i18n/index.js';
 
@@ -23,6 +24,7 @@ const hasWebGL = () => {
 // The area buttons recolour the staircase and relabel its steps; each leads to that area's page.
 export default function Hero() {
   const t = useT();
+  const { user, areas } = useApp();
   const lang = useLang();
   const stageRef = useRef(null);
   const sceneRef = useRef(null);
@@ -113,12 +115,20 @@ export default function Hero() {
         </Link>
         <nav className="hero3d__nav">
           <LangSwitch />
-          <Link to="/login" className="hero3d__link">
-            {t('Log in')}
-          </Link>
-          <Link to="/signup" className="zbtn zbtn--small hero3d__signup">
-            {t('Start free')} <span aria-hidden="true">↗</span>
-          </Link>
+          {user ? (
+            <Link to="/my" className="zbtn zbtn--small hero3d__signup">
+              {t('My learning')} <span aria-hidden="true">↗</span>
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="hero3d__link">
+                {t('Log in')}
+              </Link>
+              <Link to="/signup" className="zbtn zbtn--small hero3d__signup">
+                {t('Start free')} <span aria-hidden="true">↗</span>
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 
@@ -155,9 +165,15 @@ export default function Hero() {
               <Link to={`/learn/${area.id}`} className="zbtn">
                 {t('Explore {name}', { name: t(area.short) })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
               </Link>
-              <Link to={`/signup?area=${area.id}`} className="hero3d__try">
-                {t('Register for {name}', { name: t(area.short) })}
-              </Link>
+              {user ? (
+                <Link to={areaPath(area.id)} className="hero3d__try">
+                  {areas.includes(area.id) ? t('Open {name}', { name: t(area.short) }) : t('Look inside {name}', { name: t(area.short) })}
+                </Link>
+              ) : (
+                <Link to={`/signup?area=${area.id}`} className="hero3d__try">
+                  {t('Register for {name}', { name: t(area.short) })}
+                </Link>
+              )}
             </div>
           </div>
         </div>

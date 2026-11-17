@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { SPOTLIGHT } from '../../data/site.js';
 import { useT } from '../../i18n/index.js';
+import { useApp } from '../../state.jsx';
 
 const PARTS = [
   ['1.1', 'Short questions'],
@@ -12,6 +13,7 @@ const PARTS = [
 // The part that already works today: CEFR Multilevel Speaking.
 export default function Spotlight() {
   const t = useT();
+  const { user } = useApp();
   return (
     <section className="home-sec" id="now" aria-labelledby="now-title">
       <div className="spotlight reveal">
@@ -30,12 +32,20 @@ export default function Spotlight() {
             ))}
           </ul>
           <div className="spotlight__cta">
-            <Link to="/try" className="zbtn">
-              🎤 {t('Try one question')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
-            </Link>
-            <Link to="/signup" className="text-link">
-              {t('Create a free account')} →
-            </Link>
+            {user ? (
+              <Link to="/cefr" className="zbtn">
+                🎤 {t('Open CEFR practice')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
+              </Link>
+            ) : (
+              <>
+                <Link to="/try" className="zbtn">
+                  🎤 {t('Try one question')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
+                </Link>
+                <Link to="/cefr" className="text-link">
+                  {t('Look inside CEFR')} →
+                </Link>
+              </>
+            )}
           </div>
         </div>
         <ol className="spotlight__parts" aria-label={t('The four Speaking parts')}>

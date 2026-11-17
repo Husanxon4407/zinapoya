@@ -1,5 +1,5 @@
 import { Suspense, useRef } from 'react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import LangSwitch from './LangSwitch.jsx';
 import { useT } from '../i18n/index.js';
@@ -9,62 +9,89 @@ import SoundControls from './SoundControls.jsx';
 import CoachChat from './CoachChat.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import Logo from './Logo.jsx';
-import { AREAS, areaById } from '../data/areas.js';
+import { AREAS, areaById, areaPath } from '../data/areas.js';
 
-const LINKS = [
-  ['/', '🏠', 'Home'],
+const CEFR_LINKS = [
+  ['/cefr', '🏠', 'Home'],
   ['/games', '🎮', 'Games'],
   ['/vocab', '📚', 'Words'],
   ['/progress', '📈', 'Progress'],
   ['/history', '🗂️', 'History'],
 ];
+const GUEST_HIDDEN = ['/progress', '/history'];
+// Links that stay lit on their inner pages too (/games/quiz lights "Games").
+const SECTIONS = ['/games', '/vocab', '/teacher'];
+const GENERAL = ['/my', '/profile', '/teacher', '/privacy', '/reset-password'];
+
+// Which area the open page belongs to: /ielts → IELTS; games, words, practice… → CEFR;
+// My learning, profile and the teacher's class belong to no area.
+function useRouteArea() {
+  const { pathname } = useLocation();
+  if (GENERAL.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
+  const other = AREAS.find((a) => a.id !== 'cefr' && pathname === areaPath(a.id));
+  return other ? other.id : 'cefr';
+}
 
 export default function Layout() {
-  const { user, profile, stats, attemptsReady, loadError, area } = useApp();
+  const { user, profile, stats, attemptsReady, loadError, areas } = useApp();
   const navigate = useNavigate();
   const t = useT();
   const menuRef = useRef(null);
   const areaMenuRef = useRef(null);
-  const name = profile?.name || user.name;
-  const current = areaById(area);
+  const routeArea = useRouteArea();
+  const current = routeArea && areaById(routeArea);
+  const name = profile?.name || user?.name || '';
   // Games, words, progress… belong to CEFR practice; other areas get their own pages later.
-  const isCefr = area === 'cefr';
-  const base = isCefr ? LINKS : [['/', current.emoji, 'Home']];
-  const links = profile?.role === 'teacher' ? [...base, ['/teacher', '🧑‍🏫', 'Class']] : base;
+  const isCefr = routeArea === 'cefr';
+  let links = isCefr ? CEFR_LINKS : current ? [[areaPath(current.id), current.emoji, 'Home']] : [];
+  if (!user) links = links.filter(([to]) => !GUEST_HIDDEN.includes(to));
+  if (user) links = [...links, ['/my', '🧭', 'My learning']];
+  if (profile?.role === 'teacher') links = [...links, ['/teacher', '🧑‍🏫', 'Class']];
+  const closeAreaMenu = () => areaMenuRef.current?.removeAttribute('open');
+  // The switcher lists the student's own areas first; guests see all of them.
+  const menuAreas = user ? AREAS.filter((a) => areas.includes(a.id)) : AREAS;
 
   return (
     <div className="app">
       <header className="topbar">
-        <NavLink to="/" className="logo">
+        <Link to="/" className="logo" title={t('Zinapoya homepage')}>
           <Logo />
-        </NavLink>
+        </Link>
         <details className="areamenu" ref={areaMenuRef}>
-          <summary aria-label={t('Change area')} style={{ '--ac': current.theme.accent }}>
-            <span aria-hidden="true">{current.emoji}</span>
-            <span className="areamenu__name">{t(current.short)}</span>
+          <summary aria-label={t('Change area')} style={{ '--ac': current?.theme.accent || '#94a3b8' }}>
+            <span aria-hidden="true">{current ? current.emoji : '🧭'}</span>
+            <span className="areamenu__name">{current ? t(current.short) : t('My learning')}</span>
             <span aria-hidden="true" className="areamenu__caret">
               ▾
             </span>
           </summary>
           <div className="areamenu__panel">
-            <small>{t('Your area')}</small>
-            {AREAS.map((a) => (
+            {user && (
+              <Link to="/my" className={!current ? 'is-on' : ''} onClick={closeAreaMenu}>
+                <span aria-hidden="true">🧭</span> {t('My learning')}
+              </Link>
+            )}
+            <small>{user ? t('My areas') : t('Areas')}</small>
+            {menuAreas.map((a) => (
               <Link
                 key={a.id}
-                to={`/learn/${a.id}`}
-                className={a.id === area ? 'is-on' : ''}
+                to={areaPath(a.id)}
+                className={a.id === routeArea ? 'is-on' : ''}
                 style={{ '--ac': a.theme.accent }}
-                onClick={() => areaMenuRef.current?.removeAttribute('open')}
+                onClick={closeAreaMenu}
               >
                 <span aria-hidden="true">{a.emoji}</span> {t(a.name)}
-                {a.id === area && <span className="areamenu__check">✓</span>}
+                {a.id === routeArea && <span className="areamenu__check">✓</span>}
               </Link>
             ))}
+            <Link to="/" className="areamenu__all" onClick={closeAreaMenu}>
+              ✨ {user ? t('Join another area') : t('Zinapoya homepage')}
+            </Link>
           </div>
         </details>
         <nav className="topnav">
           {links.map(([to, icon, label]) => (
-            <NavLink key={to} to={to} end={to === '/'} title={t(label)}>
+            <NavLink key={to} to={to} end={!SECTIONS.includes(to)} title={t(label)}>
               <span aria-hidden="true">{icon}</span>
               <span className="topnav__label">{t(label)}</span>
             </NavLink>
@@ -74,33 +101,60 @@ export default function Layout() {
           <LangSwitch />
           <ThemeToggle />
           <SoundControls />
-          <span className="streak" title={t('Days in a row')}>🔥 {stats.streak}</span>
-          <details className="usermenu" ref={menuRef}>
-            <summary aria-label={t('Account menu')}>
-              <Avatar name={name} url={profile?.avatar_url} size={40} />
-            </summary>
-            <div className="usermenu__panel">
-              <strong>{name}</strong>
-              <small>{user.email}</small>
-              <Link className="btn btn--small" to="/profile" onClick={() => menuRef.current?.removeAttribute('open')}>
-                👤 {t('My profile')}
+          {user ? (
+            <>
+              <span className="streak" title={t('Days in a row')}>🔥 {stats.streak}</span>
+              <details className="usermenu" ref={menuRef}>
+                <summary aria-label={t('Account menu')}>
+                  <Avatar name={name} url={profile?.avatar_url} size={40} />
+                </summary>
+                <div className="usermenu__panel">
+                  <strong>{name}</strong>
+                  <small>{user.email}</small>
+                  <Link className="btn btn--small" to="/profile" onClick={() => menuRef.current?.removeAttribute('open')}>
+                    👤 {t('My profile')}
+                  </Link>
+                  {profile && 'onboarded_at' in profile && (
+                    <Link className="btn btn--ghost btn--small" to="/welcome?edit=1&next=%2Fmy" onClick={() => menuRef.current?.removeAttribute('open')}>
+                      📝 {t('About you')}
+                    </Link>
+                  )}
+                  <button
+                    className="btn btn--ghost btn--small"
+                    onClick={async () => {
+                      await api.signOut();
+                      navigate('/');
+                    }}
+                  >
+                    {t('Log out')}
+                  </button>
+                  <Link className="usermenu__privacy" to="/privacy" onClick={() => menuRef.current?.removeAttribute('open')}>
+                    {t('Privacy policy')}
+                  </Link>
+                </div>
+              </details>
+            </>
+          ) : (
+            <span className="topbar__guest">
+              <Link to="/login" className="topbar__login">
+                {t('Log in')}
               </Link>
-              <button
-                className="btn btn--ghost btn--small"
-                onClick={async () => {
-                  await api.signOut();
-                  navigate('/');
-                }}
-              >
-                {t('Log out')}
-              </button>
-              <Link className="usermenu__privacy" to="/privacy" onClick={() => menuRef.current?.removeAttribute('open')}>
-                {t('Privacy policy')}
+              <Link to="/signup" className="btn btn--small">
+                {t('Start free')}
               </Link>
-            </div>
-          </details>
+            </span>
+          )}
         </div>
       </header>
+
+      {!user && (
+        <div className="guest-banner">
+          <span>👋 {t('You are looking around as a guest. Create a free account to record answers and save your progress.')}</span>
+          <Link to="/signup" className="btn btn--small">
+            {t('Create a free account')}
+          </Link>
+        </div>
+      )}
 
       {isLocalMode && (
         <div className="demo-banner">
@@ -128,11 +182,11 @@ export default function Layout() {
         )}
       </main>
 
-      {aiEnabled && isCefr && <CoachChat />}
+      {aiEnabled && isCefr && user && <CoachChat />}
 
       <nav className={`bottomnav ${links.length < 2 ? 'bottomnav--none' : ''}`}>
         {links.map(([to, icon, label]) => (
-          <NavLink key={to} to={to} end={to === '/'}>
+          <NavLink key={to} to={to} end={!SECTIONS.includes(to)}>
             <span>{icon}</span>
             <small>{t(label)}</small>
           </NavLink>

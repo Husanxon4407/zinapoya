@@ -31,3 +31,27 @@ export function peekPendingArea() {
     return null;
   }
 }
+
+// Where to go after logging in (Google and email confirmation leave the site, so it waits here).
+// Only paths inside this site are accepted.
+const NEXT_KEY = 'zp_next';
+export const safePath = (p) => (typeof p === 'string' && p.startsWith('/') && !p.startsWith('//') ? p : null);
+
+export function setNextPath(path) {
+  try {
+    if (safePath(path)) localStorage.setItem(NEXT_KEY, path);
+    else localStorage.removeItem(NEXT_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
+export function takeNextPath() {
+  try {
+    const p = localStorage.getItem(NEXT_KEY);
+    localStorage.removeItem(NEXT_KEY);
+    return safePath(p);
+  } catch {
+    return null;
+  }
+}

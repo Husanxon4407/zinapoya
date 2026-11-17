@@ -44,8 +44,9 @@ export function AppProvider({ children }) {
   useEffect(() => {
     setAttempts([]);
     setGameScores([]);
-    setAttemptsReady(false);
     setLoadError('');
+    // Guests have nothing to load: their pages show at once.
+    setAttemptsReady(!user);
     if (user) refreshAttempts();
   }, [user, refreshAttempts]);
 
@@ -72,26 +73,46 @@ export function AppProvider({ children }) {
     };
   }, [user]);
 
-  // An area picked before logging in (area page, sign-up, Google) is saved on the account now.
+  // The areas this student joined. Accounts from before areas existed are in CEFR Multilevel.
+  const savedAreas = (user?.areas || []).filter(isArea);
+  const areas = user ? (savedAreas.length ? savedAreas : [DEFAULT_AREA]) : [];
+  const areasKey = areas.join(',');
+  // The area opened last (the default for "Home" links).
+  const area = user && isArea(user.area) && areas.includes(user.area) ? user.area : areas[0] || DEFAULT_AREA;
+
+  // Join one more area (one tap, no new registration) or replace the whole list ("About you").
+  const saveAreas = useCallback(async (list, current) => {
+    const clean = [...new Set(list.filter(isArea))];
+    if (!clean.length) return;
+    const u = await api.saveAreas(clean, clean.includes(current) ? current : clean[0]);
+    if (u) setUser(u);
+  }, []);
+  const joinArea = useCallback(
+    (id) => (isArea(id) ? saveAreas([...areasKey.split(',').filter(Boolean), id], id) : Promise.resolve()),
+    [areasKey, saveAreas],
+  );
+
+  // An area picked before logging in (area page, sign-up, Google) is joined now.
   const userId = user?.id;
   useEffect(() => {
     if (!userId) return;
     const pending = takePendingArea();
-    if (pending && pending !== user.area) {
-      api
-        .setArea(pending)
-        .then((u) => u && setUser(u))
-        .catch((e) => console.warn('Could not save the chosen area', e));
+    if (pending && !(user.areas || []).includes(pending)) {
+      const list = (user.areas || []).filter(isArea);
+      saveAreas([...(list.length ? list : user.area ? [user.area] : []), pending], pending).catch((e) =>
+        console.warn('Could not save the chosen area', e),
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // Students from before areas existed (and anyone without a choice) are in CEFR Multilevel.
-  const area = isArea(user?.area) ? user.area : DEFAULT_AREA;
-  const chooseArea = useCallback(async (id) => {
-    if (!isArea(id)) return;
-    const u = await api.setArea(id);
-    if (u) setUser(u);
+  // New students answer a few quick "About you" questions once (the teacher never does).
+  // Only when the database has those fields (migration 09), so nothing breaks before it runs.
+  const needsAbout = !!profile && profile.role !== 'teacher' && 'onboarded_at' in profile && !profile.onboarded_at;
+  const saveAbout = useCallback(async (answers) => {
+    const p = await api.updateProfile({ ...answers, onboarded_at: new Date().toISOString() });
+    setProfile(p);
+    return p;
   }, []);
 
   const addAttempt = useCallback((row) => setAttempts((list) => [row, ...list]), []);
@@ -124,7 +145,7 @@ export function AppProvider({ children }) {
   const stats = useMemo(() => computeStats(attempts), [attempts]);
   const xp = useMemo(() => computeXp(attempts, gameScores), [attempts, gameScores]);
 
-  const value = { user, area, chooseArea, profile, setProfile, authReady, attempts, attemptsReady, loadError, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
+  const value = { user, area, areas, joinArea, saveAreas, needsAbout, saveAbout, profile, setProfile, authReady, attempts, attemptsReady, loadError, stats, xp, gameScores, addGameScore, refreshAttempts, addAttempt, patchAttempt, recovering, setRecovering };
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

@@ -1,44 +1,41 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AreaVisual from '../components/areas/AreaVisual.jsx';
-import { AREAS, areaById } from '../data/areas.js';
+import JoinBar from '../components/JoinBar.jsx';
+import { AREAS, areaById, areaPath } from '../data/areas.js';
 import { useApp } from '../state.jsx';
 import { skillName, useT } from '../i18n/index.js';
 import { areaStyle } from './AreaLanding.jsx';
 import '../styles-areas.css';
 
-// Main page (after login) of an area that is still being built. It already has the area's own
-// look; the real lessons and practice will be added here area by area.
-export default function AreaMain() {
+// Main page of an area that is still being built (/ielts, /sat…). Anyone can look at it; it already
+// has the area's own look, and the real lessons will be added here area by area.
+export default function AreaMain({ areaId }) {
   const t = useT();
-  const { user, profile, area: areaId, chooseArea } = useApp();
+  const { user, profile, areas } = useApp();
   const area = areaById(areaId);
-  const [busy, setBusy] = useState('');
   const name = t(area.name);
   const first = (profile?.name || user?.name || '').split(' ')[0];
-
-  async function switchTo(id) {
-    setBusy(id);
-    try {
-      await chooseArea(id);
-    } catch (e) {
-      alert(e.message);
-    } finally {
-      setBusy('');
-    }
-  }
+  const joined = areas.includes(area.id);
 
   return (
     <div className={`amain apage--${area.id}`} style={areaStyle(area)}>
+      <JoinBar areaId={area.id} />
       <section className="amain__hero">
         <div className={`abg abg--${area.visual}`} aria-hidden="true" />
         <div className="amain__text">
           <span className="ahero__kicker">
             <span aria-hidden="true">{area.emoji}</span> {name}
           </span>
-          <h1>{first ? t('Welcome, {name}!', { name: first }) : t('Welcome!')}</h1>
+          <h1>{joined && first ? t('Welcome, {name}!', { name: first }) : name}</h1>
           <p>{t('Your {name} page is ready, and the lessons are on their way. We are building {name} step by step — you will see each part here the day it opens.', { name })}</p>
           <span className="badge-soon">{t('Opening soon')}</span>
+          {!user && (
+            <p className="amain__cta">
+              <Link to={`/signup?area=${area.id}`} className="btn">
+                {t('Register for {name}', { name: t(area.short) })}
+              </Link>
+            </p>
+          )}
         </div>
         <div className="amain__visual">
           <AreaVisual area={area} />
@@ -75,9 +72,9 @@ export default function AreaMain() {
                 <h3>{t(a.name)}</h3>
                 <p>{t(a.text)}</p>
               </div>
-              <button type="button" className="btn" onClick={() => switchTo(a.id)} disabled={!!busy}>
-                {busy === a.id ? t('Opening…') : t('Switch to {name}', { name: t(a.short) })}
-              </button>
+              <Link to={areaPath(a.id)} className="btn">
+                {t('Open {name}', { name: t(a.short) })}
+              </Link>
             </div>
           ))}
         </div>
@@ -86,7 +83,7 @@ export default function AreaMain() {
           {AREAS.filter((a) => a.id !== area.id).map((a, i) => (
             <span key={a.id}>
               {i > 0 && ' · '}
-              <Link to={`/learn/${a.id}`}>{t(a.short)}</Link>
+              <Link to={areaPath(a.id)}>{t(a.short)}</Link>
             </span>
           ))}
         </p>
