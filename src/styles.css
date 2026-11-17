@@ -3613,3 +3613,18 @@ a.side-card:hover {
 .profile__foot a {
   color: var(--muted);
 }
+
+/* Teacher: which areas students chose */
+.areas-panel h2 { margin-top: 0; }
+.areas-panel__list { display: grid; gap: 10px; margin: 8px 0 12px; }
+.areas-panel__row { display: grid; grid-template-columns: minmax(150px, 240px) 1fr auto; align-items: center; gap: 12px; }
+.areas-panel__name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.areas-panel__name small { color: var(--muted, #6b7280); }
+.areas-panel__bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, currentColor 10%, transparent); overflow: hidden; }
+.areas-panel__bar span { display: block; height: 100%; min-width: 4px; border-radius: inherit; transition: width .6s ease; }
+.areas-panel__num { min-width: 48px; text-align: right; white-space: nowrap; }
+.areas-panel__num small { color: var(--muted, #6b7280); }
+@media (max-width: 560px) {
+  .areas-panel__row { grid-template-columns: 1fr auto; }
+  .areas-panel__bar { grid-column: 1 / -1; order: 3; }
+}

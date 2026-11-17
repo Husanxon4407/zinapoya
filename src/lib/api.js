@@ -312,6 +312,12 @@ remote.teacher = {
     const { error } = await supabase.from('site_questions').update({ answered: true, answer: answer || null }).eq('id', id);
     if (error) throw error;
   },
+  // [{ id, area, joined_at }] for every student (area comes from their login data).
+  async studentAreas() {
+    const { data, error } = await supabase.rpc('teacher_student_areas');
+    if (error) throw notSetUp(error) ? new Error('Area numbers are not set up yet. Run the latest database update (08_student_areas.sql).') : error;
+    return data;
+  },
 };
 
 // The database is missing a table or function (a supabase/migrations file has not been run yet).
@@ -566,6 +572,10 @@ local.teacher = {
   listStudentAttempts: async (id) => ls.get(`su_attempts_${id}`, []),
   listQuestions: async () => ls.get('su_questions', []),
   answerQuestion: async (id, answer) => ls.set('su_questions', ls.get('su_questions', []).map((q) => (q.id === id ? { ...q, answered: true, answer } : q))),
+  studentAreas: async () => {
+    const byId = Object.fromEntries(Object.values(ls.get('su_users', {})).map((u) => [u.id, u]));
+    return localStudents().map((u) => ({ id: u.id, area: byId[u.id]?.area || 'cefr', joined_at: null }));
+  },
 };
 
 local.publicStats = async () => {

@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { useApp } from '../state.jsx';
 import { api } from '../lib/api.js';
 import { PARTS } from '../data/parts.js';
+import { AREAS } from '../data/areas.js';
 import { computeStats, levelFromScore, overallScore } from '../lib/progress.js';
 import Avatar from '../components/Avatar.jsx';
 import AnswerReview from '../components/AnswerReview.jsx';
@@ -143,6 +144,46 @@ function QuestionsPanel() {
   );
 }
 
+// How many students chose each area: shows which area to build next.
+function AreasPanel({ areas, error }) {
+  if (error) return <p className="notice notice--warn">{error}</p>;
+  if (!areas) return null;
+  const weekAgo = Date.now() - 7 * DAY;
+  const rows = AREAS.map((a) => {
+    const list = areas.filter((x) => x.area === a.id);
+    return { ...a, count: list.length, week: list.filter((x) => x.joined_at && new Date(x.joined_at).getTime() > weekAgo).length };
+  }).sort((a, b) => b.count - a.count);
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const wanted = rows.find((r) => !r.ready && r.count > 0);
+  return (
+    <div className="card areas-panel">
+      <h2>🧭 Areas students chose</h2>
+      <div className="areas-panel__list">
+        {rows.map((r) => (
+          <div key={r.id} className="areas-panel__row">
+            <span className="areas-panel__name">
+              {r.emoji} {r.short}
+              {!r.ready && <small> · not built yet</small>}
+            </span>
+            <span className="areas-panel__bar">
+              <span style={{ width: `${(r.count / max) * 100}%`, background: r.theme.accent }} />
+            </span>
+            <span className="areas-panel__num">
+              <strong>{r.count}</strong>
+              {r.week > 0 && <small> +{r.week} this week</small>}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="muted small">
+        {wanted
+          ? `Most wanted area that is not built yet: ${wanted.emoji} ${wanted.short} (${wanted.count} student${wanted.count === 1 ? '' : 's'}).`
+          : 'Students who joined before areas existed count as CEFR.'}
+      </p>
+    </div>
+  );
+}
+
 export default function Teacher() {
   const guard = useTeacherGuard();
   const [students, setStudents] = useState(null);
@@ -150,9 +191,12 @@ export default function Teacher() {
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('inactive');
+  const [areas, setAreas] = useState(null);
+  const [areasError, setAreasError] = useState('');
 
   useEffect(() => {
     if (guard !== 'ok') return;
+    api.teacher.studentAreas().then(setAreas).catch((e) => setAreasError(e.message));
     Promise.all([api.teacher.listStudents(), api.teacher.listAttempts()])
       .then(([s, a]) => {
         setStudents(s);
@@ -226,6 +270,8 @@ export default function Teacher() {
               <small>{classAvg === null ? 'no AI scores yet' : `class average ${classAvg}/100`}</small>
             </div>
           </div>
+
+          <AreasPanel areas={areas} error={areasError} />
 
           {sleeping > 0 && <p className="notice notice--warn">😴 {sleeping} student{sleeping > 1 ? 's have' : ' has'} not practised for 3+ days.</p>}
 
