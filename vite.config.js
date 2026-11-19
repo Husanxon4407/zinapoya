@@ -32,6 +32,8 @@ function precacheList() {
 
 export default defineConfig({
   plugins: [react(), precacheList()],
+  // Vercel tells the build whether it is the live site ("production") or a test copy ("preview").
+  define: { __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV || '') },
   build: {
     rollupOptions: {
       output: {

@@ -16,8 +16,11 @@ registerServiceWorker();
 
 // Vercel also serves every version on its own long address (…-abc123-….vercel.app).
 // Logins are stored per address, so always send people to the one main address.
+// Not for preview builds (test copies of a branch): those must stay on their own address.
 const MAIN_HOST = 'zinapoya.vercel.app';
-if (window.location.hostname.endsWith('.vercel.app') && window.location.hostname !== MAIN_HOST) {
+// eslint-disable-next-line no-undef
+const IS_PREVIEW = typeof __VERCEL_ENV__ !== 'undefined' && __VERCEL_ENV__ === 'preview';
+if (!IS_PREVIEW && window.location.hostname.endsWith('.vercel.app') && window.location.hostname !== MAIN_HOST) {
   window.location.replace(`https://${MAIN_HOST}${window.location.pathname}${window.location.search}${window.location.hash}`);
 }
 
