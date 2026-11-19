@@ -24,6 +24,7 @@ const REST_S = 0.15;
 const TOP_S = 2.6;
 const CAP_H = 0.07; // the lighter top slab of each step
 const FIG = 1.7; // the climber's size (its local units: about 1 = its height)
+const FIG_H = FIG * 1.05; // the climber's height in scene units
 const MOTES = 60;
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -76,6 +77,17 @@ function grainTexture() {
 const rand = (i) => {
   const n = Math.sin(i * 127.1) * 43758.5453;
   return n - Math.floor(n);
+};
+
+// "Light only" blending for glows on the see-through canvas: adds colour, never touches the canvas
+// alpha (plain additive blending also raises the alpha, which shows faded sparks as dark dots).
+const GLOW_BLEND = {
+  blending: THREE.CustomBlending,
+  blendEquation: THREE.AddEquation,
+  blendSrc: THREE.SrcAlphaFactor,
+  blendDst: THREE.OneFactor,
+  blendSrcAlpha: THREE.ZeroFactor,
+  blendDstAlpha: THREE.OneFactor,
 };
 
 function radialTexture(stops) {
@@ -135,6 +147,8 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const flight = new THREE.Group();
   const stairs = new THREE.Group();
   stairs.rotation.set(0.3, -0.6, 0);
+  // Lower the staircase a little inside the frame, so the climber's head stays in view at the top.
+  stairs.position.y = -FIG_H * 0.4;
   flight.add(stairs);
   scene.add(flight);
 
@@ -301,9 +315,118 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     [0.3, 'rgba(255,255,255,0.6)'],
     [1, 'rgba(255,255,255,0)'],
   ]));
-  const moteMat = track(new THREE.PointsMaterial({ size: 0.07, map: dotTex, color: new THREE.Color(accent), transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const moteMat = track(new THREE.PointsMaterial({ size: 0.07, map: dotTex, color: new THREE.Color(accent), transparent: true, opacity: 0.8, depthWrite: false, ...GLOW_BLEND }));
   const motes = new THREE.Points(moteGeo, moteMat);
   stairs.add(motes);
+
+  // Fireworks for the top of the climb: a few rockets rise from the stand and burst into sparks
+  // that spread, fall, twinkle and fade. All inside this 3D picture.
+  const FW = 4; // fireworks per celebration
+  const SPARKS = 90; // sparks per firework
+  const fwCount = FW * (SPARKS + 1); // +1 = the rocket
+  const fwPos = new Float32Array(fwCount * 3);
+  const fwCol = new Float32Array(fwCount * 3);
+  const fwVel = new Float32Array(fwCount * 3);
+  const fwBase = new Float32Array(fwCount * 3);
+  const fwLife = new Float32Array(fwCount);
+  const fwAge = new Float32Array(fwCount).fill(99);
+  const fwGeo = track(new THREE.BufferGeometry());
+  fwGeo.setAttribute('position', new THREE.BufferAttribute(fwPos, 3));
+  fwGeo.setAttribute('color', new THREE.BufferAttribute(fwCol, 3));
+  // toneMapped: false keeps the sparks bright (the film-look colour curve would dull them)
+  const fwMat = track(new THREE.PointsMaterial({ size: 0.3, map: dotTex, vertexColors: true, transparent: true, depthWrite: false, toneMapped: false, ...GLOW_BLEND }));
+  const fireworks = new THREE.Points(fwGeo, fwMat);
+  fireworks.frustumCulled = false;
+  stairs.add(fireworks);
+  const fwPlan = []; // { at, from, to, colors, done, rocketDone }
+  const fwColors = () => [new THREE.Color(accent), new THREE.Color(0xffd36b), new THREE.Color(0xffffff), new THREE.Color(0xff5a5f), new THREE.Color(0x6f9bff)];
+  let fwPalette = fwColors();
+  const tmpC = new THREE.Color();
+  function launchFireworks(now) {
+    const top = floorY + totalH;
+    // burst points: over the lower and middle steps (the empty sky), at different heights
+    const spots = [
+      [-1.6, top + 0.2, -0.3],
+      [0.2, top + 1.1, 0.4],
+      [-2.6, top - 0.5, 0.2],
+      [1.4, top + 0.5, -0.5],
+    ];
+    fwPlan.length = 0;
+    spots.forEach(([x, y, z], i) => {
+      const c1 = fwPalette[(i * 2) % fwPalette.length];
+      const c2 = fwPalette[(i * 2 + 1) % fwPalette.length];
+      fwPlan.push({ at: now + 0.15 + i * 0.38, from: new THREE.Vector3(x + 0.2, floorY, z), to: new THREE.Vector3(x, y, z), c1, c2, launched: false, burst: false, slot: i });
+    });
+  }
+  function updateFireworks(now, dt) {
+    for (const f of fwPlan) {
+      const r = f.slot * (SPARKS + 1); // rocket index
+      if (!f.launched && now >= f.at) {
+        f.launched = true;
+        fwAge[r] = 0;
+        fwLife[r] = 0.55;
+        fwBase[r * 3] = 1;
+        fwBase[r * 3 + 1] = 0.85;
+        fwBase[r * 3 + 2] = 0.55;
+      }
+      if (f.launched && !f.burst) {
+        const k = Math.min(1, (now - f.at) / 0.55);
+        const e = 1 - Math.pow(1 - k, 2);
+        fwPos[r * 3] = f.from.x + (f.to.x - f.from.x) * e;
+        fwPos[r * 3 + 1] = f.from.y + (f.to.y - f.from.y) * e;
+        fwPos[r * 3 + 2] = f.from.z + (f.to.z - f.from.z) * e;
+        if (k >= 1) {
+          f.burst = true;
+          fwAge[r] = 99;
+          for (let j = 1; j <= SPARKS; j++) {
+            const i = r + j;
+            // even spread on a sphere, a little random speed
+            const u = rand(i * 3.1 + now) * 2 - 1;
+            const a = rand(i * 7.7 + now) * Math.PI * 2;
+            const sp = 2.8 + rand(i * 1.9 + now) * 1.4;
+            const q = Math.sqrt(1 - u * u);
+            fwVel[i * 3] = q * Math.cos(a) * sp;
+            fwVel[i * 3 + 1] = u * sp + 0.4;
+            fwVel[i * 3 + 2] = q * Math.sin(a) * sp;
+            fwPos[i * 3] = f.to.x;
+            fwPos[i * 3 + 1] = f.to.y;
+            fwPos[i * 3 + 2] = f.to.z;
+            tmpC.copy(j % 3 === 0 ? f.c2 : f.c1);
+            fwBase[i * 3] = tmpC.r;
+            fwBase[i * 3 + 1] = tmpC.g;
+            fwBase[i * 3 + 2] = tmpC.b;
+            fwAge[i] = 0;
+            fwLife[i] = 1.1 + rand(i * 5.3 + now) * 0.7;
+          }
+        }
+      }
+    }
+    for (let i = 0; i < fwCount; i++) {
+      if (fwAge[i] >= fwLife[i]) {
+        fwCol[i * 3] = fwCol[i * 3 + 1] = fwCol[i * 3 + 2] = 0;
+        continue;
+      }
+      fwAge[i] += dt;
+      const isRocket = i % (SPARKS + 1) === 0;
+      if (!isRocket) {
+        const drag = Math.max(0, 1 - 1.8 * dt);
+        fwVel[i * 3] *= drag;
+        fwVel[i * 3 + 1] = fwVel[i * 3 + 1] * drag - 1.6 * dt; // gravity
+        fwVel[i * 3 + 2] *= drag;
+        fwPos[i * 3] += fwVel[i * 3] * dt;
+        fwPos[i * 3 + 1] += fwVel[i * 3 + 1] * dt;
+        fwPos[i * 3 + 2] += fwVel[i * 3 + 2] * dt;
+      }
+      const life = 1 - fwAge[i] / fwLife[i];
+      // bright at first, then fading with a little twinkle
+      const glow = isRocket ? 1.4 : 1.6 * Math.pow(life, 1.2) * (0.7 + 0.3 * Math.sin(fwAge[i] * 40 + i));
+      fwCol[i * 3] = fwBase[i * 3] * glow;
+      fwCol[i * 3 + 1] = fwBase[i * 3 + 1] * glow;
+      fwCol[i * 3 + 2] = fwBase[i * 3 + 2] * glow;
+    }
+    fwGeo.attributes.position.needsUpdate = true;
+    fwGeo.attributes.color.needsUpdate = true;
+  }
 
   // Faint far stars.
   const starPos = [];
@@ -464,6 +587,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   let paletteT = 1;
   let lastHop = -1;
   let burstT = 1;
+  let wasTop = false;
   let active = reduced ? STEP_COUNT - 1 : -1;
   const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
   const tmp = new THREE.Vector3();
@@ -481,7 +605,8 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   function place(p) {
     const pt = curve.getPoint(p);
     flight.position.set(pt.x * hw * 0.8, pt.y * hh * 0.8 + hh * 0.06 * p, 0);
-    const size = Math.min((hw * 1.3) / totalW, (hh * 0.86) / totalH);
+    // Fit the staircase plus the person standing on the top step (and room for the fireworks).
+    const size = Math.min((hw * 1.3) / totalW, (hh * 0.86) / (totalH + FIG_H * 0.5));
     const scale = size * (0.08 + 0.92 * Math.pow(p, 1.4));
     flight.scale.setScalar(scale);
     fitShadow(scale);
@@ -573,17 +698,22 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       if (st.landed !== lastHop && st.landed >= 0) {
         pulses[st.landed] = 1;
         active = st.landed;
-        if (st.landed === STEP_COUNT - 1 && st.atTop) {
-          burstT = 0;
-          burst.position.copy(treadTop(STEP_COUNT - 1));
-          burst.position.y += 0.02;
-        }
       }
+      // Arrived at the top: ring of light + fireworks (once per climb).
+      if (st.atTop && !wasTop && !reduced) {
+        burstT = 0;
+        burst.position.copy(treadTop(STEP_COUNT - 1));
+        burst.position.y += 0.02;
+        launchFireworks(climbT);
+      }
+      wasTop = st.atTop;
       if (st.landed < 0) active = -1;
       lastHop = st.landed;
     } else {
       climber.visible = false;
     }
+
+    if (!reduced && !paused) updateFireworks(climbT, dt);
 
     if (burstT < 1) {
       burstT = Math.min(1, burstT + dt / 1.1);
@@ -666,6 +796,8 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       if (reduced) for (let i = 0; i < STEP_COUNT; i++) colorNow[i].copy(colorTo[i]);
       if (accentColor) {
         stageMat.color.set(accentColor);
+        accent = accentColor;
+        fwPalette = fwColors();
         rimMat.color.set(accentColor);
         ringMat.color.set(accentColor);
         moteMat.color.set(accentColor);
