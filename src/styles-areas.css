@@ -1341,7 +1341,7 @@ a.mycard:hover {
   }
 }
 
-/* First-visit "Choose your language" popup (LangPicker.jsx) */
+/* First-visit "Choose your language" popup (LangPicker.jsx) — same dark space look as the homepage hero */
 .langpick-overlay {
   position: fixed;
   inset: 0;
@@ -1349,31 +1349,73 @@ a.mycard:hover {
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(10, 12, 20, 0.66);
-  backdrop-filter: blur(4px);
-  animation: langpick-fade 0.25s ease;
+  overflow-y: auto;
+  background: rgba(2, 9, 20, 0.86);
+  backdrop-filter: blur(8px);
+  animation: langpick-fade 0.3s ease;
 }
 .langpick {
-  width: min(400px, 100%);
-  margin: 0;
-  padding: 28px 22px 24px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(420px, 100%);
+  padding: 30px 22px 20px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: radial-gradient(ellipse at 75% 0%, #10243c 0%, #050f20 50%, #020914 100%);
+  color: #edf3fa;
+  font-family: 'Manrope', 'Nunito', system-ui, sans-serif;
   text-align: center;
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(99, 102, 241, 0.15);
+  animation: langpick-rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.langpick__icon {
-  font-size: 2.2rem;
+/* Indigo → cyan glow (the logo's colours), a warm hint of the logo's dot, and a few stars. */
+.langpick__sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(34, 211, 238, 0.22), transparent 38%),
+    radial-gradient(circle at 10% 100%, rgba(99, 102, 241, 0.28), transparent 45%),
+    radial-gradient(circle at 70% 2%, rgba(251, 191, 36, 0.12), transparent 18%),
+    radial-gradient(1px 1px at 12% 14%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 28% 40%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 34%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 64% 22%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 92% 78%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 66%, #9fb6d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 92%, #9fb6d6 50%, transparent 51%);
+}
+.langpick__brand {
+  justify-content: center;
+  color: #edf3fa;
+  font-size: 1.7rem;
+}
+.langpick__welcome {
+  margin: 10px 0 0;
+  color: #9eafc4;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 .langpick__title {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin: 6px 0 18px;
-  font-size: 1.15rem;
-  line-height: 1.35;
+  margin: 18px 0 20px;
+  font-family: inherit;
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 .langpick__title span + span {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: var(--muted);
+  letter-spacing: 0;
+  color: #9eafc4;
 }
 .langpick__list {
   display: grid;
@@ -1384,25 +1426,40 @@ a.mycard:hover {
   align-items: center;
   gap: 14px;
   width: 100%;
-  min-height: 60px;
-  padding: 10px 16px;
-  border: 2px solid var(--line);
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--text);
+  min-height: 64px;
+  padding: 10px 16px 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #edf3fa;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    background-color 0.18s,
+    border-color 0.18s,
+    transform 0.18s;
 }
 .langpick__btn:hover,
 .langpick__btn:focus-visible {
-  border-color: var(--primary);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(165, 180, 252, 0.6);
+  transform: translateY(-2px);
+  outline: none;
 }
+/* The suggested language: a glowing gradient border in the logo's colours. */
 .langpick__btn.is-suggested {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  border-color: transparent;
+  background:
+    linear-gradient(#0c1a33, #0c1a33) padding-box,
+    linear-gradient(120deg, #6366f1, #3b9cf5 55%, #22d3ee) border-box;
+  box-shadow: 0 8px 28px rgba(59, 156, 245, 0.25);
+}
+.langpick__btn.is-suggested:hover,
+.langpick__btn.is-suggested:focus-visible {
+  background:
+    linear-gradient(#11233f, #11233f) padding-box,
+    linear-gradient(120deg, #6366f1, #3b9cf5 55%, #22d3ee) border-box;
 }
 .langpick__btn:disabled {
   cursor: wait;
@@ -1413,25 +1470,70 @@ a.mycard:hover {
   flex: none;
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: #fff;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #c7d2fe;
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+}
+.langpick__btn.is-suggested .langpick__badge {
+  background: linear-gradient(135deg, #6366f1, #22d3ee);
+  color: #fff;
 }
 .langpick__name {
   display: flex;
   flex-direction: column;
+  gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 .langpick__name strong {
-  font-size: 1.1rem;
+  font-size: 1.08rem;
+  font-weight: 800;
 }
 .langpick__name small {
-  color: var(--muted);
+  color: #9eafc4;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.langpick__arrow {
+  flex: none;
+  color: #a5b4fc;
+  font-size: 1.2rem;
+  transition: transform 0.18s;
+}
+.langpick__btn:hover .langpick__arrow,
+.langpick__btn:focus-visible .langpick__arrow {
+  transform: translateX(3px);
+}
+.langpick__btn.is-suggested .langpick__arrow {
+  color: #fcd34d;
+}
+.langpick__note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 16px 0 0;
+  color: #8598b0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
 }
 @keyframes langpick-fade {
   from {
     opacity: 0;
+  }
+}
+@keyframes langpick-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .langpick,
+  .langpick-overlay {
+    animation: none;
   }
 }
