@@ -1,8 +1,10 @@
 // The 3D staircase on the main page (Three.js). Loaded on demand, so it never slows the first paint.
 //
-// Rounded ceramic-glass steps rise into place while the staircase flies in along a curve. Then the
-// learner (a small white figure) hops up step by step: it crouches, jumps, stretches in the air and
-// squashes on landing; each step lights up as it lands, and reaching the top sends out a ring of light.
+// Stone-like steps (fine grain, a lighter top slab with a small overhanging nose, like real stairs)
+// rise into place on a glossy black stand while the staircase flies in along a curve. Then the learner,
+// a jointed mannequin (knees, elbows, feet, neck), climbs like a person: lifts one knee high, puts the
+// foot on the next step, pushes up while the other leg follows and the arms swing; legs alternate.
+// At the top it raises both arms. Each step lights up as it is reached.
 // Studio reflections (RoomEnvironment) and soft real shadows make it read as a real object.
 // setPalette() recolours everything for an area.
 // Labels are normal HTML positioned over the canvas each frame (onFrame), so they stay crisp
@@ -17,14 +19,60 @@ const STEP_W = 1.05;
 const STEP_D = 2.1;
 const STEP_H = 0.55;
 const ENTRANCE_S = 4.2;
-const HOP_S = 0.6;
-const REST_S = 0.45;
-const TOP_S = 1.9;
+const STEP_S = 1.15; // one step up, from lifting the knee to standing on the next step
+const REST_S = 0.15;
+const TOP_S = 2.6;
+const CAP_H = 0.07; // the lighter top slab of each step
+const FIG = 1.7; // the climber's size (its local units: about 1 = its height)
 const MOTES = 60;
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 const easeOutBack = (t) => 1 + 2.5 * Math.pow(t - 1, 3) + 1.5 * Math.pow(t - 1, 2);
+const smooth = (t) => t * t * (3 - 2 * t);
+// Value of a keyframed track at time k (0..1): times[] ascending, vals[] same length, smooth in between.
+function track1(times, vals, k) {
+  if (k <= times[0]) return vals[0];
+  for (let i = 1; i < times.length; i++) {
+    if (k <= times[i]) {
+      const u = (k - times[i - 1]) / (times[i] - times[i - 1]);
+      return vals[i - 1] + (vals[i] - vals[i - 1]) * smooth(u);
+    }
+  }
+  return vals[vals.length - 1];
+}
+
+// Fine stone grain (used as colour variation and as bump): small speckles + soft blotches.
+function grainTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = '#808080';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 70; i++) {
+    const x = rand(i + 1) * 256;
+    const y = rand(i + 300) * 256;
+    const r = 10 + rand(i + 600) * 40;
+    const grad = g.createRadialGradient(x, y, 0, x, y, r);
+    const v = rand(i + 900) > 0.5 ? 255 : 0;
+    grad.addColorStop(0, `rgba(${v},${v},${v},0.08)`);
+    grad.addColorStop(1, `rgba(${v},${v},${v},0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 256, 256);
+  }
+  const img = g.getImageData(0, 0, 256, 256);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = (rand(i * 0.37 + 11) - 0.5) * 46;
+    img.data[i] += n;
+    img.data[i + 1] += n;
+    img.data[i + 2] += n;
+  }
+  g.putImageData(img, 0, 0);
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.5, 1.5);
+  return tex;
+}
 const rand = (i) => {
   const n = Math.sin(i * 127.1) * 43758.5453;
   return n - Math.floor(n);
@@ -97,7 +145,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   key.position.set(-3.2, 6.5, 4.5);
   key.target.position.set(0, floorY, 0);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.mapSize.set(2048, 2048);
   key.shadow.bias = -0.0004;
   key.shadow.normalBias = 0.02;
   key.shadow.radius = 5;
@@ -181,6 +229,9 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const colorNow = [];
   const colorFrom = [];
   const colorTo = [];
+  const grain = track(grainTexture());
+  const capColor = new THREE.Color();
+  const white = new THREE.Color(0xffffff);
   for (let i = 0; i < STEP_COUNT; i++) {
     const h = (i + 1) * STEP_H;
     const geo = track(new RoundedBoxGeometry(STEP_W * 0.96, h, STEP_D, 4, 0.08));
@@ -191,12 +242,15 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     const mat = track(new THREE.MeshPhysicalMaterial({
       color: c,
       emissive: c,
-      emissiveIntensity: 0.07,
-      roughness: 0.42,
+      emissiveIntensity: 0.05,
+      roughness: 0.62,
+      roughnessMap: grain,
+      bumpMap: grain,
+      bumpScale: 0.35,
       metalness: 0,
-      clearcoat: 0.55,
-      clearcoatRoughness: 0.22,
-      envMapIntensity: 0.38,
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.4,
+      envMapIntensity: 0.45,
       transparent: true,
     }));
     const mesh = new THREE.Mesh(geo, mat);
@@ -205,11 +259,23 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     mesh.userData.home = new THREE.Vector3(-totalW / 2 + STEP_W / 2 + i * STEP_W, h / 2 + floorY, 0);
     mesh.position.copy(mesh.userData.home);
 
-    // Bright front edge of each tread (like the lines in the logo).
-    const edgeMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
-    const edge = new THREE.Mesh(track(new THREE.BoxGeometry(STEP_W * 0.86, 0.04, 0.05)), edgeMat);
-    edge.position.set(0, h / 2 - 0.035, STEP_D / 2 + 0.005);
-    mesh.add(edge);
+    // The top slab (tread): a little lighter and smoother, slightly wider, with a nose that sticks
+    // out over the front like real stairs (it throws a thin shadow line on the front face).
+    const capMat = track(new THREE.MeshPhysicalMaterial({
+      color: c.clone().lerp(white, 0.3),
+      roughness: 0.38,
+      bumpMap: grain,
+      bumpScale: 0.15,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.25,
+      envMapIntensity: 0.6,
+      transparent: true,
+    }));
+    const cap = new THREE.Mesh(track(new RoundedBoxGeometry(STEP_W * 0.99, CAP_H, STEP_D + 0.08, 3, 0.03)), capMat);
+    cap.position.set(0, h / 2 + CAP_H / 2 - 0.01, 0.04);
+    cap.castShadow = true;
+    cap.receiveShadow = true;
+    mesh.add(cap);
 
     const anchor = new THREE.Object3D();
     anchor.position.set(0, h / 2 - 0.27, STEP_D / 2 + 0.02); // on the front of the step, under the tread
@@ -245,42 +311,64 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const stars = new THREE.Points(starGeo, track(new THREE.PointsMaterial({ color: 0x9fb6d6, size: 0.035, transparent: true, opacity: 0.55 })));
   scene.add(stars);
 
-  // The learner: a small white person (head, body, two arms, two legs). Arms swing up and legs tuck
-  // during a jump; the body squashes on landing. Faces the way it climbs (+x).
-  const figMat = track(new THREE.MeshPhysicalMaterial({ color: 0xf6f7fb, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.3, transparent: true }));
+  // The learner: a jointed mannequin. climber = feet on the ground; pelvis holds the legs (hip ->
+  // knee -> foot); torso (leans) holds the chest, neck, head and arms (shoulder -> elbow -> hand).
+  // It faces +x, the way it climbs. Forward swing = +z rotation, a bent knee = -z.
+  const figMat = track(new THREE.MeshPhysicalMaterial({ color: 0xf3f4f8, roughness: 0.5, sheen: 0.6, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xffffff), clearcoat: 0.3, clearcoatRoughness: 0.5, transparent: true }));
+  const jointMat = track(new THREE.MeshPhysicalMaterial({ color: 0xd9dce4, roughness: 0.45, clearcoat: 0.4, transparent: true }));
   const climber = new THREE.Group();
-  const bodyPivot = new THREE.Group(); // squash & stretch around the feet
-  const limb = (r, len) => track(new THREE.CapsuleGeometry(r, len, 4, 12));
-  const part = (geo, x, y, z, parent) => {
-    const m = new THREE.Mesh(geo, figMat);
+  const capsule = (r, len) => track(new THREE.CapsuleGeometry(r, len, 6, 14));
+  const ball = (r) => track(new THREE.SphereGeometry(r, 20, 14));
+  const add = (parent, geo, x, y, z, mat = figMat) => {
+    const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
     m.castShadow = true;
     parent.add(m);
     return m;
   };
-  const legs = [-0.048, 0.048].map((z) => {
+  const HIP_Y = 0.53;
+  const pelvis = new THREE.Group();
+  pelvis.position.y = HIP_Y;
+  climber.add(pelvis);
+  add(pelvis, ball(0.075), 0, 0.01, 0).scale.set(0.9, 0.7, 1.35);
+  const legs = [-0.062, 0.062].map((z) => {
     const hip = new THREE.Group();
-    hip.position.set(0, 0.2, z);
-    part(limb(0.036, 0.12), 0, -0.1, 0, hip);
-    bodyPivot.add(hip);
-    return hip;
+    hip.position.set(0, 0, z);
+    add(hip, capsule(0.047, 0.17), 0, -0.125, 0);
+    const knee = new THREE.Group();
+    knee.position.y = -0.25;
+    add(knee, ball(0.043), 0, 0, 0, jointMat);
+    add(knee, capsule(0.039, 0.17), 0, -0.12, 0);
+    add(knee, track(new RoundedBoxGeometry(0.13, 0.045, 0.075, 2, 0.02)), 0.035, -0.255, 0);
+    hip.add(knee);
+    pelvis.add(hip);
+    return { hip, knee };
   });
-  part(limb(0.078, 0.13), 0, 0.31, 0, bodyPivot); // body
-  part(track(new THREE.SphereGeometry(0.086, 28, 20)), 0.01, 0.52, 0, bodyPivot); // head
-  const arms = [-0.105, 0.105].map((z) => {
+  const torso = new THREE.Group();
+  pelvis.add(torso);
+  add(torso, capsule(0.085, 0.17), 0, 0.16, 0).scale.set(0.8, 1, 1.3);
+  add(torso, capsule(0.03, 0.04), 0, 0.33, 0);
+  const head = add(torso, ball(0.078), 0.012, 0.43, 0);
+  head.scale.set(1, 1.15, 0.95);
+  const arms = [-0.13, 0.13].map((z) => {
     const shoulder = new THREE.Group();
-    shoulder.position.set(0, 0.41, z);
-    part(limb(0.028, 0.13), 0, -0.085, 0, shoulder);
-    bodyPivot.add(shoulder);
-    return shoulder;
+    shoulder.position.set(0, 0.285, z);
+    add(shoulder, ball(0.036), 0, 0, 0, jointMat);
+    add(shoulder, capsule(0.031, 0.13), 0, -0.1, 0);
+    const elbow = new THREE.Group();
+    elbow.position.y = -0.2;
+    add(elbow, ball(0.029), 0, 0, 0, jointMat);
+    add(elbow, capsule(0.027, 0.12), 0, -0.085, 0);
+    add(elbow, ball(0.034), 0.004, -0.18, 0);
+    shoulder.add(elbow);
+    torso.add(shoulder);
+    return { shoulder, elbow, side: z > 0 ? 1 : -1 };
   });
-  climber.add(bodyPivot);
-  const orbLight = new THREE.PointLight(0xffd27a, 1.6, 2.6, 1.8);
-  orbLight.position.y = 0.35;
+  const orbLight = new THREE.PointLight(0xffd27a, 1.2, 2.6, 1.8);
+  orbLight.position.set(0.15, 0.6, 0.2);
   climber.add(orbLight);
-  climber.scale.setScalar(1.45);
+  climber.scale.setScalar(FIG);
   stairs.add(climber);
-  let landedAt = 0;
 
   // Ring of light when the learner reaches the top.
   const burstMat = track(new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -288,15 +376,51 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   burst.rotation.x = -Math.PI / 2;
   stairs.add(burst);
 
-  // Where the figure's feet stand on step i.
+  // Where the climber stands on step i: on top of the slab, a little toward the next step.
   const treadTop = (i) => {
     const s = steps[Math.max(0, Math.min(STEP_COUNT - 1, i))].userData.home;
-    return new THREE.Vector3(s.x, s.y + ((i + 1) * STEP_H) / 2, 0.35);
+    return new THREE.Vector3(s.x + STEP_W * 0.2, s.y + ((i + 1) * STEP_H) / 2 + CAP_H - 0.01, 0.3);
   };
   const groundStart = () => {
     const p = treadTop(0);
-    return new THREE.Vector3(p.x - STEP_W * 1.1, floorY, p.z);
+    return new THREE.Vector3(p.x - STEP_W, floorY, p.z);
   };
+
+  // One step up, k = 0..1. "lead" = the leg that goes first (they take turns).
+  const T = [0, 0.18, 0.36, 0.62, 0.86, 1];
+  const POSE = {
+    root: [0, 0, 0.04, 0.62, 1, 1],
+    leadHip: [0, 0.8, 1.75, 0.85, 0.08, 0],
+    leadKnee: [-0.05, -1.8, -1.95, -0.85, -0.12, -0.05],
+    trailHip: [0, 0.02, -0.12, -0.45, 0.55, 0],
+    trailKnee: [-0.05, -0.08, -0.12, -0.45, -1.35, -0.05],
+    lean: [0.04, 0.12, 0.22, 0.3, 0.12, 0.04],
+    armF: [0.05, 0.3, 0.55, 0.7, 0.3, 0.05],
+    armB: [-0.05, -0.2, -0.35, -0.5, -0.2, -0.05],
+    elbow: [0.18, 0.35, 0.55, 0.75, 0.45, 0.18],
+  };
+  const pose = (k) => {
+    const o = {};
+    for (const key of Object.keys(POSE)) o[key] = track1(T, POSE[key], k);
+    return o;
+  };
+  const NEUTRAL = pose(1);
+  function applyPose(q, lead, top = 0) {
+    const L = legs[lead];
+    const R = legs[1 - lead];
+    L.hip.rotation.z = q.leadHip;
+    L.knee.rotation.z = q.leadKnee;
+    R.hip.rotation.z = q.trailHip;
+    R.knee.rotation.z = q.trailKnee;
+    torso.rotation.z = -q.lean * (1 - top);
+    arms.forEach((a, i) => {
+      // the arm on the other side from the leading leg swings forward
+      const swing = i === 1 - lead ? q.armF : q.armB;
+      a.shoulder.rotation.z = swing * (1 - top) + 2.9 * top;
+      a.shoulder.rotation.x = -a.side * (0.12 + 0.25 * top);
+      a.elbow.rotation.z = q.elbow * (1 - top) + 0.15 * top;
+    });
+  }
 
   // Entrance path in "box units" (-1..1): from small in the upper right, swinging into the middle.
   const curve = new THREE.CatmullRomCurve3(
@@ -344,26 +468,25 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   }
 
   function climb(t) {
-    const per = HOP_S + REST_S;
+    const per = STEP_S + REST_S;
     const loop = STEP_COUNT * per + TOP_S;
     const lt = t % loop;
     const n = Math.floor(lt / per);
     if (n >= STEP_COUNT) {
+      // At the top: both arms up, a couple of happy bounces, then fade out and start again.
       const k = (lt - STEP_COUNT * per) / TOP_S;
       const p = treadTop(STEP_COUNT - 1);
-      p.y += Math.abs(Math.sin(k * Math.PI * 3)) * 0.12 * (1 - k);
-      return { p, fade: k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1, landed: STEP_COUNT - 1, top: true, air: Math.abs(Math.sin(k * Math.PI * 3)) * (1 - k), crouch: 0 };
+      p.y += Math.abs(Math.sin(k * Math.PI * 4)) * 0.07 * clamp01(1 - k * 1.4);
+      return { p, q: NEUTRAL, lead: 0, top: smooth(clamp01(k * 4)) * clamp01((1 - k) * 4), fade: k > 0.82 ? 1 - (k - 0.82) / 0.18 : 1, landed: STEP_COUNT - 1, atTop: true };
     }
     const from = n === 0 ? groundStart() : treadTop(n - 1);
     const to = treadTop(n);
-    const k = clamp01((lt - n * per) / HOP_S);
-    const e = easeInOut(k);
-    const p = from.clone().lerp(to, e);
-    p.y += Math.sin(e * Math.PI) * 0.55;
-    // crouch at the end of the rest, just before the next jump
-    const rest = lt - n * per - HOP_S;
-    const crouch = k >= 1 ? clamp01((rest - (REST_S - 0.18)) / 0.18) : 0;
-    return { p, fade: n === 0 ? clamp01(k * 2.5) : 1, landed: k >= 1 ? n : n - 1, top: false, air: k < 1 ? Math.sin(e * Math.PI) : 0, crouch };
+    const k = clamp01((lt - n * per) / STEP_S);
+    const q = pose(k);
+    const p = from.clone().lerp(to, q.root);
+    // the body dips a touch while the knee is high, then rises with the push
+    p.y -= Math.sin(clamp01(k / 0.4) * Math.PI) * 0.03;
+    return { p, q, lead: n % 2, top: 0, fade: n === 0 ? clamp01(k * 4) : 1, landed: k >= 0.8 ? n : n - 1, atTop: false };
   }
 
   function update(dt) {
@@ -388,11 +511,16 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       m.position.y = m.userData.home.y - (1 - s) * 2.4;
       const o = clamp01(k * 1.6);
       m.material.opacity = o;
-      m.children[0].material.opacity = 0.9 * o;
+      m.children[0].material.opacity = o;
       pulses[i] = Math.max(0, pulses[i] - dt * 1.6);
       m.material.color.copy(colorNow[i]);
       m.material.emissive.copy(colorNow[i]);
-      m.material.emissiveIntensity = 0.07 + pulses[i] * 0.8;
+      m.material.emissiveIntensity = 0.05 + pulses[i] * 0.8;
+      capColor.copy(colorNow[i]).lerp(white, 0.3);
+      m.children[0].material.color.copy(capColor);
+      m.children[0].material.emissive = m.children[0].material.emissive || new THREE.Color();
+      m.children[0].material.emissive.copy(colorNow[i]);
+      m.children[0].material.emissiveIntensity = pulses[i] * 0.9;
     });
 
     // Motes drift up and loop.
@@ -416,17 +544,17 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
 
     // The learner.
     if (entrance > 0.72 || reduced) {
-      const st = reduced ? { p: treadTop(STEP_COUNT - 1), fade: 1, landed: STEP_COUNT - 1, top: false, air: 0, crouch: 0 } : climb(climbT);
+      const st = reduced ? { p: treadTop(STEP_COUNT - 1), q: NEUTRAL, lead: 0, top: 0, fade: 1, landed: STEP_COUNT - 1, atTop: false } : climb(climbT);
       climber.position.copy(st.p);
-      climber.scale.setScalar(1.45);
       climber.visible = st.fade > 0.01;
       figMat.opacity = st.fade;
-      orbLight.intensity = 1.6 * st.fade;
+      jointMat.opacity = st.fade;
+      orbLight.intensity = 1.2 * st.fade;
+      applyPose(st.q, st.lead, st.top);
       if (st.landed !== lastHop && st.landed >= 0) {
         pulses[st.landed] = 1;
         active = st.landed;
-        landedAt = climbT;
-        if (st.landed === STEP_COUNT - 1 && st.top) {
+        if (st.landed === STEP_COUNT - 1 && st.atTop) {
           burstT = 0;
           burst.position.copy(treadTop(STEP_COUNT - 1));
           burst.position.y += 0.02;
@@ -434,19 +562,6 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       }
       if (st.landed < 0) active = -1;
       lastHop = st.landed;
-      // Squash on landing, crouch before take-off, stretch in the air; lean into the jump.
-      const impact = reduced || st.air > 0.05 ? 0 : Math.exp(-(climbT - landedAt) * 14);
-      const sy = 1 + 0.16 * st.air - 0.24 * impact - 0.18 * st.crouch;
-      bodyPivot.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
-      bodyPivot.rotation.z = -0.22 * st.air + 0.1 * st.crouch;
-      // arms: swing back while crouching, up and forward in the air; legs tuck forward mid-jump
-      arms.forEach((a, i) => {
-        a.rotation.z = 1.5 * st.air - 0.7 * st.crouch + (i ? 0.05 : -0.05);
-        a.rotation.x = (i ? -1 : 1) * (0.12 + 0.25 * st.air);
-      });
-      legs.forEach((l, i) => {
-        l.rotation.z = 0.75 * st.air * (i ? 1 : 0.8) - 0.15 * st.crouch;
-      });
     } else {
       climber.visible = false;
     }

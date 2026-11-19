@@ -1,5 +1,6 @@
-// SpeakUp service worker: makes the site installable, opens offline, and shows daily reminders.
-const CACHE = 'speakup-v2';
+// Zinapoya service worker: makes the site installable, opens offline, and shows daily reminders.
+// A new CACHE name clears every older offline copy (old logo icons included).
+const CACHE = 'zinapoya-v3';
 
 // Download the whole site once (app files + exam pictures, listed by the build in precache.json),
 // so practice works offline. Files of older versions are removed afterwards.
@@ -96,10 +97,10 @@ self.addEventListener('push', (event) => {
     data = { body: event.data?.text() };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'SpeakUp 🎤', {
+    self.registration.showNotification(data.title || 'Zinapoya', {
       body: data.body || 'Time for your speaking practice!',
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: '/icons/v2/icon-192.png',
+      badge: '/icons/v2/icon-192.png',
       tag: 'daily-reminder',
       data: { url: data.url || '/' },
     }),

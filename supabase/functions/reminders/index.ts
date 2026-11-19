@@ -1,4 +1,4 @@
-// Supabase Edge Function: SpeakUp daily reminder.
+// Supabase Edge Function: Zinapoya daily reminder.
 //   POST {"action":"public-key"} → the public push key the website needs to turn reminders on.
 //   POST from the 19:00 pg_cron job (header x-cron-secret) → sends today's reminders.
 // Sends a push notification to every student who turned reminders on and has not practised today (Tashkent time).
