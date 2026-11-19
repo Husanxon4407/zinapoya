@@ -864,4 +864,13 @@ export default {
   "Finish": "Готово",
   "Skip for now": "Пропустить пока",
   'Welcome back! Log in to record answers and see your progress.': 'С возвращением! Войдите, чтобы записывать ответы и видеть свой прогресс.',
+  "Language club": "Языковой клуб",
+  "{n} people online": "{n} в сети",
+  "Write a message…": "Напишите сообщение…",
+  "Hi! Ready to practise today?": "Привет! Готовы сегодня позаниматься?",
+  "Hi! What are we learning today?": "Привет! Что мы сегодня изучаем?",
+  "Hi! Let's talk in Russian.": "Привет! Давай поговорим по-русски.",
+  "Hello! Nice to meet you.": "Здравствуйте! Приятно познакомиться.",
+  "Hello! How are you?": "Привет! Как дела?",
+  "Hi! Shall we practise together?": "Привет! Попрактикуемся вместе?",
 };

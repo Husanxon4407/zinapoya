@@ -1,8 +1,8 @@
 // The animated picture on each area homepage. One per area, all drawn in code (no images),
 // so they are light, sharp on every screen and follow the area colours.
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCanvasLoop, rgba, reducedMotion } from './useCanvasLoop.js';
-import { skillName, useT } from '../../i18n/index.js';
+import { skillName, useLang, useT } from '../../i18n/index.js';
 
 /* ---------- CEFR: a live voice ---------- */
 function VoiceVisual({ theme }) {
@@ -275,76 +275,140 @@ function GraphVisual({ theme }) {
   );
 }
 
-/* ---------- Languages: a globe that says hello ---------- */
-// Greetings spread evenly around the globe (not at their real countries, which would crowd Europe).
-const HELLO_WORDS = ['Hello', 'Salom', 'Привет', '안녕하세요', 'Merhaba', 'Hallo', 'مرحبا', 'Bonjour', 'Hola', 'こんにちは', '你好', 'नमस्ते', 'Olá', 'Ciao', 'Jambo', 'Sawubona'];
-const HELLOS = HELLO_WORDS.map((w, i) => [w, [-38, 8, 42, -12, 28, -30, 52, 0][i % 8], (i * 360) / HELLO_WORDS.length + (i % 2) * 11]);
-function GreetingsVisual({ theme }) {
-  const ref = useCanvasLoop((ctx, { w, h, t }) => {
-    const cx = w / 2;
-    const cy = h / 2;
-    const R = Math.min(w, h) * 0.36;
-    const rot = t * 0.22;
-    const tilt = 0.38;
-    const project = (lat, lon) => {
-      const la = (lat * Math.PI) / 180;
-      const lo = (lon * Math.PI) / 180 + rot;
-      const x = Math.cos(la) * Math.sin(lo);
-      const y = Math.sin(la);
-      const z = Math.cos(la) * Math.cos(lo);
-      // tilt around the x axis
-      const y2 = y * Math.cos(tilt) - z * Math.sin(tilt);
-      const z2 = y * Math.sin(tilt) + z * Math.cos(tilt);
-      return [cx + x * R, cy - y2 * R, z2];
+/* ---------- Languages: a live language-club chat ---------- */
+// People from around the world write to the learner, one message at a time, like a real messenger:
+// "typing…", then the message; one voice note; the learner ("you") answers now and then.
+// Under each foreign message a small line gives its meaning in the visitor's own language.
+// (Same idea as the logo: practice is a conversation.)
+const CHAT = [
+  { who: 'Emma', lang: 'en', text: 'Hi! Ready to practise today?', tr: 'Hi! Ready to practise today?' },
+  { you: true, text: 'Yes! Let’s go 🙌' },
+  { who: 'Aziz', lang: 'uz', text: 'Salom! Bugun nimani o‘rganamiz?', tr: 'Hi! What are we learning today?' },
+  { who: 'Olga', lang: 'ru', text: 'Привет! Давай поговорим по-русски.', tr: "Hi! Let's talk in Russian." },
+  { who: 'Minji', lang: 'ko', text: '안녕하세요! 만나서 반가워요.', tr: 'Hello! Nice to meet you.' },
+  { you: true, text: 'Nice to meet you too! 😊' },
+  { who: 'Emre', lang: 'tr', voice: '0:04', text: 'Merhaba! Nasılsın?', tr: 'Hello! How are you?' },
+  { who: 'Lukas', lang: 'de', text: 'Hallo! Wie geht’s dir?', tr: 'Hello! How are you?' },
+  { who: 'Layla', lang: 'ar', text: 'مرحبا! كيف حالك؟', tr: 'Hello! How are you?', rtl: true },
+  { you: true, text: 'I’m great, thanks! 💬' },
+  { who: 'Diego', lang: 'es', text: '¡Hola! ¿Practicamos juntos?', tr: 'Hi! Shall we practise together?' },
+];
+const PEOPLE_COLORS = { Emma: '#60a5fa', Aziz: '#34d399', Olga: '#f472b6', Minji: '#a78bfa', Emre: '#f87171', Lukas: '#fbbf24', Layla: '#2dd4bf', Diego: '#fb923c' };
+const GLYPHS = ['あ', 'Ж', 'ع', '한', 'ñ', 'ß', 'ç', 'ö', '你', 'ğ', 'Ω', 'é', 'ق', 'Я', 'ü', 'ê'];
+const TYPING_MS = 1100;
+const READ_MS = 1700;
+const KEEP = 7;
+
+function ChatVisual() {
+  const t = useT();
+  const ui = useLang();
+  const [items, setItems] = useState(() => (reducedMotion() ? CHAT.slice(0, 5).map((m, i) => ({ id: i, n: i, typing: false })) : []));
+
+  useEffect(() => {
+    if (reducedMotion()) return undefined;
+    let n = 0;
+    let id = 0;
+    let timer = 0;
+    const next = () => {
+      const k = n % CHAT.length;
+      const myId = id++;
+      // the learner's own messages appear without "typing…" from the other side
+      const typing = !CHAT[k].you;
+      setItems((list) => [...list, { id: myId, n: k, typing }].slice(-KEEP));
+      timer = setTimeout(
+        () => {
+          setItems((list) => list.map((it) => (it.id === myId ? { ...it, typing: false } : it)));
+          n += 1;
+          timer = setTimeout(next, READ_MS);
+        },
+        typing ? TYPING_MS : 250,
+      );
     };
-    // Glow behind the globe.
-    const g = ctx.createRadialGradient(cx, cy, R * 0.2, cx, cy, R * 1.5);
-    g.addColorStop(0, rgba(theme.accent, 0.22));
-    g.addColorStop(1, rgba(theme.accent, 0));
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-    // Dots on the sphere.
-    for (let lat = -80; lat <= 80; lat += 10) {
-      const step = 360 / Math.max(8, Math.round(36 * Math.cos((lat * Math.PI) / 180)));
-      for (let lon = 0; lon < 360; lon += step) {
-        const [x, y, z] = project(lat, lon);
-        if (z < -0.05) continue;
-        ctx.beginPath();
-        ctx.arc(x, y, 1.2 + z * 1.3, 0, Math.PI * 2);
-        ctx.fillStyle = rgba(theme.accent, 0.15 + z * 0.6);
-        ctx.fill();
-      }
-    }
-    // Outline.
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.strokeStyle = rgba(theme.accent, 0.35);
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    // Greetings on the front side.
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    HELLOS.forEach(([word, lat, lon], i) => {
-      const [x, y, z] = project(lat, lon);
-      if (z < 0.15) return;
-      const a = Math.min(1, (z - 0.15) / 0.35);
-      const size = 11 + z * 9;
-      ctx.font = `700 ${size}px Manrope, system-ui, sans-serif`;
-      const tw = ctx.measureText(word).width + 18;
-      ctx.fillStyle = rgba(theme.bg, 0.75 * a);
-      ctx.strokeStyle = rgba(i % 3 === 0 ? theme.accent2 : theme.accent, 0.8 * a);
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.roundRect(x - tw / 2, y - size * 0.85, tw, size * 1.7, size);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = `rgba(255,255,255,${a})`;
-      ctx.fillText(word, x, y + 1);
-    });
-  });
+    timer = setTimeout(next, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="avis avis--greetings">
-      <canvas ref={ref} className="avis__canvas" aria-hidden="true" />
+    <div className="avis avis--chat">
+      {GLYPHS.map((g, i) => (
+        <span key={i} className="chat-glyph" aria-hidden="true" style={{ '--i': i }}>
+          {g}
+        </span>
+      ))}
+      <div className="chat" aria-hidden="true" translate="no">
+        <div className="chat__head">
+          <div className="chat__faces">
+            {['Emma', 'Aziz', 'Minji', 'Layla'].map((p) => (
+              <span key={p} style={{ '--c': PEOPLE_COLORS[p] }}>
+                {p[0]}
+              </span>
+            ))}
+          </div>
+          <div className="chat__title">
+            <b>{t('Language club')}</b>
+            <small>
+              <i className="chat__online" /> {t('{n} people online', { n: 128 })}
+            </small>
+          </div>
+        </div>
+        <div className="chat__list">
+          {items.map((it) => {
+            const m = CHAT[it.n];
+            if (m.you) {
+              return (
+                <div key={it.id} className="msg msg--you">
+                  <div className="msg__bubble">{m.text}</div>
+                </div>
+              );
+            }
+            const showTr = m.tr && m.lang !== ui;
+            return (
+              <div key={it.id} className="msg" style={{ '--c': PEOPLE_COLORS[m.who] }}>
+                <span className="msg__face">{m.who[0]}</span>
+                <div className={`msg__bubble ${it.typing ? 'is-typing' : ''}`}>
+                  <span className="msg__who">
+                    {m.who} <em>{m.lang.toUpperCase()}</em>
+                  </span>
+                  {it.typing ? (
+                    <span className="msg__dots">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  ) : (
+                    <>
+                      {m.voice && (
+                        <span className="msg__voice">
+                          <span className="msg__play">▶</span>
+                          <span className="msg__wave">
+                            {Array.from({ length: 22 }, (_, i) => (
+                              <i key={i} style={{ '--h': `${30 + Math.round(70 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)))}%`, '--i': i }} />
+                            ))}
+                          </span>
+                          <small>{m.voice}</small>
+                        </span>
+                      )}
+                      <span className="msg__text" dir={m.rtl ? 'rtl' : 'ltr'} lang={m.lang}>
+                        {m.text}
+                      </span>
+                      {showTr && <span className="msg__tr">{t(m.tr)}</span>}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="chat__input">
+          <span>{t('Write a message…')}</span>
+          <span className="chat__mic">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" />
+              <path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -389,7 +453,7 @@ function ChalkVisual({ theme }) {
   );
 }
 
-const VISUALS = { voice: VoiceVisual, gauge: GaugeVisual, graph: GraphVisual, greetings: GreetingsVisual, chalk: ChalkVisual };
+const VISUALS = { voice: VoiceVisual, gauge: GaugeVisual, graph: GraphVisual, greetings: ChatVisual, chalk: ChalkVisual };
 
 export default function AreaVisual({ area }) {
   const V = VISUALS[area.visual] || VoiceVisual;

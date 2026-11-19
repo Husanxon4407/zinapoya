@@ -864,4 +864,13 @@ export default {
   "Finish": "Tugatish",
   "Skip for now": "Hozircha o‘tkazib yuborish",
   'Welcome back! Log in to record answers and see your progress.': 'Xush kelibsiz! Javob yozib olish va natijalaringizni ko‘rish uchun tizimga kiring.',
+  "Language club": "Til klubi",
+  "{n} people online": "{n} kishi onlayn",
+  "Write a message…": "Xabar yozing…",
+  "Hi! Ready to practise today?": "Salom! Bugun mashq qilishga tayyormisiz?",
+  "Hi! What are we learning today?": "Salom! Bugun nimani o‘rganamiz?",
+  "Hi! Let's talk in Russian.": "Salom! Keling, ruscha gaplashamiz.",
+  "Hello! Nice to meet you.": "Salom! Tanishganimdan xursandman.",
+  "Hello! How are you?": "Salom! Qalaysiz?",
+  "Hi! Shall we practise together?": "Salom! Birga mashq qilamizmi?",
 };
