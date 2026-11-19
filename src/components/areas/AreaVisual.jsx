@@ -276,9 +276,10 @@ function GraphVisual({ theme }) {
 }
 
 /* ---------- Languages: a live language-club chat ---------- */
-// People from around the world write to the learner, one message at a time, like a real messenger:
-// "typing…", then the message; one voice note; the learner ("you") answers now and then.
-// Under each foreign message a small line gives its meaning in the visitor's own language.
+// A messenger group inside a phone (Telegram-style dark look): "Aziz is typing…" in the header, then
+// the message; bubbles with tails, times and ✓✓; one voice note; the learner answers now and then.
+// Under each foreign message a quote line gives its meaning in the visitor's own language.
+// Three small cards float around the phone so the picture fills its space.
 // (Same idea as the logo: practice is a conversation.)
 const CHAT = [
   { who: 'Emma', lang: 'en', text: 'Hi! Ready to practise today?', tr: 'Hi! Ready to practise today?' },
@@ -293,121 +294,195 @@ const CHAT = [
   { you: true, text: 'I’m great, thanks! 💬' },
   { who: 'Diego', lang: 'es', text: '¡Hola! ¿Practicamos juntos?', tr: 'Hi! Shall we practise together?' },
 ];
-const PEOPLE_COLORS = { Emma: '#60a5fa', Aziz: '#34d399', Olga: '#f472b6', Minji: '#a78bfa', Emre: '#f87171', Lukas: '#fbbf24', Layla: '#2dd4bf', Diego: '#fb923c' };
-const GLYPHS = ['あ', 'Ж', 'ع', '한', 'ñ', 'ß', 'ç', 'ö', '你', 'ğ', 'Ω', 'é', 'ق', 'Я', 'ü', 'ê'];
-const TYPING_MS = 1100;
+const PEOPLE_COLORS = { Emma: '#6cb4ff', Aziz: '#5fd68d', Olga: '#f78ccf', Minji: '#b79cff', Emre: '#ff8a7a', Lukas: '#f7c65c', Layla: '#4dd6c8', Diego: '#ffa45c' };
+const LANG_CODES = ['EN', 'UZ', 'RU', 'KO', 'TR', 'DE', 'AR', 'ES'];
+const TYPING_MS = 1200;
 const READ_MS = 1700;
 const KEEP = 7;
+const timeOf = (n) => `10:${String(14 + ((n * 3) % 40)).padStart(2, '0')}`;
+
+const Icon = ({ d, size = 18 }) => (
+  <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
+    <path d={d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const ICONS = {
+  back: 'M15 5l-7 7 7 7',
+  more: 'M12 5.5v.01M12 12v.01M12 18.5v.01',
+  smile: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 14.5s1.3 1.8 3.5 1.8 3.5-1.8 3.5-1.8M9 9.5v.01M15 9.5v.01',
+  clip: 'M20.5 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8',
+  mic: 'M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM6 11a6 6 0 0 0 12 0M12 17v4',
+  speaker: 'M4 9v6h4l5 4V5L8 9H4zM16.5 8.5a5 5 0 0 1 0 7',
+};
 
 function ChatVisual() {
   const t = useT();
   const ui = useLang();
-  const [items, setItems] = useState(() => (reducedMotion() ? CHAT.slice(0, 5).map((m, i) => ({ id: i, n: i, typing: false })) : []));
+  const still = reducedMotion();
+  const [items, setItems] = useState(() => (still ? CHAT.slice(0, 6).map((m, i) => ({ id: i, n: i })) : []));
+  const [typing, setTyping] = useState(null);
 
   useEffect(() => {
-    if (reducedMotion()) return undefined;
+    if (still) return undefined;
     let n = 0;
     let id = 0;
     let timer = 0;
     const next = () => {
       const k = n % CHAT.length;
-      const myId = id++;
-      // the learner's own messages appear without "typing…" from the other side
-      const typing = !CHAT[k].you;
-      setItems((list) => [...list, { id: myId, n: k, typing }].slice(-KEEP));
-      timer = setTimeout(
-        () => {
-          setItems((list) => list.map((it) => (it.id === myId ? { ...it, typing: false } : it)));
-          n += 1;
-          timer = setTimeout(next, READ_MS);
-        },
-        typing ? TYPING_MS : 250,
-      );
+      const m = CHAT[k];
+      const show = () => {
+        setTyping(null);
+        setItems((list) => [...list, { id: id++, n: k }].slice(-KEEP));
+        n += 1;
+        timer = setTimeout(next, READ_MS);
+      };
+      if (m.you) {
+        timer = setTimeout(show, 300);
+      } else {
+        setTyping(m.who);
+        timer = setTimeout(show, TYPING_MS);
+      }
     };
     timer = setTimeout(next, 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [still]);
 
   return (
     <div className="avis avis--chat">
-      {GLYPHS.map((g, i) => (
-        <span key={i} className="chat-glyph" aria-hidden="true" style={{ '--i': i }}>
-          {g}
-        </span>
-      ))}
-      <div className="chat" aria-hidden="true" translate="no">
-        <div className="chat__head">
-          <div className="chat__faces">
-            {['Emma', 'Aziz', 'Minji', 'Layla'].map((p) => (
-              <span key={p} style={{ '--c': PEOPLE_COLORS[p] }}>
-                {p[0]}
-              </span>
-            ))}
-          </div>
-          <div className="chat__title">
+      <div className="tg-stage">
+      <div className="tg-phone" aria-hidden="true" translate="no">
+        <div className="tg-head">
+          <span className="tg-head__icon">
+            <Icon d={ICONS.back} />
+          </span>
+          <span className="tg-head__ava">Aa</span>
+          <span className="tg-head__title">
             <b>{t('Language club')}</b>
-            <small>
-              <i className="chat__online" /> {t('{n} people online', { n: 128 })}
-            </small>
-          </div>
-        </div>
-        <div className="chat__list">
-          {items.map((it) => {
-            const m = CHAT[it.n];
-            if (m.you) {
-              return (
-                <div key={it.id} className="msg msg--you">
-                  <div className="msg__bubble">{m.text}</div>
-                </div>
-              );
-            }
-            const showTr = m.tr && m.lang !== ui;
-            return (
-              <div key={it.id} className="msg" style={{ '--c': PEOPLE_COLORS[m.who] }}>
-                <span className="msg__face">{m.who[0]}</span>
-                <div className={`msg__bubble ${it.typing ? 'is-typing' : ''}`}>
-                  <span className="msg__who">
-                    {m.who} <em>{m.lang.toUpperCase()}</em>
-                  </span>
-                  {it.typing ? (
-                    <span className="msg__dots">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                  ) : (
-                    <>
-                      {m.voice && (
-                        <span className="msg__voice">
-                          <span className="msg__play">▶</span>
-                          <span className="msg__wave">
-                            {Array.from({ length: 22 }, (_, i) => (
-                              <i key={i} style={{ '--h': `${30 + Math.round(70 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)))}%`, '--i': i }} />
-                            ))}
-                          </span>
-                          <small>{m.voice}</small>
-                        </span>
-                      )}
-                      <span className="msg__text" dir={m.rtl ? 'rtl' : 'ltr'} lang={m.lang}>
-                        {m.text}
-                      </span>
-                      {showTr && <span className="msg__tr">{t(m.tr)}</span>}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="chat__input">
-          <span>{t('Write a message…')}</span>
-          <span className="chat__mic">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" />
-              <path d="M6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+            {typing ? (
+              <small className="tg-head__typing">
+                {t('{name} is typing', { name: typing })}
+                <span className="tg-dots">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </small>
+            ) : (
+              <small>{t('{n} members, {m} online', { n: 128, m: 12 })}</small>
+            )}
+          </span>
+          <span className="tg-head__icon">
+            <Icon d={ICONS.more} />
           </span>
         </div>
+
+        <div className="tg-wall">
+          <div className="tg-list">
+            <span className="tg-date">{t('Today')}</span>
+            {items.map((it) => {
+              const m = CHAT[it.n];
+              const time = timeOf(it.id + 3);
+              if (m.you) {
+                return (
+                  <div key={it.id} className="tg-msg tg-msg--out">
+                    <div className="tg-bubble">
+                      <span className="tg-text">{m.text}</span>
+                      <span className="tg-meta">
+                        {time} <span className="tg-ticks">✓✓</span>
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+              const showTr = m.tr && m.lang !== ui;
+              return (
+                <div key={it.id} className="tg-msg" style={{ '--c': PEOPLE_COLORS[m.who] }}>
+                  <span className="tg-ava">{m.who[0]}</span>
+                  <div className="tg-bubble">
+                    <span className="tg-name">
+                      {m.who} <em>{m.lang.toUpperCase()}</em>
+                    </span>
+                    {m.voice && (
+                      <span className="tg-voice">
+                        <span className="tg-play">▶</span>
+                        <span className="tg-wave">
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <i key={i} style={{ '--h': `${25 + Math.round(75 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)))}%`, '--i': i }} />
+                          ))}
+                        </span>
+                        <small>{m.voice}</small>
+                      </span>
+                    )}
+                    <span className="tg-text" dir={m.rtl ? 'rtl' : 'ltr'} lang={m.lang}>
+                      {m.text}
+                    </span>
+                    {showTr && <span className="tg-quote">{t(m.tr)}</span>}
+                    <span className="tg-meta">{time}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="tg-input">
+          <span className="tg-input__icon">
+            <Icon d={ICONS.smile} />
+          </span>
+          <span className="tg-input__field">{t('Message')}</span>
+          <span className="tg-input__icon">
+            <Icon d={ICONS.clip} />
+          </span>
+          <span className="tg-input__mic">
+            <Icon d={ICONS.mic} size={17} />
+          </span>
+        </div>
+      </div>
+
+      {/* Cards around the phone (hidden on small screens) */}
+      <div className="lc-card lc-card--langs" aria-hidden="true" translate="no">
+        <b>{t('{n} languages', { n: LANG_CODES.length })}</b>
+        <span className="lc-codes">
+          {LANG_CODES.map((c, i) => (
+            <i key={c} style={{ '--i': i }}>
+              {c}
+            </i>
+          ))}
+        </span>
+      </div>
+      <div className="lc-card lc-card--word" aria-hidden="true" translate="no">
+        <small>{t('Word of the day')}</small>
+        <span className="lc-word">
+          <b lang="tr">Merhaba</b>
+          <span className="lc-say">
+            <Icon d={ICONS.speaker} size={15} />
+          </span>
+        </span>
+        <span className="lc-mean">{t('means “Hello”')}</span>
+      </div>
+      <div className="lc-card lc-card--speak" aria-hidden="true" translate="no">
+        <small>{t('Pronunciation')}</small>
+        <span className="lc-speak">
+          <span className="lc-ring" style={{ '--p': 92 }}>
+            <b>92%</b>
+          </span>
+          <span>
+            <b lang="tr">Merhaba</b>
+            <span className="lc-ok">✓ {t('Great!')}</span>
+          </span>
+        </span>
+      </div>
+      <div className="lc-card lc-card--streak" aria-hidden="true">
+        <span className="lc-fire">🔥</span>
+        <span>
+          <b>{t('{n}-day streak', { n: 7 })}</b>
+          <span className="lc-days">
+            {Array.from({ length: 7 }, (_, i) => (
+              <i key={i} style={{ '--i': i }} />
+            ))}
+          </span>
+        </span>
+      </div>
       </div>
     </div>
   );
