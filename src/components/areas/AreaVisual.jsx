@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCanvasLoop, rgba, reducedMotion } from './useCanvasLoop.js';
 import { skillName, useLang, useT } from '../../i18n/index.js';
+import { NotebookScene, QuestionScene, RecorderScene, ReportScene } from './AreaScenes.jsx';
 
 /* ---------- CEFR: a live voice ---------- */
 function VoiceVisual({ theme }) {
@@ -528,7 +529,12 @@ function ChalkVisual({ theme }) {
   );
 }
 
-const VISUALS = { voice: VoiceVisual, gauge: GaugeVisual, graph: GraphVisual, greetings: ChatVisual, chalk: ChalkVisual };
+// USE_SCENES = true: the "real app" scenes (AreaScenes.jsx) for CEFR, IELTS, SAT and School.
+// false: the original drawings above (voice rings, band dial, score graph, chalkboard).
+const USE_SCENES = true;
+const VISUALS = USE_SCENES
+  ? { voice: RecorderScene, gauge: ReportScene, graph: QuestionScene, greetings: ChatVisual, chalk: NotebookScene }
+  : { voice: VoiceVisual, gauge: GaugeVisual, graph: GraphVisual, greetings: ChatVisual, chalk: ChalkVisual };
 
 export default function AreaVisual({ area }) {
   const V = VISUALS[area.visual] || VoiceVisual;
