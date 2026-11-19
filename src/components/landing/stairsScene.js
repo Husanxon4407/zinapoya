@@ -95,7 +95,9 @@ function radialTexture(stops) {
  * @param {HTMLElement} host  the element the canvas fills
  * @param {{ palette: string[], accent: string, onFrame?: Function, onReady?: Function, reduced?: boolean }} opts
  */
-export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, onReady, reduced = false } = {}) {
+// autoStart: false = load and warm up now, but wait for start() before anything moves (the page
+// starts it together with the typing headline).
+export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, onReady, reduced = false, autoStart = true } = {}) {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -435,6 +437,8 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   let hw = 1;
   let hh = 1;
   let entrance = reduced ? 1 : 0;
+  let started = autoStart || reduced;
+  let warmed = false;
   let climbT = 0;
   let paused = false;
   let visible = true;
@@ -490,7 +494,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   }
 
   function update(dt) {
-    if (!paused && !reduced) {
+    if (!paused && !reduced && started) {
       if (entrance < 1) entrance = Math.min(1, entrance + dt / ENTRANCE_S);
       if (entrance > 0.72) climbT += dt;
       swayT += dt;
@@ -585,13 +589,14 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
 
   function frame(now) {
     raf = 0;
+    if (!warmed) return; // nothing is drawn before the background warm-up is done
     // Real clock (slow phones don't get slow motion), never more than a quarter second per jump.
     const dt = Math.min(0.25, Math.max(0, (now - last) / 1000));
     last = now;
     update(dt);
     renderer.render(scene, camera);
     report();
-    if (visible && !(reduced || paused)) raf = requestAnimationFrame(frame);
+    if (visible && started && !(reduced || paused)) raf = requestAnimationFrame(frame);
   }
   function kick() {
     if (!raf && visible) {
@@ -617,8 +622,24 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   if (!reduced) window.addEventListener('pointermove', onPointer, { passive: true });
 
   layout();
-  kick();
-  onReady?.();
+  // Warm-up: prepare every shader (in the background where the browser can, so the page never
+  // freezes) and draw one frame, so nothing stutters once the staircase starts moving.
+  let disposed = false;
+  (async () => {
+    await new Promise((r) => setTimeout(r, 0));
+    try {
+      if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
+      else renderer.compile(scene, camera);
+    } catch {
+      /* the first frame will compile what is left */
+    }
+    if (disposed) return;
+    warmed = true;
+    update(0);
+    renderer.render(scene, camera);
+    kick();
+    onReady?.();
+  })();
 
   return {
     setPalette(colors, accentColor) {
@@ -640,6 +661,12 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
         frame(last);
       }
     },
+    start() {
+      if (started) return;
+      started = true;
+      last = performance.now();
+      kick();
+    },
     replay() {
       entrance = 0;
       climbT = 0;
@@ -660,6 +687,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       }
     },
     dispose() {
+      disposed = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();

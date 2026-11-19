@@ -6,11 +6,12 @@ import TypeTitle from './TypeTitle.jsx';
 import { AREAS, areaPath } from '../../data/areas.js';
 import { useApp } from '../../state.jsx';
 import { useFitText } from '../../lib/useFitText.js';
-import { langAsked, useLang, useT } from '../../i18n/index.js';
+import { useLang, useT } from '../../i18n/index.js';
 import { useReturning } from '../../lib/returning.js';
 
 const STEPS = 6;
 const AUTO_SWITCH_MS = 4200;
+const HOLD_MAX_MS = 2500;
 
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const hasWebGL = () => {
@@ -33,9 +34,11 @@ export default function Hero() {
   const sceneRef = useRef(null);
   const labelRefs = useRef([]);
   const [ready, setReady] = useState(false);
-  // The 3D staircase starts after the headline has typed itself (its start-up is heavy). While the
-  // first-visit language popup is open it can load straight away, behind the popup.
-  const [sceneGo, setSceneGo] = useState(() => !langAsked() || prefersReducedMotion());
+  // The staircase loads and warms up at once but stays still; the headline waits for it (at most
+  // HOLD_MAX_MS), then both start together: letters typing, staircase flying in.
+  const [webgl] = useState(hasWebGL);
+  const [holdOver, setHoldOver] = useState(false);
+  const typingStarted = useRef(false);
   const [paused, setPaused] = useState(false);
   const [index, setIndex] = useState(0);
   const [auto, setAuto] = useState(true);
@@ -44,7 +47,7 @@ export default function Hero() {
   const area = AREAS[index];
 
   useEffect(() => {
-    if (!sceneGo || !hasWebGL()) return undefined;
+    if (!webgl) return undefined;
     let alive = true;
     const start = () =>
       import('./stairsScene.js').then(({ createStairsScene }) => {
@@ -53,6 +56,7 @@ export default function Hero() {
           palette: AREAS[0].theme.steps,
           accent: AREAS[0].theme.accent,
           reduced: prefersReducedMotion(),
+          autoStart: false,
           onReady: () => setReady(true),
           onFrame: (pts) =>
             pts.forEach((p, i) => {
@@ -64,15 +68,26 @@ export default function Hero() {
             }),
         });
       });
-    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 120));
-    const handle = idle(() => start().catch(() => {}));
+    const handle = setTimeout(() => start().catch(() => setHoldOver(true)), 0);
+    const limit = setTimeout(() => setHoldOver(true), HOLD_MAX_MS);
     return () => {
       alive = false;
-      window.cancelIdleCallback?.(handle);
+      clearTimeout(handle);
+      clearTimeout(limit);
       sceneRef.current?.dispose();
       sceneRef.current = null;
     };
-  }, [sceneGo]);
+  }, [webgl]);
+
+  // If the staircase finished warming up after the typing had already begun (slow phone), start it now.
+  useEffect(() => {
+    if (ready && typingStarted.current) sceneRef.current?.start();
+  }, [ready]);
+
+  function startTogether() {
+    typingStarted.current = true;
+    sceneRef.current?.start();
+  }
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && sceneRef.current?.finish();
@@ -150,7 +165,7 @@ export default function Hero() {
 
       <div className="hero3d__grid">
         <div className="hero3d__text">
-          <TypeTitle lines={[t('Step up'), t('to your'), t('level')]} lang={lang} titleRef={titleRef} onDone={() => setSceneGo(true)} />
+          <TypeTitle lines={[t('Step up'), t('to your'), t('level')]} lang={lang} titleRef={titleRef} hold={webgl && !ready && !holdOver} onStart={startTogether} />
           <p className="rise" style={{ '--d': 1 }}>
             {t('Languages, exam prep and school subjects.')} {t('One clear step at a time.')}
           </p>
