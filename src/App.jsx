@@ -7,6 +7,7 @@ import Landing from './pages/Landing.jsx';
 import { ForgotPassword, Login, ResetPassword, Signup, signInErrorFromUrl } from './pages/Auth.jsx';
 import Home from './pages/Home.jsx';
 import Gate from './components/Gate.jsx';
+import LangPicker from './components/LangPicker.jsx';
 import { AREAS, areaPath, isArea } from './data/areas.js';
 import { safePath, takeNextPath } from './lib/area.js';
 
@@ -72,6 +73,7 @@ export default function App() {
       <Backdrop />
       <div className="app-layer">
         <Screens />
+        <LangPicker />
       </div>
     </>
   );

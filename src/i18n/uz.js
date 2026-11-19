@@ -863,4 +863,5 @@ export default {
   "Save": "Saqlash",
   "Finish": "Tugatish",
   "Skip for now": "Hozircha o‘tkazib yuborish",
+  'Welcome back! Log in to record answers and see your progress.': 'Xush kelibsiz! Javob yozib olish va natijalaringizni ko‘rish uchun tizimga kiring.',
 };

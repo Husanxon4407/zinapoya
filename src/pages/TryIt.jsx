@@ -5,9 +5,11 @@ import { PART1_1 } from '../data/part1_1.js';
 import { pick, stepsP11 } from '../lib/steps.js';
 import { useT } from '../i18n/index.js';
 import Logo from '../components/Logo.jsx';
+import { useReturning } from '../lib/returning.js';
 
 export default function TryIt() {
   const t = useT();
+  const returning = useReturning();
   const [steps] = useState(() => stepsP11([pick(PART1_1)]));
   return (
     <div className="guest-page">
@@ -15,8 +17,8 @@ export default function TryIt() {
         <Link to="/" className="logo">
           <Logo />
         </Link>
-        <Link to="/signup" className="btn btn--small">
-          {t('Sign up free')}
+        <Link to={returning ? '/login' : '/signup'} className="btn btn--small">
+          {returning ? t('Log in') : t('Sign up free')}
         </Link>
       </header>
       <main className="main">

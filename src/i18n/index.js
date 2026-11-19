@@ -32,6 +32,26 @@ function readSaved() {
   return 'en';
 }
 
+// True once the visitor has picked a language (or had one saved before): the first-visit
+// language popup (LangPicker) shows only while this is false.
+export function hasChosenLang() {
+  try {
+    return LANGS.some((l) => l.id === localStorage.getItem(KEY));
+  } catch {
+    return true; // storage blocked: the choice could not be remembered, so do not ask on every page
+  }
+}
+
+// The phone/browser language, when it is one we have (to pre-select it in the popup).
+export function deviceLang() {
+  const list = typeof navigator !== 'undefined' ? navigator.languages || [navigator.language] : [];
+  for (const l of list) {
+    const id = String(l || '').slice(0, 2).toLowerCase();
+    if (LANGS.some((x) => x.id === id)) return id;
+  }
+  return 'en';
+}
+
 let lang = readSaved();
 const listeners = new Set();
 if (typeof document !== 'undefined') document.documentElement.lang = lang;

@@ -4,6 +4,7 @@ import { computeStats, computeXp } from './lib/progress.js';
 import { dataUrlToBlob } from './lib/image.js';
 import { flushQueue } from './lib/offline.js';
 import { takePendingArea } from './lib/area.js';
+import { markReturning } from './lib/returning.js';
 import { DEFAULT_AREA, isArea } from './data/areas.js';
 
 export const PENDING_AVATAR = 'su_pending_avatar';
@@ -23,10 +24,12 @@ export function AppProvider({ children }) {
   useEffect(() => {
     api.getUser().then((u) => {
       setUser(u);
+      if (u) markReturning();
       setAuthReady(true);
     });
     return api.onAuthChange((u, event) => {
       setUser(u);
+      if (u) markReturning();
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
     });
   }, []);

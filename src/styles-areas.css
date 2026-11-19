@@ -1340,3 +1340,98 @@ a.mycard:hover {
     transform: translateY(14px);
   }
 }
+
+/* First-visit "Choose your language" popup (LangPicker.jsx) */
+.langpick-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 12, 20, 0.66);
+  backdrop-filter: blur(4px);
+  animation: langpick-fade 0.25s ease;
+}
+.langpick {
+  width: min(400px, 100%);
+  margin: 0;
+  padding: 28px 22px 24px;
+  text-align: center;
+}
+.langpick__icon {
+  font-size: 2.2rem;
+}
+.langpick__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 18px;
+  font-size: 1.15rem;
+  line-height: 1.35;
+}
+.langpick__title span + span {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.langpick__list {
+  display: grid;
+  gap: 10px;
+}
+.langpick__btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 16px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.langpick__btn:hover,
+.langpick__btn:focus-visible {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+.langpick__btn.is-suggested {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+.langpick__btn:disabled {
+  cursor: wait;
+}
+.langpick__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.langpick__name {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.langpick__name strong {
+  font-size: 1.1rem;
+}
+.langpick__name small {
+  color: var(--muted);
+}
+@keyframes langpick-fade {
+  from {
+    opacity: 0;
+  }
+}

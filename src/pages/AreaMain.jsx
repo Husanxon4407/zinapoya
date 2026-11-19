@@ -6,11 +6,13 @@ import { useApp } from '../state.jsx';
 import { skillName, useT } from '../i18n/index.js';
 import { areaStyle } from './AreaLanding.jsx';
 import '../styles-areas.css';
+import { useReturning } from '../lib/returning.js';
 
 // Main page of an area that is still being built (/ielts, /sat…). Anyone can look at it; it already
 // has the area's own look, and the real lessons will be added here area by area.
 export default function AreaMain({ areaId }) {
   const t = useT();
+  const returning = useReturning();
   const { user, profile, areas } = useApp();
   const area = areaById(areaId);
   const name = t(area.name);
@@ -31,8 +33,8 @@ export default function AreaMain({ areaId }) {
           <span className="badge-soon">{t('Opening soon')}</span>
           {!user && (
             <p className="amain__cta">
-              <Link to={`/signup?area=${area.id}`} className="btn">
-                {t('Register for {name}', { name: t(area.short) })}
+              <Link to={returning ? `/login?area=${area.id}` : `/signup?area=${area.id}`} className="btn">
+                {returning ? t('Log in') : t('Register for {name}', { name: t(area.short) })}
               </Link>
             </p>
           )}

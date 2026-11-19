@@ -6,6 +6,7 @@ import { AREAS, areaPath } from '../../data/areas.js';
 import { useApp } from '../../state.jsx';
 import { useFitText } from '../../lib/useFitText.js';
 import { useLang, useT } from '../../i18n/index.js';
+import { useReturning } from '../../lib/returning.js';
 
 const STEPS = 6;
 const AUTO_SWITCH_MS = 4200;
@@ -24,6 +25,7 @@ const hasWebGL = () => {
 // The area buttons recolour the staircase and relabel its steps; each leads to that area's page.
 export default function Hero() {
   const t = useT();
+  const returning = useReturning();
   const { user, areas } = useApp();
   const lang = useLang();
   const stageRef = useRef(null);
@@ -119,6 +121,16 @@ export default function Hero() {
             <Link to="/my" className="zbtn zbtn--small hero3d__signup">
               {t('My learning')} <span aria-hidden="true">↗</span>
             </Link>
+          ) : returning ? (
+            // Has had an account on this device: "Log in" is the main button.
+            <>
+              <Link to="/signup" className="hero3d__link">
+                {t('Sign up')}
+              </Link>
+              <Link to="/login" className="zbtn zbtn--small hero3d__signup">
+                {t('Log in')} <span aria-hidden="true">↗</span>
+              </Link>
+            </>
           ) : (
             <>
               <Link to="/login" className="hero3d__link">
@@ -168,6 +180,10 @@ export default function Hero() {
               {user ? (
                 <Link to={areaPath(area.id)} className="hero3d__try">
                   {areas.includes(area.id) ? t('Open {name}', { name: t(area.short) }) : t('Look inside {name}', { name: t(area.short) })}
+                </Link>
+              ) : returning ? (
+                <Link to={`/login?area=${area.id}`} className="hero3d__try">
+                  {t('Log in')}
                 </Link>
               ) : (
                 <Link to={`/signup?area=${area.id}`} className="hero3d__try">

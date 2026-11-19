@@ -10,6 +10,7 @@ import { useApp } from '../state.jsx';
 import { skillName, useT } from '../i18n/index.js';
 import '../styles-home.css';
 import '../styles-areas.css';
+import { useReturning } from '../lib/returning.js';
 
 // The CSS variables that give each area its own colours.
 export const areaStyle = (area) => ({
@@ -24,6 +25,7 @@ export default function AreaLanding() {
   const { id } = useParams();
   const area = areaById(id);
   const t = useT();
+  const returning = useReturning();
   const navigate = useNavigate();
   const { user, areas, joinArea } = useApp();
   const pageRef = useRef(null);
@@ -54,7 +56,11 @@ export default function AreaLanding() {
     }
   }
 
-  const primary = !user ? (
+  const primary = !user && returning ? (
+    <Link to={`/login?area=${area.id}`} className="zbtn">
+      {t('Log in')} <span className="zbtn__arrow" aria-hidden="true">↗</span>
+    </Link>
+  ) : !user ? (
     <Link to={`/signup?area=${area.id}`} className="zbtn">
       {t('Register for {name}', { name })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
     </Link>
@@ -80,8 +86,8 @@ export default function AreaLanding() {
           <nav className="hero3d__nav">
             <LangSwitch />
             {!user && (
-              <Link to={`/login?area=${area.id}`} className="hero3d__link">
-                {t('Log in')}
+              <Link to={returning ? `/signup?area=${area.id}` : `/login?area=${area.id}`} className="hero3d__link">
+                {returning ? t('Sign up') : t('Log in')}
               </Link>
             )}
             {user && (

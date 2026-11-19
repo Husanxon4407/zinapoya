@@ -10,6 +10,7 @@ import CoachChat from './CoachChat.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import Logo from './Logo.jsx';
 import { AREAS, areaById, areaPath } from '../data/areas.js';
+import { useReturning } from '../lib/returning.js';
 
 const CEFR_LINKS = [
   ['/cefr', '🏠', 'Home'],
@@ -36,6 +37,7 @@ export default function Layout() {
   const { user, profile, stats, attemptsReady, loadError, areas } = useApp();
   const navigate = useNavigate();
   const t = useT();
+  const returning = useReturning();
   const menuRef = useRef(null);
   const areaMenuRef = useRef(null);
   const routeArea = useRouteArea();
@@ -136,12 +138,20 @@ export default function Layout() {
             </>
           ) : (
             <span className="topbar__guest">
-              <Link to="/login" className="topbar__login">
-                {t('Log in')}
-              </Link>
-              <Link to="/signup" className="btn btn--small">
-                {t('Start free')}
-              </Link>
+              {returning ? (
+                <Link to="/login" className="btn btn--small">
+                  {t('Log in')}
+                </Link>
+              ) : (
+                <>
+                  <Link to="/login" className="topbar__login">
+                    {t('Log in')}
+                  </Link>
+                  <Link to="/signup" className="btn btn--small">
+                    {t('Start free')}
+                  </Link>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -149,10 +159,21 @@ export default function Layout() {
 
       {!user && (
         <div className="guest-banner">
-          <span>👋 {t('You are looking around as a guest. Create a free account to record answers and save your progress.')}</span>
-          <Link to="/signup" className="btn btn--small">
-            {t('Create a free account')}
-          </Link>
+          {returning ? (
+            <>
+              <span>👋 {t('Welcome back! Log in to record answers and see your progress.')}</span>
+              <Link to="/login" className="btn btn--small">
+                {t('Log in')}
+              </Link>
+            </>
+          ) : (
+            <>
+              <span>👋 {t('You are looking around as a guest. Create a free account to record answers and save your progress.')}</span>
+              <Link to="/signup" className="btn btn--small">
+                {t('Create a free account')}
+              </Link>
+            </>
+          )}
         </div>
       )}
 

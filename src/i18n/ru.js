@@ -863,4 +863,5 @@ export default {
   "Save": "Сохранить",
   "Finish": "Готово",
   "Skip for now": "Пропустить пока",
+  'Welcome back! Log in to record answers and see your progress.': 'С возвращением! Войдите, чтобы записывать ответы и видеть свой прогресс.',
 };

@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../state.jsx';
 import { useT } from '../i18n/index.js';
 import { hasAccess } from '../data/plans.js';
+import { useReturning } from '../lib/returning.js';
 
 // Pages that save something (recording answers, progress, profile…) need a free account.
 // Guests see this card in place of the page; after logging in they come straight back here.
@@ -10,6 +11,7 @@ export default function Gate({ children, feature, why = 'Create a free account t
   const { user, profile } = useApp();
   const { pathname, search } = useLocation();
   const t = useT();
+  const returning = useReturning();
 
   if (!user) {
     const next = encodeURIComponent(pathname + search);
@@ -22,10 +24,11 @@ export default function Gate({ children, feature, why = 'Create a free account t
         <p className="muted">{t(why)}</p>
         <div className="gate__actions">
           {/* replace: after logging in, Back skips the login page and this card */}
-          <Link className="btn" to={`/signup?next=${next}`} replace>
+          {/* Someone who already had an account on this device gets "Log in" as the main button. */}
+          <Link className={returning ? 'btn btn--ghost' : 'btn'} to={`/signup?next=${next}`} replace>
             {t('Create a free account')}
           </Link>
-          <Link className="btn btn--ghost" to={`/login?next=${next}`} replace>
+          <Link className={returning ? 'btn' : 'btn btn--ghost'} to={`/login?next=${next}`} replace style={returning ? { order: -1 } : undefined}>
             {t('Log in')}
           </Link>
         </div>
