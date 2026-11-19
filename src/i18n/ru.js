@@ -906,4 +906,7 @@ export default {
   "Formula of the day": "Формула дня",
   "Geometry": "Геометрия",
   "Question": "Вопрос",
+  "Get the CEFR level you need.": "Получите нужный уровень CEFR.",
+  "Prepare for the whole Multilevel exam — Listening, Reading, Writing and Speaking — with real exam tasks, timers and AI feedback. Start with Speaking today; the other sections open step by step.": "Готовьтесь ко всему экзамену Multilevel — аудирование, чтение, письмо и говорение — с реальными заданиями, таймером и разбором от ИИ. Начните с говорения уже сегодня; остальные разделы откроются шаг за шагом.",
+  "Start practising →": "Начать практику →",
 };

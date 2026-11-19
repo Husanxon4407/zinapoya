@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
 
 export const STEP_COUNT = 6;
 const STEP_W = 1.05;
@@ -110,13 +111,51 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     key.shadow.camera.updateProjectionMatrix();
   };
 
+  // A glossy black display stand: its top really reflects the staircase (a second, small render),
+  // its side catches the studio light, and a thin rim glows in the area colour.
+  const podR = totalW * 0.98;
+  const mirror = new Reflector(track(new THREE.CircleGeometry(podR, 96)), {
+    clipBias: 0.003,
+    textureWidth: 512,
+    textureHeight: 512,
+    color: 0x3c4552,
+  });
+  mirror.rotation.x = -Math.PI / 2;
+  mirror.position.y = floorY - 0.03;
+  stairs.add(mirror);
+  disposables.push(mirror.getRenderTarget(), mirror.material);
+  const podSide = new THREE.Mesh(
+    track(new THREE.CylinderGeometry(podR, podR * 1.015, 0.16, 96, 1, true)),
+    track(new THREE.MeshPhysicalMaterial({ color: 0x0a101c, metalness: 0.7, roughness: 0.32, clearcoat: 1, side: THREE.DoubleSide })),
+  );
+  podSide.position.y = floorY - 0.03 - 0.08;
+  stairs.add(podSide);
+  const rimMat = track(new THREE.MeshBasicMaterial({ color: new THREE.Color(accent), transparent: true, opacity: 0.85 }));
+  const podRim = new THREE.Mesh(track(new THREE.TorusGeometry(podR, 0.012, 8, 128)), rimMat);
+  podRim.rotation.x = -Math.PI / 2;
+  podRim.position.y = floorY - 0.03;
+  stairs.add(podRim);
+  // Soft contact shadow right where the steps touch the stand (keeps them from "floating").
+  const aoTex = track(radialTexture([
+    [0, 'rgba(0,0,0,0.75)'],
+    [0.45, 'rgba(0,0,0,0.35)'],
+    [1, 'rgba(0,0,0,0)'],
+  ]));
+  const contact = new THREE.Mesh(
+    track(new THREE.PlaneGeometry(totalW * 1.35, STEP_D * 1.9)),
+    track(new THREE.MeshBasicMaterial({ map: aoTex, transparent: true, depthWrite: false })),
+  );
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.y = floorY - 0.022;
+  stairs.add(contact);
+
   // A glowing stage under the staircase.
   const stageTex = track(radialTexture([
     [0, 'rgba(255,255,255,0.55)'],
     [0.35, 'rgba(255,255,255,0.18)'],
     [1, 'rgba(255,255,255,0)'],
   ]));
-  const stageMat = track(new THREE.MeshBasicMaterial({ map: stageTex, color: new THREE.Color(accent), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const stageMat = track(new THREE.MeshBasicMaterial({ map: stageTex, color: new THREE.Color(accent), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
   const stage = new THREE.Mesh(track(new THREE.PlaneGeometry(totalW * 1.9, totalW * 1.9)), stageMat);
   stage.rotation.x = -Math.PI / 2;
   stage.position.y = floorY - 0.02;
@@ -206,17 +245,34 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const stars = new THREE.Points(starGeo, track(new THREE.PointsMaterial({ color: 0x9fb6d6, size: 0.035, transparent: true, opacity: 0.55 })));
   scene.add(stars);
 
-  // The learner: a small white figure (body + head) with a soft warm light that makes the step glow.
+  // The learner: a small white person (head, body, two arms, two legs). Arms swing up and legs tuck
+  // during a jump; the body squashes on landing. Faces the way it climbs (+x).
   const figMat = track(new THREE.MeshPhysicalMaterial({ color: 0xf6f7fb, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.3, transparent: true }));
   const climber = new THREE.Group();
   const bodyPivot = new THREE.Group(); // squash & stretch around the feet
-  const body = new THREE.Mesh(track(new THREE.CapsuleGeometry(0.105, 0.17, 6, 18)), figMat);
-  body.position.y = 0.19;
-  const head = new THREE.Mesh(track(new THREE.SphereGeometry(0.1, 28, 20)), figMat);
-  head.position.y = 0.47;
-  [body, head].forEach((m) => {
+  const limb = (r, len) => track(new THREE.CapsuleGeometry(r, len, 4, 12));
+  const part = (geo, x, y, z, parent) => {
+    const m = new THREE.Mesh(geo, figMat);
+    m.position.set(x, y, z);
     m.castShadow = true;
-    bodyPivot.add(m);
+    parent.add(m);
+    return m;
+  };
+  const legs = [-0.048, 0.048].map((z) => {
+    const hip = new THREE.Group();
+    hip.position.set(0, 0.2, z);
+    part(limb(0.036, 0.12), 0, -0.1, 0, hip);
+    bodyPivot.add(hip);
+    return hip;
+  });
+  part(limb(0.078, 0.13), 0, 0.31, 0, bodyPivot); // body
+  part(track(new THREE.SphereGeometry(0.086, 28, 20)), 0.01, 0.52, 0, bodyPivot); // head
+  const arms = [-0.105, 0.105].map((z) => {
+    const shoulder = new THREE.Group();
+    shoulder.position.set(0, 0.41, z);
+    part(limb(0.028, 0.13), 0, -0.085, 0, shoulder);
+    bodyPivot.add(shoulder);
+    return shoulder;
   });
   climber.add(bodyPivot);
   const orbLight = new THREE.PointLight(0xffd27a, 1.6, 2.6, 1.8);
@@ -382,7 +438,15 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       const impact = reduced || st.air > 0.05 ? 0 : Math.exp(-(climbT - landedAt) * 14);
       const sy = 1 + 0.16 * st.air - 0.24 * impact - 0.18 * st.crouch;
       bodyPivot.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
-      bodyPivot.rotation.z = -0.28 * st.air + 0.1 * st.crouch;
+      bodyPivot.rotation.z = -0.22 * st.air + 0.1 * st.crouch;
+      // arms: swing back while crouching, up and forward in the air; legs tuck forward mid-jump
+      arms.forEach((a, i) => {
+        a.rotation.z = 1.5 * st.air - 0.7 * st.crouch + (i ? 0.05 : -0.05);
+        a.rotation.x = (i ? -1 : 1) * (0.12 + 0.25 * st.air);
+      });
+      legs.forEach((l, i) => {
+        l.rotation.z = 0.75 * st.air * (i ? 1 : 0.8) - 0.15 * st.crouch;
+      });
     } else {
       climber.visible = false;
     }
@@ -451,6 +515,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       if (reduced) for (let i = 0; i < STEP_COUNT; i++) colorNow[i].copy(colorTo[i]);
       if (accentColor) {
         stageMat.color.set(accentColor);
+        rimMat.color.set(accentColor);
         ringMat.color.set(accentColor);
         moteMat.color.set(accentColor);
       }

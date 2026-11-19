@@ -159,18 +159,31 @@ export default function AreaLanding() {
             <h2 id="skills-title">{t('What you will practise')}</h2>
           </div>
           <div className="askills">
-            {area.skills.map((s, i) => (
-              <article key={s.name} className="askill reveal" style={{ '--d': i }}>
-                <div className="askill__head">
-                  <span className="askill__emoji" aria-hidden="true">
-                    {s.emoji}
-                  </span>
-                  {s.ready ? <span className="askill__tag askill__tag--live">{t('Open now')}</span> : <span className="askill__tag">{t('Coming soon')}</span>}
-                </div>
-                <h3>{skillName(t, s.name)}</h3>
-                <p>{t(s.text)}</p>
-              </article>
-            ))}
+            {area.skills.map((s, i) => {
+              const body = (
+                <>
+                  <div className="askill__head">
+                    <span className="askill__emoji" aria-hidden="true">
+                      {s.emoji}
+                    </span>
+                    {s.ready ? <span className="askill__tag askill__tag--live">{t('Open now')}</span> : <span className="askill__tag">{t('Coming soon')}</span>}
+                  </div>
+                  <h3>{skillName(t, s.name)}</h3>
+                  <p>{t(s.text)}</p>
+                  {s.ready && s.to && <span className="askill__go">{t('Start practising →')}</span>}
+                </>
+              );
+              // A skill that is open leads straight to its practice page.
+              return s.ready && s.to ? (
+                <Link key={s.name} to={s.to} className="askill askill--link reveal" style={{ '--d': i }}>
+                  {body}
+                </Link>
+              ) : (
+                <article key={s.name} className="askill reveal" style={{ '--d': i }}>
+                  {body}
+                </article>
+              );
+            })}
           </div>
         </section>
 

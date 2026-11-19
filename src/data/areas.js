@@ -15,12 +15,13 @@ export const AREAS = [
     ready: true,
     visual: 'voice',
     kicker: 'Uzbekistan’s Multilevel exam',
-    title: 'Speak with confidence on exam day.',
-    text: 'Practise all four Speaking parts with real exam questions, the examiner’s voice, a timer and detailed AI feedback after every answer.',
+    title: 'Get the CEFR level you need.',
+    text: 'Prepare for the whole Multilevel exam — Listening, Reading, Writing and Speaking — with real exam tasks, timers and AI feedback. Start with Speaking today; the other sections open step by step.',
     steps: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
     theme: { bg: '#03161a', bg2: '#0b3d44', accent: '#2dd4bf', accent2: '#bef264', steps: ['#0f766e', '#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#bef264'] },
     skills: [
-      { emoji: '🎤', name: 'Speaking', text: 'All four parts: short questions, picture comparison, a 2-minute talk and a discussion.', ready: true },
+      // `to`: where a ready skill's box leads.
+      { emoji: '🎤', name: 'Speaking', text: 'All four parts: short questions, picture comparison, a 2-minute talk and a discussion.', ready: true, to: '/cefr' },
       { emoji: '🎧', name: 'Listening', text: 'Exam-style audio with the same question types and timing.' },
       { emoji: '📖', name: 'Reading', text: 'Real passage types practised against the clock.' },
       { emoji: '✍️', name: 'Writing', text: 'Letters and essays checked for grammar, vocabulary and structure.' },

@@ -906,4 +906,7 @@ export default {
   "Formula of the day": "Kun formulasi",
   "Geometry": "Geometriya",
   "Question": "Savol",
+  "Get the CEFR level you need.": "Kerakli CEFR darajangizni qo‘lga kiriting.",
+  "Prepare for the whole Multilevel exam — Listening, Reading, Writing and Speaking — with real exam tasks, timers and AI feedback. Start with Speaking today; the other sections open step by step.": "Butun Multilevel imtihoniga tayyorlaning — Tinglash, O‘qish, Yozish va Gapirish — haqiqiy imtihon topshiriqlari, taymer va AI tahlili bilan. Bugun Gapirishdan boshlang; qolgan bo‘limlar qadamma-qadam ochiladi.",
+  "Start practising →": "Mashqni boshlash →",
 };
