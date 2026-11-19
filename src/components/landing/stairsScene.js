@@ -1,12 +1,15 @@
 // The 3D staircase on the main page (Three.js). Loaded on demand, so it never slows the first paint.
 //
-// Glassy rounded steps rise into place while the staircase flies in along a curve. Then the learner
-// (a warm glowing orb with a light trail) hops up step by step; each step lights up as it lands,
-// and reaching the top sends out a ring of light. setPalette() recolours everything for an area.
+// Rounded ceramic-glass steps rise into place while the staircase flies in along a curve. Then the
+// learner (a small white figure) hops up step by step: it crouches, jumps, stretches in the air and
+// squashes on landing; each step lights up as it lands, and reaching the top sends out a ring of light.
+// Studio reflections (RoomEnvironment) and soft real shadows make it read as a real object.
+// setPalette() recolours everything for an area.
 // Labels are normal HTML positioned over the canvas each frame (onFrame), so they stay crisp
 // and translatable.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 export const STEP_COUNT = 6;
 const STEP_W = 1.05;
@@ -16,8 +19,7 @@ const ENTRANCE_S = 4.2;
 const HOP_S = 0.6;
 const REST_S = 0.45;
 const TOP_S = 1.9;
-const TRAIL = 22;
-const MOTES = 90;
+const MOTES = 60;
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
@@ -49,7 +51,9 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.95;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const canvas = renderer.domElement;
   canvas.className = 'stairs3d__canvas';
   canvas.setAttribute('aria-hidden', 'true');
@@ -59,19 +63,22 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
   camera.position.set(0, 0.4, 13);
 
-  scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x1a1030, 1.1));
-  const key = new THREE.DirectionalLight(0xffffff, 2.6);
-  key.position.set(-4, 7, 6);
-  scene.add(key);
-  const rim = new THREE.DirectionalLight(0x6aa8ff, 1.4);
-  rim.position.set(5, 2, -4);
-  scene.add(rim);
-
   const disposables = [];
   const track = (...items) => {
     disposables.push(...items);
     return items[0];
   };
+
+  // Soft studio reflections on every surface (what makes plastic look like a real object).
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envMap = track(pmrem.fromScene(new RoomEnvironment(), 0.04).texture);
+  pmrem.dispose();
+  scene.environment = envMap;
+
+  scene.add(new THREE.HemisphereLight(0xbfd8ff, 0x1a1030, 0.45));
+  const rim = new THREE.DirectionalLight(0x6aa8ff, 1.2);
+  rim.position.set(5, 2, -4);
+  scene.add(rim);
 
   // Everything that flies in together.
   const flight = new THREE.Group();
@@ -84,6 +91,25 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const totalH = STEP_COUNT * STEP_H;
   const floorY = -totalH / 2;
 
+  // Warm key light that casts soft shadows (it moves with the staircase).
+  const key = new THREE.DirectionalLight(0xfff3e4, 2.4);
+  key.position.set(-3.2, 6.5, 4.5);
+  key.target.position.set(0, floorY, 0);
+  key.castShadow = true;
+  key.shadow.mapSize.set(1024, 1024);
+  key.shadow.bias = -0.0004;
+  key.shadow.normalBias = 0.02;
+  key.shadow.radius = 5;
+  stairs.add(key, key.target);
+  let shadowScale = 0;
+  const fitShadow = (scale) => {
+    if (Math.abs(scale - shadowScale) < 0.01) return;
+    shadowScale = scale;
+    const r = totalW * 0.95 * scale;
+    Object.assign(key.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 0.1, far: 30 * scale + 5 });
+    key.shadow.camera.updateProjectionMatrix();
+  };
+
   // A glowing stage under the staircase.
   const stageTex = track(radialTexture([
     [0, 'rgba(255,255,255,0.55)'],
@@ -95,6 +121,12 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   stage.rotation.x = -Math.PI / 2;
   stage.position.y = floorY - 0.02;
   stairs.add(stage);
+  const groundMat = track(new THREE.ShadowMaterial({ color: 0x000814, opacity: 0.5, transparent: true, depthWrite: false }));
+  const ground = new THREE.Mesh(track(new THREE.PlaneGeometry(totalW * 2.2, totalW * 2.2)), groundMat);
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = floorY - 0.005;
+  ground.receiveShadow = true;
+  stairs.add(ground);
   const ringMat = track(new THREE.MeshBasicMaterial({ color: new THREE.Color(accent), transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
   [1.0, 1.5, 2.0].forEach((r) => {
     const ring = new THREE.Mesh(track(new THREE.RingGeometry(r * totalW * 0.42, r * totalW * 0.42 + 0.025, 96)), ringMat);
@@ -120,25 +152,28 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     const mat = track(new THREE.MeshPhysicalMaterial({
       color: c,
       emissive: c,
-      emissiveIntensity: 0.18,
-      roughness: 0.22,
-      metalness: 0.05,
-      clearcoat: 1,
-      clearcoatRoughness: 0.15,
+      emissiveIntensity: 0.07,
+      roughness: 0.42,
+      metalness: 0,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.22,
+      envMapIntensity: 0.38,
       transparent: true,
     }));
     const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
     mesh.userData.home = new THREE.Vector3(-totalW / 2 + STEP_W / 2 + i * STEP_W, h / 2 + floorY, 0);
     mesh.position.copy(mesh.userData.home);
 
     // Bright front edge of each tread (like the lines in the logo).
-    const edgeMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 }));
+    const edgeMat = track(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
     const edge = new THREE.Mesh(track(new THREE.BoxGeometry(STEP_W * 0.86, 0.04, 0.05)), edgeMat);
     edge.position.set(0, h / 2 - 0.035, STEP_D / 2 + 0.005);
     mesh.add(edge);
 
     const anchor = new THREE.Object3D();
-    anchor.position.set(0, h / 2 + 0.36, STEP_D / 2 - 0.2);
+    anchor.position.set(0, h / 2 - 0.27, STEP_D / 2 + 0.02); // on the front of the step, under the tread
     mesh.add(anchor);
 
     stairs.add(mesh);
@@ -159,7 +194,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     [0.3, 'rgba(255,255,255,0.6)'],
     [1, 'rgba(255,255,255,0)'],
   ]));
-  const moteMat = track(new THREE.PointsMaterial({ size: 0.12, map: dotTex, color: new THREE.Color(accent), transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const moteMat = track(new THREE.PointsMaterial({ size: 0.07, map: dotTex, color: new THREE.Color(accent), transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
   const motes = new THREE.Points(moteGeo, moteMat);
   stairs.add(motes);
 
@@ -171,31 +206,25 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const stars = new THREE.Points(starGeo, track(new THREE.PointsMaterial({ color: 0x9fb6d6, size: 0.035, transparent: true, opacity: 0.55 })));
   scene.add(stars);
 
-  // The learner: orb + glow + its own warm light + a fading trail.
-  const glowTex = track(radialTexture([
-    [0, 'rgba(255,236,170,1)'],
-    [0.22, 'rgba(255,200,80,0.6)'],
-    [1, 'rgba(255,190,60,0)'],
-  ]));
-  const orb = new THREE.Group();
-  orb.add(new THREE.Mesh(track(new THREE.SphereGeometry(0.16, 32, 24)), track(new THREE.MeshStandardMaterial({ color: 0xfff1c2, emissive: 0xffc23d, emissiveIntensity: 2.2 }))));
-  const glow = new THREE.Sprite(track(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })));
-  glow.scale.setScalar(1.3);
-  orb.add(glow);
-  const orbLight = new THREE.PointLight(0xffc857, 3.5, 4.5, 1.6);
-  orb.add(orbLight);
-  stairs.add(orb);
-  const trailMat = [];
-  const trail = [];
-  for (let i = 0; i < TRAIL; i++) {
-    const m = track(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0 }));
-    const s = new THREE.Sprite(m);
-    s.scale.setScalar(0.5 * (1 - i / TRAIL) + 0.08);
-    stairs.add(s);
-    trailMat.push(m);
-    trail.push(s);
-  }
-  const history = [];
+  // The learner: a small white figure (body + head) with a soft warm light that makes the step glow.
+  const figMat = track(new THREE.MeshPhysicalMaterial({ color: 0xf6f7fb, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.3, transparent: true }));
+  const climber = new THREE.Group();
+  const bodyPivot = new THREE.Group(); // squash & stretch around the feet
+  const body = new THREE.Mesh(track(new THREE.CapsuleGeometry(0.105, 0.17, 6, 18)), figMat);
+  body.position.y = 0.19;
+  const head = new THREE.Mesh(track(new THREE.SphereGeometry(0.1, 28, 20)), figMat);
+  head.position.y = 0.47;
+  [body, head].forEach((m) => {
+    m.castShadow = true;
+    bodyPivot.add(m);
+  });
+  climber.add(bodyPivot);
+  const orbLight = new THREE.PointLight(0xffd27a, 1.6, 2.6, 1.8);
+  orbLight.position.y = 0.35;
+  climber.add(orbLight);
+  climber.scale.setScalar(1.45);
+  stairs.add(climber);
+  let landedAt = 0;
 
   // Ring of light when the learner reaches the top.
   const burstMat = track(new THREE.MeshBasicMaterial({ color: 0xffd36b, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -203,13 +232,14 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   burst.rotation.x = -Math.PI / 2;
   stairs.add(burst);
 
+  // Where the figure's feet stand on step i.
   const treadTop = (i) => {
     const s = steps[Math.max(0, Math.min(STEP_COUNT - 1, i))].userData.home;
-    return new THREE.Vector3(s.x, s.y + ((i + 1) * STEP_H) / 2 + 0.2, 0.35);
+    return new THREE.Vector3(s.x, s.y + ((i + 1) * STEP_H) / 2, 0.35);
   };
   const groundStart = () => {
     const p = treadTop(0);
-    return new THREE.Vector3(p.x - STEP_W * 1.1, floorY + 0.2, p.z);
+    return new THREE.Vector3(p.x - STEP_W * 1.1, floorY, p.z);
   };
 
   // Entrance path in "box units" (-1..1): from small in the upper right, swinging into the middle.
@@ -252,7 +282,9 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
     const pt = curve.getPoint(p);
     flight.position.set(pt.x * hw * 0.8, pt.y * hh * 0.8 + hh * 0.06 * p, 0);
     const size = Math.min((hw * 1.3) / totalW, (hh * 0.86) / totalH);
-    flight.scale.setScalar(size * (0.08 + 0.92 * Math.pow(p, 1.4)));
+    const scale = size * (0.08 + 0.92 * Math.pow(p, 1.4));
+    flight.scale.setScalar(scale);
+    fitShadow(scale);
   }
 
   function climb(t) {
@@ -264,15 +296,18 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       const k = (lt - STEP_COUNT * per) / TOP_S;
       const p = treadTop(STEP_COUNT - 1);
       p.y += Math.abs(Math.sin(k * Math.PI * 3)) * 0.12 * (1 - k);
-      return { p, fade: k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1, landed: STEP_COUNT - 1, top: true };
+      return { p, fade: k > 0.8 ? 1 - (k - 0.8) / 0.2 : 1, landed: STEP_COUNT - 1, top: true, air: Math.abs(Math.sin(k * Math.PI * 3)) * (1 - k), crouch: 0 };
     }
     const from = n === 0 ? groundStart() : treadTop(n - 1);
     const to = treadTop(n);
     const k = clamp01((lt - n * per) / HOP_S);
     const e = easeInOut(k);
     const p = from.clone().lerp(to, e);
-    p.y += Math.sin(e * Math.PI) * 0.5;
-    return { p, fade: n === 0 ? clamp01(k * 2.5) : 1, landed: k >= 1 ? n : n - 1, top: false };
+    p.y += Math.sin(e * Math.PI) * 0.55;
+    // crouch at the end of the rest, just before the next jump
+    const rest = lt - n * per - HOP_S;
+    const crouch = k >= 1 ? clamp01((rest - (REST_S - 0.18)) / 0.18) : 0;
+    return { p, fade: n === 0 ? clamp01(k * 2.5) : 1, landed: k >= 1 ? n : n - 1, top: false, air: k < 1 ? Math.sin(e * Math.PI) : 0, crouch };
   }
 
   function update(dt) {
@@ -301,7 +336,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       pulses[i] = Math.max(0, pulses[i] - dt * 1.6);
       m.material.color.copy(colorNow[i]);
       m.material.emissive.copy(colorNow[i]);
-      m.material.emissiveIntensity = 0.18 + pulses[i] * 0.9;
+      m.material.emissiveIntensity = 0.07 + pulses[i] * 0.8;
     });
 
     // Motes drift up and loop.
@@ -325,36 +360,31 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
 
     // The learner.
     if (entrance > 0.72 || reduced) {
-      const st = reduced ? { p: treadTop(STEP_COUNT - 1), fade: 1, landed: STEP_COUNT - 1, top: false } : climb(climbT);
-      orb.position.copy(st.p);
-      orb.visible = true;
-      orb.scale.setScalar(Math.max(0.001, st.fade));
-      orbLight.intensity = 3.5 * st.fade;
+      const st = reduced ? { p: treadTop(STEP_COUNT - 1), fade: 1, landed: STEP_COUNT - 1, top: false, air: 0, crouch: 0 } : climb(climbT);
+      climber.position.copy(st.p);
+      climber.scale.setScalar(1.45);
+      climber.visible = st.fade > 0.01;
+      figMat.opacity = st.fade;
+      orbLight.intensity = 1.6 * st.fade;
       if (st.landed !== lastHop && st.landed >= 0) {
         pulses[st.landed] = 1;
         active = st.landed;
+        landedAt = climbT;
         if (st.landed === STEP_COUNT - 1 && st.top) {
           burstT = 0;
           burst.position.copy(treadTop(STEP_COUNT - 1));
-          burst.position.y -= 0.18;
+          burst.position.y += 0.02;
         }
       }
       if (st.landed < 0) active = -1;
       lastHop = st.landed;
-      history.unshift(orb.position.clone());
-      if (history.length > TRAIL) history.pop();
-      trail.forEach((s, i) => {
-        const h = history[i];
-        if (!h || reduced) {
-          trailMat[i].opacity = 0;
-          return;
-        }
-        s.position.copy(h);
-        trailMat[i].opacity = 0.45 * (1 - i / TRAIL) * st.fade;
-      });
+      // Squash on landing, crouch before take-off, stretch in the air; lean into the jump.
+      const impact = reduced || st.air > 0.05 ? 0 : Math.exp(-(climbT - landedAt) * 14);
+      const sy = 1 + 0.16 * st.air - 0.24 * impact - 0.18 * st.crouch;
+      bodyPivot.scale.set(1 / Math.sqrt(sy), sy, 1 / Math.sqrt(sy));
+      bodyPivot.rotation.z = -0.28 * st.air + 0.1 * st.crouch;
     } else {
-      orb.visible = false;
-      trailMat.forEach((m) => (m.opacity = 0));
+      climber.visible = false;
     }
 
     if (burstT < 1) {
@@ -434,7 +464,6 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       entrance = 0;
       climbT = 0;
       lastHop = -1;
-      history.length = 0;
       paused = false;
       kick();
     },

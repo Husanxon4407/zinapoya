@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { deviceLang, langAsked, LANGS, loadLang, savedLang, setLang } from '../i18n/index.js';
 import Logo from './Logo.jsx';
 
+export const LANG_PICKED = 'zp-lang-picked';
+
 // First visit only: "Choose your language" before anything else, written in all three languages,
 // because some visitors cannot read English yet. The saved (or phone) language is highlighted.
 // Later the language is changed with the 🌐 switch at the top of every page.
@@ -35,6 +37,7 @@ export default function LangPicker() {
     setBusy(id);
     await setLang(id);
     setOpen(false);
+    window.dispatchEvent(new Event(LANG_PICKED)); // the homepage title starts typing now
   }
 
   // The suggested language goes first.

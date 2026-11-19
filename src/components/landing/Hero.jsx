@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo, { LogoMark } from '../Logo.jsx';
 import LangSwitch from '../LangSwitch.jsx';
+import TypeTitle from './TypeTitle.jsx';
 import { AREAS, areaPath } from '../../data/areas.js';
 import { useApp } from '../../state.jsx';
 import { useFitText } from '../../lib/useFitText.js';
-import { useLang, useT } from '../../i18n/index.js';
+import { langAsked, useLang, useT } from '../../i18n/index.js';
 import { useReturning } from '../../lib/returning.js';
 
 const STEPS = 6;
@@ -32,15 +33,18 @@ export default function Hero() {
   const sceneRef = useRef(null);
   const labelRefs = useRef([]);
   const [ready, setReady] = useState(false);
+  // The 3D staircase starts after the headline has typed itself (its start-up is heavy). While the
+  // first-visit language popup is open it can load straight away, behind the popup.
+  const [sceneGo, setSceneGo] = useState(() => !langAsked() || prefersReducedMotion());
   const [paused, setPaused] = useState(false);
   const [index, setIndex] = useState(0);
   const [auto, setAuto] = useState(true);
   const [swap, setSwap] = useState(false);
-  const titleRef = useFitText({ max: 96, min: 30 }, [lang]);
+  const titleRef = useFitText({ max: 80, min: 30, maxVh: 9.5 }, [lang]);
   const area = AREAS[index];
 
   useEffect(() => {
-    if (!hasWebGL()) return undefined;
+    if (!sceneGo || !hasWebGL()) return undefined;
     let alive = true;
     const start = () =>
       import('./stairsScene.js').then(({ createStairsScene }) => {
@@ -54,7 +58,7 @@ export default function Hero() {
             pts.forEach((p, i) => {
               const el = labelRefs.current[i];
               if (!el) return;
-              el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
+              el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) translate(-50%, -50%)`;
               el.style.opacity = p.o.toFixed(2);
               el.classList.toggle('is-on', !!p.on);
             }),
@@ -68,7 +72,7 @@ export default function Hero() {
       sceneRef.current?.dispose();
       sceneRef.current = null;
     };
-  }, []);
+  }, [sceneGo]);
 
   useEffect(() => {
     const onKey = (e) => e.key === 'Escape' && sceneRef.current?.finish();
@@ -146,14 +150,7 @@ export default function Hero() {
 
       <div className="hero3d__grid">
         <div className="hero3d__text">
-          <h1 id="hero-title" ref={titleRef} className="hero3d__title rise" style={{ '--d': 0 }}>
-            <span className="fit-line">{t('Step up')}</span>
-            <span className="fit-line">{t('to your')}</span>
-            <span className="fit-line">
-              {t('level')}
-              <span className="hero3d__dot">.</span>
-            </span>
-          </h1>
+          <TypeTitle lines={[t('Step up'), t('to your'), t('level')]} lang={lang} titleRef={titleRef} onDone={() => setSceneGo(true)} />
           <p className="rise" style={{ '--d': 1 }}>
             {t('Languages, exam prep and school subjects.')} {t('One clear step at a time.')}
           </p>

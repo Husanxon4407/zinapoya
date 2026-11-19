@@ -349,10 +349,11 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-family: 'Manrope', 'Nunito', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif;
   font-weight: 800;
-  font-size: 1.32rem;
-  letter-spacing: -0.04em;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
   color: var(--text);
   text-decoration: none;
 }
@@ -360,11 +361,17 @@ a {
   display: grid;
   place-items: center;
   line-height: 0;
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(34, 211, 238, 0.18);
 }
-.logo__dot {
-  color: #f5b301;
+.logo__text {
+  /* the wordmark sits a hair lower than the mark's centre */
+  transform: translateY(-1px);
+}
+/* The mark on the ink square (app icon look). */
+.logo__badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  background: #12162b;
 }
 .topnav {
   display: flex;

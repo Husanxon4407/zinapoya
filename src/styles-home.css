@@ -187,6 +187,7 @@
   position: relative;
   z-index: 2;
   flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: center;
@@ -199,7 +200,7 @@
 }
 .hero3d__title {
   margin: 0;
-  font-size: 92px; /* refined by useFitText to fit the column */
+  font-size: 72px; /* refined by useFitText to fit the column and the screen height */
   font-weight: 600;
   line-height: 1.02;
   letter-spacing: -0.055em;
@@ -212,10 +213,91 @@
   white-space: nowrap;
 }
 .hero3d__dot {
-  color: var(--gold);
+  color: #ff5a5f; /* the logo's reply red */
+}
+/* Typing headline (TypeTitle.jsx) */
+.tchar,
+.tdot {
+  display: inline-block;
+  position: relative;
+}
+.hero3d__title.is-waiting .tchar,
+.hero3d__title.is-waiting .tdot {
+  opacity: 0;
+}
+.hero3d__title.is-typing .tchar {
+  opacity: 0;
+  animation: tchar-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) var(--td) forwards;
+}
+/* the cursor: shown on each letter only while that letter is being typed */
+.hero3d__title.is-typing .tchar::after,
+.hero3d__title.is-typing .tdot::after {
+  content: '';
+  position: absolute;
+  top: 0.14em;
+  bottom: 0.1em;
+  right: -0.07em;
+  width: 0.06em;
+  border-radius: 2px;
+  background: var(--hero-accent);
+  box-shadow: 0 0 12px var(--hero-accent);
+  opacity: 0;
+}
+.hero3d__title.is-typing .tchar::after {
+  animation: tcaret-on var(--ts) steps(1) var(--td);
+}
+.hero3d__title.is-typing .tdot {
+  opacity: 0;
+  animation: tdot-pop 0.55s cubic-bezier(0.3, 1.7, 0.5, 1) var(--td) forwards;
+}
+.hero3d__title.is-typing .tdot::after {
+  right: -0.14em;
+  animation: tcaret-blink 0.9s steps(1) calc(var(--td) + 0.25s) 3;
+}
+@keyframes tchar-in {
+  0% {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(0.2em) scale(0.94);
+    color: var(--hero-accent);
+  }
+  55% {
+    opacity: 1;
+    filter: blur(0);
+    color: var(--hero-accent);
+  }
+  100% {
+    opacity: 1;
+    filter: none;
+    transform: none;
+    color: inherit;
+  }
+}
+@keyframes tdot-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes tcaret-on {
+  0% {
+    opacity: 1;
+  }
+}
+@keyframes tcaret-blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 .hero3d__text > p {
-  margin: 22px 0 26px;
+  margin: clamp(10px, 2.4vh, 22px) 0 clamp(14px, 3vh, 26px);
   max-width: 460px;
   font-size: 15px;
   line-height: 1.75;
@@ -267,8 +349,8 @@
 }
 
 .hero3d__area {
-  margin-top: 22px;
-  padding-top: 20px;
+  margin-top: clamp(12px, 2.6vh, 22px);
+  padding-top: clamp(12px, 2.4vh, 20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   transition:
     opacity 0.22s,
@@ -310,9 +392,27 @@
 /* The 3D stage (its own column) */
 .stairs3d {
   position: relative;
-  height: min(72svh, 640px);
+  height: min(74svh, 660px);
   min-height: 340px;
   min-width: 0;
+}
+/* Computers: the whole opening screen (top bar, text, staircase, bottom line) fits in the window,
+   in every language. Very short windows (under 560px) scroll instead of squeezing. */
+@media (min-width: 901px) {
+  .hero3d {
+    height: 100svh;
+    min-height: 560px;
+  }
+  .hero3d__top {
+    padding-top: clamp(14px, 3vh, 24px);
+    padding-bottom: clamp(10px, 2vh, 24px);
+  }
+  .stairs3d {
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
+    max-height: 680px;
+  }
 }
 .stairs3d__canvas {
   position: absolute;
@@ -1243,9 +1343,6 @@
   .hero3d__area {
     margin-top: 14px;
     padding-top: 14px;
-  }
-  .stairs3d {
-    height: 64svh;
   }
 }
 
