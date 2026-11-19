@@ -146,20 +146,41 @@
 .hero3d__link:hover {
   color: var(--accent);
 }
-.hero3d .lang-switch,
-.ahero .lang-switch {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
+/* Language pill on the dark hero */
+.hero3d .lang-switch__btn,
+.ahero .lang-switch__btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: var(--space-text);
 }
-.hero3d .lang-switch select,
-.ahero .lang-switch select {
-  color: var(--space-text);
-  background: transparent;
+.hero3d .lang-switch__btn:hover,
+.ahero .lang-switch__btn:hover,
+.hero3d .lang-switch.is-open .lang-switch__btn,
+.ahero .lang-switch.is-open .lang-switch__btn {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
 }
-.hero3d .lang-switch option,
-.ahero .lang-switch option {
-  color: #101e30;
+.hero3d .lang-switch__globe,
+.ahero .lang-switch__globe {
+  color: var(--hero-accent, var(--accent, #7dd3fc));
+}
+.hero3d .lang-menu,
+.ahero .lang-menu {
+  background: #111c2e;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #eef3fb;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+}
+.hero3d .lang-menu__item:hover,
+.ahero .lang-menu__item:hover,
+.hero3d .lang-menu__item.is-on,
+.ahero .lang-menu__item.is-on {
+  background: rgba(255, 255, 255, 0.09);
+}
+.hero3d .lang-menu__badge,
+.ahero .lang-menu__badge {
+  background: rgba(255, 255, 255, 0.1);
+  color: #eef3fb;
 }
 
 .hero3d__grid {

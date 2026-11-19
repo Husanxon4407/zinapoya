@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { deviceLang, hasChosenLang, LANGS, loadLang, setLang } from '../i18n/index.js';
+import { deviceLang, langAsked, LANGS, loadLang, savedLang, setLang } from '../i18n/index.js';
 
 // First visit only: "Choose your language" before anything else, written in all three languages,
-// because some visitors cannot read English yet. The phone's language is highlighted.
+// because some visitors cannot read English yet. The saved (or phone) language is highlighted.
 // Later the language is changed with the 🌐 switch at the top of every page.
 const WORDS = {
   en: { hello: 'Hello!', pick: 'Choose your language' },
@@ -11,9 +11,9 @@ const WORDS = {
 };
 
 export default function LangPicker() {
-  const [open, setOpen] = useState(() => !hasChosenLang());
+  const [open, setOpen] = useState(() => !langAsked());
   const [busy, setBusy] = useState(null);
-  const [suggested] = useState(deviceLang);
+  const [suggested] = useState(() => savedLang() || deviceLang());
   const firstRef = useRef(null);
 
   useEffect(() => {

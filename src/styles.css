@@ -1157,9 +1157,9 @@ a {
   width: 100%;
   max-width: 420px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   margin-bottom: 20px;
 }
 .auth__card {
@@ -3329,37 +3329,151 @@ a.roster__row:hover {
   padding: 4px 0;
 }
 
-/* ---------- Language switch ---------- */
+/* ---------- Language switch (LangSwitch.jsx) ---------- */
+/* Top bar: pill button + menu */
 .lang-switch {
+  position: relative;
+  display: inline-flex;
+}
+.lang-switch__btn {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px 0 10px;
   border-radius: 999px;
-  background: var(--surface);
   border: var(--border);
-  padding: 0 4px 0 8px;
-  height: 36px;
-  font-size: 0.9rem;
-}
-.lang-switch select {
-  font: inherit;
-  font-weight: 800;
-  border: 0;
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
-  padding: 4px 2px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.lang-switch__btn:hover,
+.lang-switch.is-open .lang-switch__btn {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.lang-switch__btn:focus-visible,
+.lang-menu__item:focus-visible,
+.lang-seg__btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.lang-switch__globe {
+  color: var(--primary);
+  flex: none;
+}
+.lang-switch__chev {
+  opacity: 0.6;
+  transition: transform 0.2s;
+}
+.lang-switch.is-open .lang-switch__chev {
+  transform: rotate(180deg);
+}
+.lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 190px;
+  padding: 6px;
+  border-radius: 16px;
+  border: var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 18px 40px rgba(16, 20, 40, 0.18);
+  animation: lang-menu-in 0.16s ease;
+}
+.lang-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
   cursor: pointer;
 }
-/* The open list is drawn by the browser: give it real colours, or Windows shows light text on white in dark mode. */
-.lang-switch select,
-.lang-switch option {
-  background-color: var(--surface);
+.lang-menu__item:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.lang-menu__item.is-on {
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+}
+.lang-menu__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.lang-menu__item.is-on .lang-menu__badge {
+  background: var(--primary);
+  color: #fff;
+}
+.lang-menu__name {
+  flex: 1;
+}
+.lang-menu__mark {
+  width: 18px;
+  color: var(--primary);
+  font-weight: 800;
+  text-align: center;
+}
+@keyframes lang-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Login / sign-up: all three languages side by side */
+.lang-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  border: var(--border);
+  background: var(--surface);
+}
+.lang-seg__btn {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.lang-seg__btn:hover {
   color: var(--text);
 }
-.lang-switch select:focus-visible {
-  outline: 2px solid var(--primary);
-  border-radius: 6px;
+.lang-seg__btn.is-on {
+  background: var(--primary);
+  color: #fff;
 }
+.lang-seg__btn.is-busy {
+  opacity: 0.6;
+}
+
 @media (max-width: 560px) {
   /* Phones: keep every top-bar control on screen. */
   .topbar .logo__text {
@@ -3368,10 +3482,11 @@ a.roster__row:hover {
   .topbar__user {
     gap: 8px;
   }
-  .topbar .lang-switch {
-    padding: 0 2px 0 6px;
+  .topbar .lang-switch__btn {
+    padding: 0 9px;
+    gap: 4px;
   }
-  .topbar .lang-switch > span {
+  .topbar .lang-switch__chev {
     display: none;
   }
 }
@@ -3388,7 +3503,7 @@ a.roster__row:hover {
   .topbar .streak {
     padding: 4px 8px;
   }
-  .topbar .lang-switch {
+  .topbar .lang-switch__btn {
     height: 34px;
   }
   .topbar .usermenu .avatar {

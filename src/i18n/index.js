@@ -32,13 +32,30 @@ function readSaved() {
   return 'en';
 }
 
-// True once the visitor has picked a language (or had one saved before): the first-visit
-// language popup (LangPicker) shows only while this is false.
-export function hasChosenLang() {
+// The first-visit language popup (LangPicker) is shown once per device, to new and existing
+// visitors alike; after any choice (popup or 🌐 switch) it never comes back.
+const ASKED = 'zp_lang_asked';
+export function langAsked() {
   try {
-    return LANGS.some((l) => l.id === localStorage.getItem(KEY));
+    return localStorage.getItem(ASKED) === '1';
   } catch {
-    return true; // storage blocked: the choice could not be remembered, so do not ask on every page
+    return true; // storage blocked: the answer could not be remembered, so do not ask on every page
+  }
+}
+function markAsked() {
+  try {
+    localStorage.setItem(ASKED, '1');
+  } catch {
+    /* storage blocked */
+  }
+}
+// Saved language, if the visitor ever chose one (to highlight it in the popup).
+export function savedLang() {
+  try {
+    const saved = localStorage.getItem(KEY);
+    return LANGS.some((l) => l.id === saved) ? saved : null;
+  } catch {
+    return null;
   }
 }
 
@@ -61,6 +78,7 @@ export const getLang = () => lang;
 export async function setLang(id) {
   await loadLang(id); // switch only once the words are here, so the page never flashes English
   lang = id;
+  markAsked();
   try {
     localStorage.setItem(KEY, id);
   } catch {
