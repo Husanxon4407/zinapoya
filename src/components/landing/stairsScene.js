@@ -2,7 +2,7 @@
 //
 // Stone-like steps (fine grain, a lighter top slab with a small overhanging nose, like real stairs)
 // rise into place on a glossy black stand while the staircase flies in along a curve. Then the learner,
-// a jointed mannequin (knees, elbows, feet, neck), climbs like a person: lifts one knee high, puts the
+// a small person in everyday clothes (T-shirt, jeans, shoes), climbs like a person: lifts one knee high, puts the
 // foot on the next step, pushes up while the other leg follows and the arms swing; legs alternate.
 // At the top it raises both arms. Each step lights up as it is reached.
 // Studio reflections (RoomEnvironment) and soft real shadows make it read as a real object.
@@ -313,15 +313,23 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const stars = new THREE.Points(starGeo, track(new THREE.PointsMaterial({ color: 0x9fb6d6, size: 0.035, transparent: true, opacity: 0.55 })));
   scene.add(stars);
 
-  // The learner: a jointed mannequin. climber = feet on the ground; pelvis holds the legs (hip ->
-  // knee -> foot); torso (leans) holds the chest, neck, head and arms (shoulder -> elbow -> hand).
-  // It faces +x, the way it climbs. Forward swing = +z rotation, a bent knee = -z.
-  const figMat = track(new THREE.MeshPhysicalMaterial({ color: 0xf3f4f8, roughness: 0.5, sheen: 0.6, sheenRoughness: 0.6, sheenColor: new THREE.Color(0xffffff), clearcoat: 0.3, clearcoatRoughness: 0.5, transparent: true }));
-  const jointMat = track(new THREE.MeshPhysicalMaterial({ color: 0xd9dce4, roughness: 0.45, clearcoat: 0.4, transparent: true }));
+  // The learner: a small person in everyday clothes, so it never blends into the light steps:
+  // warm skin, short dark hair, a blue T-shirt (the logo's blue), dark jeans, dark shoes with light soles.
+  // climber = feet on the ground; pelvis holds the legs (hip -> knee -> shoe); torso (leans) holds the
+  // chest, neck, head and arms (shoulder -> elbow -> hand). It faces +x, the way it climbs.
+  // Forward swing = +z rotation, a bent knee = -z.
+  const cloth = (color, extra = {}) => track(new THREE.MeshPhysicalMaterial({ color, roughness: 0.75, sheen: 0.5, sheenRoughness: 0.8, sheenColor: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.4), transparent: true, ...extra }));
+  const SKIN = cloth(0xd9a07c, { roughness: 0.55, sheen: 0.2 });
+  const HAIR = cloth(0x3b2a20, { roughness: 0.6 });
+  const SHIRT = cloth(0x2f6bff);
+  const JEANS = cloth(0x23324f);
+  const SHOE = cloth(0x1c1f27, { roughness: 0.45, sheen: 0, clearcoat: 0.4 });
+  const SOLE = cloth(0xe9ebf0, { roughness: 0.6, sheen: 0 });
+  const figMats = [SKIN, HAIR, SHIRT, JEANS, SHOE, SOLE];
   const climber = new THREE.Group();
   const capsule = (r, len) => track(new THREE.CapsuleGeometry(r, len, 6, 14));
   const ball = (r) => track(new THREE.SphereGeometry(r, 20, 14));
-  const add = (parent, geo, x, y, z, mat = figMat) => {
+  const add = (parent, geo, x, y, z, mat) => {
     const m = new THREE.Mesh(geo, mat);
     m.position.set(x, y, z);
     m.castShadow = true;
@@ -332,36 +340,44 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
   const pelvis = new THREE.Group();
   pelvis.position.y = HIP_Y;
   climber.add(pelvis);
-  add(pelvis, ball(0.075), 0, 0.01, 0).scale.set(0.9, 0.7, 1.35);
+  add(pelvis, ball(0.075), 0, 0.01, 0, JEANS).scale.set(0.9, 0.7, 1.35);
   const legs = [-0.062, 0.062].map((z) => {
     const hip = new THREE.Group();
     hip.position.set(0, 0, z);
-    add(hip, capsule(0.047, 0.17), 0, -0.125, 0);
+    add(hip, capsule(0.048, 0.17), 0, -0.125, 0, JEANS);
     const knee = new THREE.Group();
     knee.position.y = -0.25;
-    add(knee, ball(0.043), 0, 0, 0, jointMat);
-    add(knee, capsule(0.039, 0.17), 0, -0.12, 0);
-    add(knee, track(new RoundedBoxGeometry(0.13, 0.045, 0.075, 2, 0.02)), 0.035, -0.255, 0);
+    add(knee, ball(0.045), 0, 0, 0, JEANS);
+    add(knee, capsule(0.041, 0.17), 0, -0.12, 0, JEANS);
+    // shoe: dark upper on a light sole
+    add(knee, track(new RoundedBoxGeometry(0.135, 0.04, 0.078, 2, 0.018)), 0.037, -0.248, 0, SHOE);
+    add(knee, track(new RoundedBoxGeometry(0.14, 0.016, 0.08, 2, 0.007)), 0.038, -0.272, 0, SOLE);
     hip.add(knee);
     pelvis.add(hip);
     return { hip, knee };
   });
   const torso = new THREE.Group();
   pelvis.add(torso);
-  add(torso, capsule(0.085, 0.17), 0, 0.16, 0).scale.set(0.8, 1, 1.3);
-  add(torso, capsule(0.03, 0.04), 0, 0.33, 0);
-  const head = add(torso, ball(0.078), 0.012, 0.43, 0);
+  add(torso, capsule(0.087, 0.17), 0, 0.16, 0, SHIRT).scale.set(0.8, 1, 1.3);
+  add(torso, capsule(0.03, 0.04), 0, 0.33, 0, SKIN);
+  const head = add(torso, ball(0.078), 0.012, 0.43, 0, SKIN);
   head.scale.set(1, 1.15, 0.95);
+  // short hair: a cap over the top and back of the head
+  const hair = add(torso, track(new THREE.SphereGeometry(0.083, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.55)), 0.0, 0.445, 0, HAIR);
+  hair.scale.set(1.02, 1.12, 0.98);
+  hair.rotation.z = 0.35; // more hair at the back than over the face
   const arms = [-0.13, 0.13].map((z) => {
     const shoulder = new THREE.Group();
     shoulder.position.set(0, 0.285, z);
-    add(shoulder, ball(0.036), 0, 0, 0, jointMat);
-    add(shoulder, capsule(0.031, 0.13), 0, -0.1, 0);
+    add(shoulder, ball(0.038), 0, 0, 0, SHIRT);
+    // short sleeve, then bare arm
+    add(shoulder, capsule(0.036, 0.05), 0, -0.05, 0, SHIRT);
+    add(shoulder, capsule(0.029, 0.1), 0, -0.12, 0, SKIN);
     const elbow = new THREE.Group();
     elbow.position.y = -0.2;
-    add(elbow, ball(0.029), 0, 0, 0, jointMat);
-    add(elbow, capsule(0.027, 0.12), 0, -0.085, 0);
-    add(elbow, ball(0.034), 0.004, -0.18, 0);
+    add(elbow, ball(0.028), 0, 0, 0, SKIN);
+    add(elbow, capsule(0.026, 0.12), 0, -0.085, 0, SKIN);
+    add(elbow, ball(0.033), 0.004, -0.18, 0, SKIN);
     shoulder.add(elbow);
     torso.add(shoulder);
     return { shoulder, elbow, side: z > 0 ? 1 : -1 };
@@ -551,8 +567,7 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
       const st = reduced ? { p: treadTop(STEP_COUNT - 1), q: NEUTRAL, lead: 0, top: 0, fade: 1, landed: STEP_COUNT - 1, atTop: false } : climb(climbT);
       climber.position.copy(st.p);
       climber.visible = st.fade > 0.01;
-      figMat.opacity = st.fade;
-      jointMat.opacity = st.fade;
+      figMats.forEach((m) => (m.opacity = st.fade));
       orbLight.intensity = 1.2 * st.fade;
       applyPose(st.q, st.lead, st.top);
       if (st.landed !== lastHop && st.landed >= 0) {
