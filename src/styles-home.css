@@ -411,7 +411,9 @@
     height: auto;
     min-height: 0;
     align-self: stretch;
-    max-height: 680px;
+    max-height: 780px;
+    /* reach up into the empty space under the top bar: room for the climber's head at the top */
+    margin-top: -100px;
   }
 }
 .stairs3d__canvas {
@@ -421,8 +423,8 @@
   height: 100%;
   animation: hero-in 1.2s ease both;
   /* Soft edges: the glowing stage fades out instead of ending in a straight line. */
-  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 70%, transparent 100%);
-  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 70%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 80%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 80%, transparent 100%);
 }
 @keyframes hero-in {
   from {

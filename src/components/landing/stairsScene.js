@@ -604,9 +604,9 @@ export function createStairsScene(host, { palette, accent = '#a5b4fc', onFrame, 
 
   function place(p) {
     const pt = curve.getPoint(p);
-    flight.position.set(pt.x * hw * 0.8, pt.y * hh * 0.8 + hh * 0.06 * p, 0);
+    flight.position.set(pt.x * hw * 0.8, pt.y * hh * 0.8 + hh * 0.07 * p, 0);
     // Fit the staircase plus the person standing on the top step (and room for the fireworks).
-    const size = Math.min((hw * 1.3) / totalW, (hh * 0.86) / (totalH + FIG_H * 0.5));
+    const size = Math.min((hw * 1.5) / totalW, (hh * 1.05) / (totalH + FIG_H * 0.5));
     const scale = size * (0.08 + 0.92 * Math.pow(p, 1.4));
     flight.scale.setScalar(scale);
     fitShadow(scale);
