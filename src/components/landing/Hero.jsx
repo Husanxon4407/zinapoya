@@ -11,7 +11,9 @@ import { useReturning } from '../../lib/returning.js';
 
 const STEPS = 6;
 const AUTO_SWITCH_MS = 4200;
-const HOLD_MAX_MS = 2500;
+// The headline waits this long at most for the staircase, so both can start together. Kept short:
+// on a slow network the title must not wait for the 3D download; the staircase then joins in later.
+const HOLD_MAX_MS = 450;
 
 const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const hasWebGL = () => {
@@ -28,7 +30,10 @@ const hasWebGL = () => {
 export default function Hero() {
   const t = useT();
   const returning = useReturning();
-  const { user, areas } = useApp();
+  const { user, areas, authReady } = useApp();
+  // Until the login check is done, the login buttons are invisible (but keep their space),
+  // so a logged-in visitor never sees "Log in" flash before "My learning".
+  const authStyle = authReady ? undefined : { visibility: 'hidden' };
   const lang = useLang();
   const stageRef = useRef(null);
   const sceneRef = useRef(null);
@@ -136,6 +141,7 @@ export default function Hero() {
         </Link>
         <nav className="hero3d__nav">
           <LangSwitch />
+          <span className="hero3d__auth" style={authStyle}>
           {user ? (
             <Link to="/my" className="zbtn zbtn--small hero3d__signup">
               {t('My learning')} <span aria-hidden="true">↗</span>
@@ -160,6 +166,7 @@ export default function Hero() {
               </Link>
             </>
           )}
+          </span>
         </nav>
       </header>
 
@@ -189,6 +196,7 @@ export default function Hero() {
               <Link to={`/learn/${area.id}`} className="zbtn">
                 {t('Explore {name}', { name: t(area.short) })} <span className="zbtn__arrow" aria-hidden="true">↗</span>
               </Link>
+              <span className="hero3d__auth" style={authStyle}>
               {user ? (
                 <Link to={areaPath(area.id)} className="hero3d__try">
                   {areas.includes(area.id) ? t('Open {name}', { name: t(area.short) }) : t('Look inside {name}', { name: t(area.short) })}
@@ -202,6 +210,7 @@ export default function Hero() {
                   {t('Register for {name}', { name: t(area.short) })}
                 </Link>
               )}
+              </span>
             </div>
           </div>
         </div>

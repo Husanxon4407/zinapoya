@@ -1362,3 +1362,8 @@
     transition: none;
   }
 }
+
+/* Wrapper around the login-dependent buttons: no box of its own, so the nav/CTA layout is unchanged. */
+.hero3d__auth {
+  display: contents;
+}

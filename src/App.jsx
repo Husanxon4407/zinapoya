@@ -123,8 +123,11 @@ const lazyEl = (el) => <Suspense fallback={<PageLoading />}>{el}</Suspense>;
 
 function Screens() {
   const { user, authReady, recovering } = useApp();
+  const { pathname } = useLocation();
 
-  if (!authReady) {
+  // The main page shows at once: it does not wait for the login check (on a slow network that can
+  // take seconds when the saved session has to be refreshed). Only its login buttons wait (Hero).
+  if (!authReady && pathname !== '/') {
     return (
       <div className="splash">
         <div className="spinner" />

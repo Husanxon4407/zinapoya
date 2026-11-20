@@ -57,10 +57,10 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return; // Supabase, fonts, AI: always live
 
   // Pages: try the network first so students always get the newest version
-  // (but don't wait more than 4 s on a very slow connection: use the offline copy).
+  // (but don't wait more than 1.5 s on a weak connection: open the saved copy at once instead).
   if (req.mode === 'navigate') {
     event.respondWith(
-      Promise.race([fetch(req), new Promise((_, reject) => setTimeout(() => reject(new Error('slow')), 4000))])
+      Promise.race([fetch(req), new Promise((_, reject) => setTimeout(() => reject(new Error('slow')), 1500))])
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put('/', copy));
