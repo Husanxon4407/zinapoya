@@ -42,7 +42,7 @@ export const FAQ = [
 ];
 
 export const CONTACTS = [
-  { id: 'telegram', emoji: '📨', label: 'Telegram', value: '@bh_s_t', href: 'https://t.me/bh_s_t' },
+  { id: 'telegram', emoji: '📨', label: 'Telegram', value: '@bh_s_t', href: 'https://t.me/bh_s_t', app: 'tg://resolve?domain=bh_s_t' },
   { id: 'phone', emoji: '📞', label: 'Phone', value: '+998 93 006 44 07', href: 'tel:+998930064407' },
   { id: 'instagram', emoji: '📷', label: 'Instagram', value: '@bh_s_t', href: 'https://instagram.com/bh_s_t' },
   { id: 'email', emoji: '✉️', label: 'Email', value: 'husanxonbahodirxonov@gmail.com', href: 'mailto:husanxonbahodirxonov@gmail.com' },
