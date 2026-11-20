@@ -11,7 +11,7 @@ personal progress dashboard.
 | 2 Tell a story | 22 cue cards (6 written + 16 picture cards) |
 | 3 Argue a point | 31 For/Against topics |
 
-All questions live in `src/data/` — edit those files to add or change questions.
+Speaking questions live in `src/features/speaking/data/`, writing tasks in `src/features/writing/data/` — edit those files to add or change tasks.
 Pictures are in `public/images/`.
 
 ---
@@ -71,10 +71,17 @@ Do these once in the Supabase dashboard, in this order. Every SQL file is safe t
 
 Students turn reminders on in **My profile → 🔔 Daily reminder**. On iPhone this works only after "Add to Home Screen" (iOS 16.4 or newer).
 
+5. **CEFR Writing** (AI-checked emails and posts):
+   1. SQL Editor → paste `supabase/migrations/10_writing.sql` → Run.
+   2. Edge Functions → Deploy a new function → name it `writing` → paste `supabase/functions/writing/index.ts` → Deploy. In its settings, switch **Verify JWT** OFF. It uses the same `GEMINI_API_KEY` secret.
+   3. Optional secrets: `WRITING_MODEL` (default `gemini-flash-lite-latest`), `WRITING_BACKUP_MODEL` (default `gemini-flash-latest`), `DAILY_WRITING_LIMIT` (default 20).
+   4. `npm test` checks the official scoring rules and every writing task.
+
 ## Uzbek / Russian translations
 
 Menus and instructions can be shown in English, Uzbek (Latin) or Russian (🌐 switch in the top bar).
 The translations live in `src/i18n/uz.js` and `src/i18n/ru.js`: English text on the left, translation on the right.
+The Writing section keeps its own translations in `src/features/writing/i18n/`.
 Edit the right-hand side to improve a translation; keep `{n}`, `{a}` and similar exactly as they are.
 Anything without a translation simply shows in English. Exam questions, vocabulary and AI feedback stay in English on purpose.
 
@@ -92,10 +99,13 @@ Anything without a translation simply shows in English. Exam questions, vocabula
 
 ## Project structure
 
+The code is organised by feature — see **[src/README.md](src/README.md)** for the full map.
+
 ```
-src/data/        exam questions, timings, phrase bank
-src/lib/         speech (TTS, recording, recognition), metrics, progress, data API
-src/components/  ExamRunner (exam simulator), AnswerReview, FeedbackView, …
-src/pages/       Home, Part lists, Practice, Mock exam, Games, Phrases, Progress, History, Auth
-supabase/        schema.sql + the "feedback" AI function
+src/app/         start-up, routes, shared state
+src/features/    one folder per part of the site (home, account, speaking, writing, games, words, progress, teacher)
+src/shared/      the menu, common buttons and helpers used everywhere (API, sound, speech…)
+src/styles/      site-wide stylesheets
+src/i18n/        Uzbek and Russian translations
+supabase/        database (schema.sql + migrations/) and the AI functions (feedback, writing, …)
 ```

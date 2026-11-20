@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../../lib/api.js';
-import { useApp } from '../../../state.jsx';
+import { api } from '../../../shared/lib/api.js';
+import { useApp } from '../../../app/state.jsx';
 import { useT } from '../../../i18n/index.js';
 import { getTask, nextTask, taskForServer } from '../data/index.js';
 import { PARTS, countWords } from '../rules.js';

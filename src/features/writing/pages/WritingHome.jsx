@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../../lib/api.js';
-import { useApp } from '../../../state.jsx';
+import { api } from '../../../shared/lib/api.js';
+import { useApp } from '../../../app/state.jsx';
 import { useT } from '../../../i18n/index.js';
 import { GENRES, part1Sets, part2Prompts } from '../data/index.js';
 import { PARTS, PART_KEYS, bandLabel } from '../rules.js';

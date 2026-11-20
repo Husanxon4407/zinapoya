@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../../../lib/api.js';
+import { api } from '../../../shared/lib/api.js';
 import { useT } from '../../../i18n/index.js';
-import { PageLoading } from '../../../App.jsx';
+import { PageLoading } from '../../../app/App.jsx';
 import { getTask } from '../data/index.js';
 import { PARTS } from '../rules.js';
 import TaskCard from '../components/TaskCard.jsx';
