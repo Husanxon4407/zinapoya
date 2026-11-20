@@ -921,4 +921,13 @@ export default {
   "Writing tasks": "Yozish topshiriqlari",
   "AI correction": "AI tuzatishi",
   "Subject–verb agreement": "Ega va kesim moslashuvi",
+  "Passage {n}": "{n}-matn",
+  "Questions {a}–{b}": "{a}–{b}-savollar",
+  "The text talks about taste, not price.": "Matnda narx emas, ta’m haqida gap boradi.",
+  "{n} of {m} correct": "{m} tadan {n} tasi to‘g‘ri",
+  "{n} of {m} answered": "{m} tadan {n} tasi javob berildi",
+  "Checked by AI": "AI tekshirdi",
+  "Check answers": "Javoblarni tekshirish",
+  "Reading band": "Reading bali",
+  "The passage says nothing about it — don’t guess from your own knowledge.": "Matnda bu haqda hech narsa yo‘q — o‘z bilimingizga qarab taxmin qilmang.",
 };

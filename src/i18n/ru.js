@@ -921,4 +921,13 @@ export default {
   "Writing tasks": "Задания по письму",
   "AI correction": "Исправление ИИ",
   "Subject–verb agreement": "Согласование подлежащего и сказуемого",
+  "Passage {n}": "Текст {n}",
+  "Questions {a}–{b}": "Вопросы {a}–{b}",
+  "The text talks about taste, not price.": "В тексте говорится о вкусе, а не о цене.",
+  "{n} of {m} correct": "Верно: {n} из {m}",
+  "{n} of {m} answered": "Отвечено: {n} из {m}",
+  "Checked by AI": "Проверено ИИ",
+  "Check answers": "Проверить ответы",
+  "Reading band": "Балл за чтение",
+  "The passage says nothing about it — don’t guess from your own knowledge.": "В тексте об этом ничего нет — не угадывайте по собственным знаниям.",
 };

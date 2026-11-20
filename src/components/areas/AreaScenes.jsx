@@ -277,6 +277,125 @@ export function EssayScene() {
   );
 }
 
+/* ---------- IELTS: a Reading passage checked by AI ---------- */
+// Passage sentences; `q` is the question a sentence proves (shown once that question is checked).
+const PASSAGE = [
+  { text: 'Beekeeping has become surprisingly popular in big cities.' },
+  { text: 'In London, the number of hives more than doubled between 2008 and 2013.', q: 14 },
+  { text: 'Some scientists warn that too many hives may leave little food for wild bees.', q: 15 },
+  { text: 'City honey is often said to taste better, thanks to the variety of garden flowers.', q: 16, miss: true },
+];
+// [number, statement, student's pick, right answer, picked at (s)]
+const TFNG = [
+  [14, 'The number of hives in London fell after 2008.', 'F', 'F', 1.6],
+  [15, 'Urban hives may harm wild bees.', 'T', 'T', 3.0],
+  [16, 'City honey is more expensive than country honey.', 'T', 'NG', 4.4],
+];
+const CHECK_AT = { 14: 7, 15: 7.9, 16: 8.8 };
+export function ReadingScene() {
+  const t = useT();
+  const { loop, t: s } = useLoop(16, 15);
+  const checking = s >= 6 && s < 7;
+  const isChecked = (q) => s >= CHECK_AT[q];
+  const done = s >= 10.3;
+  const answered = TFNG.filter(([, , , , at]) => s >= at).length;
+  const left = 20 * 60 - 34 - Math.floor(s * 4);
+  const timer = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+  return (
+    <div className="avis avis--scene">
+      <div className="sc-stage sc-stage--doc">
+        <div key={loop} className="sc-editor rd" aria-hidden="true" translate="no">
+          <div className="es-bar">
+            <span className="es-dots">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>
+              <b>{skillName(t, 'Reading')}</b> · {t('Passage {n}', { n: 2 })}
+            </span>
+            <span className="es-time">{timer}</span>
+          </div>
+          <div className="rd-passage" lang="en">
+            <b className="rd-title">The buzz in our cities</b>
+            {PASSAGE.map((p) => (
+              <span
+                key={p.text}
+                className={`rd-s ${p.q && isChecked(p.q) ? (p.miss ? 'is-miss' : 'is-proof') : ''}`}
+              >
+                {p.q && isChecked(p.q) && <sup>{p.q}</sup>}
+                {p.text}{' '}
+              </span>
+            ))}
+          </div>
+          <div className="rd-qs">
+            <small className="rd-qs__head">{t('Questions {a}–{b}', { a: 14, b: 16 })} · True / False / Not Given</small>
+            {TFNG.map(([n, text, pick, right, at]) => {
+              const picked = s >= at;
+              const checked = isChecked(n);
+              const ok = pick === right;
+              return (
+                <div key={n} className={`rd-q ${checked ? (ok ? 'is-ok' : 'is-bad') : ''}`}>
+                  <b className="rd-q__n">{n}</b>
+                  <span className="rd-q__text" lang="en">
+                    {text}
+                    {checked && !ok && <em className="rd-why">{t('The text talks about taste, not price.')}</em>}
+                  </span>
+                  <span className="rd-opts">
+                    {['T', 'F', 'NG'].map((o) => (
+                      <i
+                        key={o}
+                        className={[
+                          picked && o === pick ? 'is-pick' : '',
+                          checked && o === right ? 'is-right' : '',
+                          checked && !ok && o === pick ? 'is-wrong' : '',
+                        ].join(' ')}
+                      >
+                        {o}
+                      </i>
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="es-tools">
+            <span>{done ? <b className="rd-score">{t('{n} of {m} correct', { n: 2, m: 3 })}</b> : t('{n} of {m} answered', { n: answered, m: 3 })}</span>
+            {done ? (
+              <span className="es-check rd-band">
+                {t('Reading band')} <b>7.0</b>
+              </span>
+            ) : (
+              <span className={`es-check ${checking ? 'is-busy' : ''} ${s >= 7 ? 'is-done' : ''}`}>
+                {s >= 7 ? `✓ ${t('Checked by AI')}` : checking ? t('Checking…') : t('Check answers')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="lc-card sc-tl" aria-hidden="true">
+          <small>{t('Target band')}</small>
+          <span className="sc-big">7.0</span>
+        </div>
+        <div className="lc-card sc-tr" aria-hidden="true">
+          <small>{t('AI tip')}</small>
+          <span className="sc-tip">
+            <b lang="en">Not Given</b>
+            {t('The passage says nothing about it — don’t guess from your own knowledge.')}
+          </span>
+        </div>
+        <div className="lc-card sc-br" aria-hidden="true">
+          <small>{t('Exam day')}</small>
+          <span className="sc-cal">
+            <b>23</b>
+            <span>{t('days left')}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- IELTS: a practice score report ---------- */
 const IELTS_BANDS = [
   ['Listening', 8.0],
