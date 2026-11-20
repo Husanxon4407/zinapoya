@@ -367,6 +367,248 @@
   background: linear-gradient(90deg, var(--a-accent), var(--a-accent2));
 }
 
+/* ---------- CEFR essay editor (AI writing check) ---------- */
+.sc-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #fbfdfc;
+  color: #10201f;
+  box-shadow:
+    0 40px 80px rgba(0, 0, 0, 0.5),
+    0 0 80px -20px color-mix(in srgb, var(--a-accent) 45%, transparent);
+  animation: doc-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.es-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: #0d1418;
+  color: #b9cccb;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.es-bar b {
+  color: #fff;
+}
+.es-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+.es-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+.es-dots i:nth-child(2) {
+  background: #febc2e;
+}
+.es-dots i:nth-child(3) {
+  background: #28c840;
+}
+.es-time {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.es-task {
+  margin: 14px 14px 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--a-accent) 12%, #fff);
+  border-left: 3px solid var(--a-accent);
+}
+.es-task small {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f766e;
+}
+.es-task p {
+  margin: 3px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.es-text {
+  position: relative;
+  flex: 1;
+  margin: 0;
+  padding: 14px 16px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: #22302f;
+}
+.es-err s {
+  text-decoration: none;
+}
+.es-err ins {
+  display: none;
+  text-decoration: none;
+}
+.es-text.is-checked .es-err s {
+  color: #dc2626;
+  text-decoration: line-through wavy #ef4444;
+  animation: es-mark 0.4s ease-out calc(var(--i) * 0.22s) both;
+}
+.es-text.is-checked .es-err ins {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.5;
+  animation: es-pop 0.45s cubic-bezier(0.2, 0.8, 0.2, 1.4) calc(0.15s + var(--i) * 0.22s) both;
+}
+.es-good {
+  background: linear-gradient(color-mix(in srgb, var(--a-accent2) 55%, transparent), color-mix(in srgb, var(--a-accent2) 55%, transparent)) no-repeat 0 85% / 0% 45%;
+  border-radius: 3px;
+}
+.es-text.is-checked .es-good {
+  background-size: 100% 45%;
+  transition: background-size 0.5s ease-out calc(var(--i) * 0.22s);
+  font-weight: 700;
+}
+@keyframes es-mark {
+  from {
+    color: inherit;
+    text-decoration-color: transparent;
+  }
+}
+@keyframes es-pop {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.6);
+  }
+}
+.es-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--a-accent) 30%, transparent), transparent);
+  border-bottom: 2px solid var(--a-accent);
+  pointer-events: none;
+  animation: es-scan 1.3s ease-in-out both;
+}
+@keyframes es-scan {
+  from {
+    transform: translateY(-40px);
+  }
+  to {
+    transform: translateY(200px);
+    opacity: 0.2;
+  }
+}
+.es-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 14px;
+  border-top: 1px solid #e3eceb;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #5d7472;
+  font-variant-numeric: tabular-nums;
+}
+.es-check {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #0d1418;
+  color: #fff;
+  font-weight: 800;
+  transition: background 0.3s;
+}
+.es-check.is-busy {
+  background: var(--a-accent);
+  color: #062521;
+  animation: es-busy 0.8s ease-in-out infinite alternate;
+}
+.es-check.is-done {
+  background: #15803d;
+}
+@keyframes es-busy {
+  to {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--a-accent) 25%, transparent);
+  }
+}
+.es-result {
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid #dbe9e7;
+  box-shadow: 0 -10px 40px rgba(6, 37, 33, 0.25);
+}
+.es-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 14px;
+}
+.es-rows .rec-row {
+  grid-template-columns: 1fr;
+  gap: 3px;
+  font-size: 0.68rem;
+}
+.es-result .rec-result__head b {
+  font-size: 1.6rem;
+}
+.es-chips {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.es-chips i {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.es-chips .is-err {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.es-chips .is-good {
+  background: #dcfce7;
+  color: #15803d;
+}
+.es-comment {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #0f766e;
+}
+.sc-parts--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.sc-fix {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.sc-fix s {
+  color: #f87171;
+  text-decoration-color: #f87171;
+}
+.sc-fix b {
+  color: var(--a-accent2);
+}
+
 /* ---------- IELTS score report (paper document) ---------- */
 .sc-doc {
   position: relative;

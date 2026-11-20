@@ -1,5 +1,5 @@
 // "Real app" pictures for the area homepages (CEFR, IELTS, SAT, School), in the same style as the
-// Languages chat: one realistic screen in the middle (phone, score report, test window, notebook)
+// Languages chat: one realistic screen in the middle (essay editor, score report, test window, notebook)
 // with small cards hanging on its edges. Each scene plays in a loop; the loop number is used as a
 // React key so the CSS animations start again from the beginning every round.
 // The older pictures still live in AreaVisual.jsx (switch back there with USE_SCENES).
@@ -108,6 +108,159 @@ export function RecorderScene() {
           <span className="sc-tip">
             {t('Try a linking phrase:')} <b lang="en">“On top of that…”</b>
           </span>
+        </div>
+        <div className="lc-card sc-br" aria-hidden="true">
+          <small>{t('Next level')}</small>
+          <span className="sc-next">
+            <b>B2</b>
+            <span className="sc-meter">
+              <i style={{ '--v': '72%' }} />
+            </span>
+            <b>C1</b>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- CEFR: an essay checked by AI ---------- */
+// [kind, text, correction]: 'p' plain text, 'err' a mistake (struck out, correction shown),
+// 'good' a strong phrase (highlighted).
+const ESSAY = [
+  ['p', 'Nowadays, more and more students '],
+  ['err', 'prefers', 'prefer'],
+  ['p', ' studying online. '],
+  ['good', 'On the one hand,'],
+  ['p', ' it saves time and gives students '],
+  ['err', 'an access', 'access'],
+  ['p', ' to the best teachers. On the other hand, it '],
+  ['err', 'make', 'can make'],
+  ['p', ' people feel lonely. '],
+  ['good', 'All things considered,'],
+  ['p', ' I believe '],
+  ['good', 'a balance between the two'],
+  ['p', ' is the ideal option.'],
+];
+const ESSAY_LEN = ESSAY.reduce((n, [, x]) => n + x.length, 0);
+const ESSAY_SCORES = [
+  ['Task response', 80],
+  ['Coherence', 84],
+  ['Vocabulary', 76],
+  ['Grammar', 62],
+];
+export function EssayScene() {
+  const t = useT();
+  const { loop, t: s } = useLoop(16, 15);
+  const typed = Math.floor(clamp01((s - 0.4) / 6.2) * ESSAY_LEN);
+  const typing = s < 6.8;
+  const checking = s >= 7 && s < 8.3;
+  const checked = s >= 8.3;
+  const done = s >= 10.2;
+  const left = 40 * 60 - 12 - Math.floor(s * 7);
+  const timer = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+
+  // Render the essay up to `typed` characters; marks number their highlight order with --i.
+  let rest = typed;
+  let mark = 0;
+  const body = [];
+  for (const [kind, text, fix] of ESSAY) {
+    if (rest <= 0) break;
+    const part = text.slice(0, rest);
+    rest -= text.length;
+    const key = body.length;
+    if (kind === 'p' || part.length < text.length) body.push(<span key={key}>{part}</span>);
+    else if (kind === 'err')
+      body.push(
+        <span key={key} className="es-err" style={{ '--i': mark++ }}>
+          <s>{text}</s>
+          <ins>{fix}</ins>
+        </span>,
+      );
+    else
+      body.push(
+        <span key={key} className="es-good" style={{ '--i': mark++ }}>
+          {text}
+        </span>,
+      );
+  }
+  const words = ESSAY.map(([, x]) => x)
+    .join('')
+    .slice(0, typed)
+    .split(/\s+/)
+    .filter(Boolean).length;
+
+  return (
+    <div className="avis avis--scene">
+      <div className="sc-stage sc-stage--doc">
+        <div key={loop} className="sc-editor" aria-hidden="true" translate="no">
+          <div className="es-bar">
+            <span className="es-dots">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>
+              <b>{skillName(t, 'Writing')}</b> · {t('Part {n}', { n: '2' })}
+            </span>
+            <span className="es-time">{timer}</span>
+          </div>
+          <div className="es-task">
+            <small>{t('Essay')}</small>
+            <p lang="en">Some people think students should study online rather than at school. Do you agree?</p>
+          </div>
+          <p className={`es-text ${checked ? 'is-checked' : ''}`} lang="en">
+            {body}
+            {typing && <span className="rec-caret" />}
+            {checking && <span className="es-scan" />}
+          </p>
+          <div className="es-tools">
+            <span>{t('{n} words', { n: words })}</span>
+            <span className={`es-check ${checking ? 'is-busy' : ''} ${checked ? 'is-done' : ''}`}>
+              {checked ? `✓ ${t('Checked')}` : checking ? t('Checking…') : `✨ ${t('Check with AI')}`}
+            </span>
+          </div>
+          <div className={`rec-result es-result ${done ? 'is-in' : ''}`}>
+            <div className="rec-result__head">
+              <span>
+                <small>{t('Estimated level')}</small>
+                <b>B2</b>
+              </span>
+              <span className="es-chips">
+                <i className="is-err">{t('{n} mistakes', { n: 3 })}</i>
+                <i className="is-good">{t('{n} strong phrases', { n: 3 })}</i>
+              </span>
+            </div>
+            <div className="es-rows">
+              {ESSAY_SCORES.map(([name, v], i) => (
+                <div key={name} className="rec-row">
+                  <span>{t(name)}</span>
+                  <span className="rec-bar">
+                    <i style={{ '--v': `${v}%`, '--i': i }} />
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="es-comment">{t('Great linking phrases! Watch your verb forms.')}</p>
+          </div>
+        </div>
+
+        <div className="lc-card sc-tl" aria-hidden="true">
+          <small>{t('Writing tasks')}</small>
+          <span className="sc-parts sc-parts--3">
+            {['1.1', '1.2', '2'].map((p) => (
+              <i key={p} className={p === '2' ? 'is-on' : ''}>
+                {p}
+              </i>
+            ))}
+          </span>
+        </div>
+        <div className="lc-card sc-tr" aria-hidden="true">
+          <small>{t('AI correction')}</small>
+          <span className="sc-fix" lang="en">
+            students <s>prefers</s> <b>prefer</b>
+          </span>
+          <small className="sc-sub">{t('Subject–verb agreement')}</small>
         </div>
         <div className="lc-card sc-br" aria-hidden="true">
           <small>{t('Next level')}</small>
