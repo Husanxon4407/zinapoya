@@ -33,7 +33,7 @@
     <script>
       // Set the theme before the page paints, so dark mode never flashes white.
       try {
-        var c = localStorage.getItem('su_theme') || 'auto';
+        var c = localStorage.getItem('su_theme') || 'dark';
         var dark = c === 'dark' || (c === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
       } catch (e) {}

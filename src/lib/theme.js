@@ -17,7 +17,7 @@ const write = (k, v) => {
 const listeners = new Set();
 const media = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
-export const getThemeChoice = () => read('su_theme', 'auto'); // 'auto' | 'light' | 'dark'
+export const getThemeChoice = () => read('su_theme', 'dark'); // 'auto' | 'light' | 'dark' (dark by default)
 export const resolvedTheme = () => {
   const c = getThemeChoice();
   return c === 'auto' ? (media?.matches ? 'dark' : 'light') : c;
