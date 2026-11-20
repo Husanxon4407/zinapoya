@@ -42,6 +42,10 @@ const Mistakes = page(() => import('./pages/Mistakes.jsx'));
 const Privacy = page(() => import('./pages/Privacy.jsx'));
 const Teacher = page(() => import('./pages/Teacher.jsx'));
 const TeacherStudent = page(() => import('./pages/Teacher.jsx'), 'TeacherStudent');
+// CEFR Writing (everything for it lives in src/features/writing).
+const WritingHome = page(() => import('./features/writing/pages/WritingHome.jsx'));
+const WritingTask = page(() => import('./features/writing/pages/WritingTask.jsx'));
+const WritingResult = page(() => import('./features/writing/pages/WritingResult.jsx'));
 
 export function PageLoading() {
   return (
@@ -164,6 +168,9 @@ function Screens() {
           <Route path="/practice/:key/:id" element={<Gate feature="cefr.speaking"><Practice /></Gate>} />
           <Route path="/mock" element={<Gate feature="cefr.mock"><MockExam /></Gate>} />
           <Route path="/workout" element={<Gate feature="cefr.speaking"><Workout /></Gate>} />
+          <Route path="/writing" element={<WritingHome />} />
+          <Route path="/writing/result/:attemptId" element={<Gate why="Log in to see your writing feedback."><WritingResult /></Gate>} />
+          <Route path="/writing/:part/:id" element={<WritingTask />} />
           <Route path="/games" element={<Games />} />
           <Route path="/games/roulette" element={<Roulette />} />
           <Route path="/games/bingo" element={<LinkerBingo />} />

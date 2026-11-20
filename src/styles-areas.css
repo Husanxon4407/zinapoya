@@ -2121,3 +2121,25 @@ a.mycard:hover {
     animation: none;
   }
 }
+
+/* The menu measured itself and its labels do not fit (Layout.jsx): icons only, names on hover. */
+.topnav--icons .topnav__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.topnav--icons a {
+  font-size: 1.15rem;
+  padding: 8px 12px;
+}
+/* First step before icons only: the same labels with tighter spacing. */
+.topnav--tight {
+  gap: 2px;
+}
+.topnav--tight a {
+  padding: 8px 8px;
+  gap: 4px;
+}

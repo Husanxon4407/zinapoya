@@ -1,6 +1,11 @@
 // O‘zbekcha (lotin). Chap tomonda inglizcha matn, o‘ng tomonda tarjima.
 // Teacher: you can change any translation on the right. {n}, {a} and similar must stay as they are.
+import writing from '../features/writing/i18n/uz.js';
+
 export default {
+  // Writing section (its own file); keys written below win if a text appears in both.
+  ...writing,
+
   // Menu
   Home: 'Bosh sahifa',
   Games: 'O‘yinlar',

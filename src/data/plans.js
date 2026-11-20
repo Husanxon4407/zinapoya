@@ -7,6 +7,7 @@ export const FEATURES = {
   'cefr.ai-feedback': 'free',
   'cefr.games': 'free',
   'cefr.words': 'free',
+  'cefr.writing': 'free',
 };
 
 export const hasAccess = (feature, plan = 'free') => !feature || (FEATURES[feature] ?? 'free') === 'free' || plan === 'pro';

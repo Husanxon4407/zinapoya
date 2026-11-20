@@ -1,4 +1,4 @@
-import { Suspense, useRef } from 'react';
+import { Suspense, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Avatar from './Avatar.jsx';
 import LangSwitch from './LangSwitch.jsx';
@@ -14,6 +14,7 @@ import { useReturning } from '../lib/returning.js';
 
 const CEFR_LINKS = [
   ['/cefr', '🏠', 'Home'],
+  ['/writing', '✍️', 'Writing'],
   ['/games', '🎮', 'Games'],
   ['/vocab', '📚', 'Words'],
   ['/progress', '📈', 'Progress'],
@@ -21,7 +22,7 @@ const CEFR_LINKS = [
 ];
 const GUEST_HIDDEN = ['/progress', '/history'];
 // Links that stay lit on their inner pages too (/games/quiz lights "Games").
-const SECTIONS = ['/games', '/vocab', '/teacher'];
+const SECTIONS = ['/games', '/vocab', '/teacher', '/writing'];
 const GENERAL = ['/my', '/profile', '/teacher', '/privacy', '/reset-password'];
 
 // Which area the open page belongs to: /ielts → IELTS; games, words, practice… → CEFR;
@@ -31,6 +32,48 @@ function useRouteArea() {
   if (GENERAL.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
   const other = AREAS.find((a) => a.id !== 'cefr' && pathname === areaPath(a.id));
   return other ? other.id : 'cefr';
+}
+
+// The menu shows icons only when its labels do not fit (long Uzbek/Russian words, many links,
+// a teacher's extra link…), instead of guessing a screen width that works for every language.
+// Returns '' (labels fit), 'topnav--tight' (labels fit with less padding) or 'topnav--icons'.
+function useFitsOrIcons(ref, deps) {
+  const [mode, setMode] = useState('');
+  useLayoutEffect(() => {
+    const nav = ref.current;
+    if (!nav) return undefined;
+    let widths = null; // [with labels, with labels + tight spacing], measured once per deps change
+    const measure = () => {
+      const keep = nav.className;
+      nav.classList.remove('topnav--icons', 'topnav--tight');
+      const full = nav.scrollWidth;
+      nav.classList.add('topnav--tight');
+      const tight = nav.scrollWidth;
+      nav.className = keep;
+      widths = [full, tight];
+    };
+    const check = () => {
+      if (!widths) measure();
+      const room = nav.clientWidth + 1;
+      setMode(widths[0] <= room ? '' : widths[1] <= room ? 'topnav--tight' : 'topnav--icons');
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(nav);
+    // Web fonts arrive after the first paint (they load in the background, see index.html) and change
+    // the label widths: measure again each time a font finishes loading.
+    const remeasure = () => {
+      widths = null;
+      check();
+    };
+    document.fonts?.addEventListener?.('loadingdone', remeasure);
+    return () => {
+      document.fonts?.removeEventListener?.('loadingdone', remeasure);
+      ro.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return mode;
 }
 
 export default function Layout() {
@@ -49,6 +92,8 @@ export default function Layout() {
   if (!user) links = links.filter(([to]) => !GUEST_HIDDEN.includes(to));
   if (user) links = [...links, ['/my', '🧭', 'My learning']];
   if (profile?.role === 'teacher') links = [...links, ['/teacher', '🧑‍🏫', 'Class']];
+  const navRef = useRef(null);
+  const navFit = useFitsOrIcons(navRef, [links.length, t]);
   const closeAreaMenu = () => areaMenuRef.current?.removeAttribute('open');
   // The switcher lists the student's own areas first; guests see all of them.
   const menuAreas = user ? AREAS.filter((a) => areas.includes(a.id)) : AREAS;
@@ -91,7 +136,7 @@ export default function Layout() {
             </Link>
           </div>
         </details>
-        <nav className="topnav">
+        <nav className={`topnav ${navFit}`} ref={navRef}>
           {links.map(([to, icon, label]) => (
             <NavLink key={to} to={to} end={!SECTIONS.includes(to)} title={t(label)}>
               <span aria-hidden="true">{icon}</span>

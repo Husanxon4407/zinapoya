@@ -345,6 +345,57 @@ remote.teacher = {
   },
 };
 
+// CEFR Writing (src/features/writing). Grading runs in the "writing" Edge Function, which also saves
+// the attempt and the mistakes, so scores cannot be changed from the browser.
+remote.writing = {
+  async check({ part, text, task, mode = 'quick', timeSpent }) {
+    const timeout = new Promise((resolve) =>
+      setTimeout(() => resolve({ data: null, error: { message: 'Checking is taking too long. Please try again in a minute.' } }), 100000),
+    );
+    const { data, error } = await Promise.race([
+      supabase.functions.invoke('writing', { body: { part, text, task, mode, time_spent_s: timeSpent } }),
+      timeout,
+    ]);
+    if (error) throw new Error(await readFunctionError(error));
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
+  async list() {
+    const uid = await currentUid();
+    const { data, error } = await supabase
+      .from('writing_attempts')
+      .select('id, part, task_id, task_title, word_count, band, capped_by, created_at')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(300);
+    if (error) throw notSetUp(error) ? new Error('Writing is not switched on for this website yet.') : error;
+    return data;
+  },
+  async get(id) {
+    const { data, error } = await supabase.from('writing_attempts').select('*').eq('id', id).maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+  async remove(id) {
+    const { error } = await supabase.from('writing_attempts').delete().eq('id', id);
+    if (error) throw error;
+  },
+  async mistakes() {
+    const uid = await currentUid();
+    const { data, error } = await supabase.from('writing_mistakes').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(500);
+    if (error) throw notSetUp(error) ? new Error('Writing is not switched on for this website yet.') : error;
+    return data;
+  },
+  async setMastered(id, mastered) {
+    const { error } = await supabase.from('writing_mistakes').update({ mastered }).eq('id', id);
+    if (error) throw error;
+  },
+  async reportScore(attemptId, reason) {
+    const { error } = await supabase.from('writing_score_reports').insert({ attempt_id: attemptId, reason: reason || null });
+    if (error) throw error;
+  },
+};
+
 // Every remote call first makes sure the Supabase library has arrived (instant after the first time).
 const whenLoaded = (obj) => {
   for (const [k, f] of Object.entries(obj)) {
@@ -647,5 +698,18 @@ local.savePushSubscription = async () => {
   throw new Error('Reminders work after the site is connected to Supabase.');
 };
 local.deletePushSubscription = async () => {};
+
+// Local demo mode has no AI, so writing checks need the live site.
+local.writing = {
+  check: async () => {
+    throw new Error('Writing checks work after the site is connected to Supabase.');
+  },
+  list: async () => [],
+  get: async () => null,
+  remove: async () => {},
+  mistakes: async () => [],
+  setMastered: async () => {},
+  reportScore: async () => {},
+};
 
 export const api = isLocalMode ? local : remote;

@@ -24,7 +24,7 @@ export const AREAS = [
       { emoji: '🎤', name: 'Speaking', text: 'All four parts: short questions, picture comparison, a 2-minute talk and a discussion.', ready: true, to: '/cefr' },
       { emoji: '🎧', name: 'Listening', text: 'Exam-style audio with the same question types and timing.' },
       { emoji: '📖', name: 'Reading', text: 'Real passage types practised against the clock.' },
-      { emoji: '✍️', name: 'Writing', text: 'Letters and essays checked for grammar, vocabulary and structure.' },
+      { emoji: '✍️', name: 'Writing', text: 'Emails and posts checked with the official criteria: points, style, grammar and words.', ready: true, to: '/writing' },
     ],
   },
   {

@@ -1,6 +1,11 @@
 // Русский. Слева английский текст, справа перевод.
 // Teacher: you can change any translation on the right. {n}, {a} and similar must stay as they are.
+import writing from '../features/writing/i18n/ru.js';
+
 export default {
+  // Writing section (its own file); keys written below win if a text appears in both.
+  ...writing,
+
   // Menu
   Home: 'Главная',
   Games: 'Игры',

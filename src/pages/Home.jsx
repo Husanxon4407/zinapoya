@@ -139,6 +139,13 @@ export default function Home() {
               <p>{t('All four parts, real timing, about 15 minutes.')}</p>
             </div>
           </Link>
+          <Link to="/writing" className="quick__card quick__card--writing">
+            <span className="quick__emoji">✍️</span>
+            <div>
+              <h3>{t('Writing practice')}</h3>
+              <p>{t('Emails and posts, checked with the official criteria.')}</p>
+            </div>
+          </Link>
         </section>
 
         {stats.total > 0 && (

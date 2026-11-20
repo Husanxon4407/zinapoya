@@ -25,11 +25,14 @@ export function useFitText({ max = 92, min = 26, maxVh = 0 } = {}, deps = []) {
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     window.addEventListener('resize', fit);
-    // Web fonts change the width once they arrive.
+    // Web fonts change the width once they arrive. They load in the background (index.html), so
+    // `document.fonts.ready` can resolve before they even start: refit after every finished font load too.
     document.fonts?.ready.then(fit).catch(() => {});
+    document.fonts?.addEventListener?.('loadingdone', fit);
     return () => {
       ro.disconnect();
       window.removeEventListener('resize', fit);
+      document.fonts?.removeEventListener?.('loadingdone', fit);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [max, min, maxVh, ...deps]);
