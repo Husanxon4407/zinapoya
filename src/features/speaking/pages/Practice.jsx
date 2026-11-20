@@ -17,7 +17,7 @@ export default function Practice() {
   // location.key changes on every navigation, so "another random one" gets new questions.
   const steps = useMemo(() => (id === 'random' ? randomSteps(key) : stepsForQuestion(key, id)), [key, id, location.key]);
   const part = PARTS[key];
-  if (!part || !steps) return <Navigate to="/cefr" replace />;
+  if (!part || !steps) return <Navigate to="/speaking" replace />;
 
   return (
     <div>

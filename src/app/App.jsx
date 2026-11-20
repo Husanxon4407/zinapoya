@@ -46,6 +46,12 @@ const TeacherStudent = page(() => import('../features/teacher/pages/Teacher.jsx'
 const WritingHome = page(() => import('../features/writing/pages/WritingHome.jsx'));
 const WritingTask = page(() => import('../features/writing/pages/WritingTask.jsx'));
 const WritingResult = page(() => import('../features/writing/pages/WritingResult.jsx'));
+const WritingGames = page(() => import('../features/writing/games/WritingGames.jsx'));
+const CefrHub = page(() => import('../features/home/pages/CefrHub.jsx'));
+const PointHunter = page(() => import('../features/writing/games/PointHunter.jsx'));
+const RegisterSwitch = page(() => import('../features/writing/games/RegisterSwitch.jsx'));
+const LetterPuzzle = page(() => import('../features/writing/games/LetterPuzzle.jsx'));
+const FixTheMistake = page(() => import('../features/writing/games/FixTheMistake.jsx'));
 
 export function PageLoading() {
   return (
@@ -160,7 +166,8 @@ function Screens() {
 
         <Route element={<Layout />}>
           <Route path="/my" element={<Gate why="Log in to see your areas and progress."><MyLearning /></Gate>} />
-          <Route path="/cefr" element={<Home />} />
+          <Route path="/cefr" element={<CefrHub />} />
+          <Route path="/speaking" element={<Home />} />
           {AREAS.filter((a) => a.id !== 'cefr').map((a) => (
             <Route key={a.id} path={areaPath(a.id)} element={<AreaMain areaId={a.id} />} />
           ))}
@@ -169,6 +176,11 @@ function Screens() {
           <Route path="/mock" element={<Gate feature="cefr.mock"><MockExam /></Gate>} />
           <Route path="/workout" element={<Gate feature="cefr.speaking"><Workout /></Gate>} />
           <Route path="/writing" element={<WritingHome />} />
+          <Route path="/writing/games" element={<WritingGames />} />
+          <Route path="/writing/games/point-hunter" element={<PointHunter />} />
+          <Route path="/writing/games/register-switch" element={<RegisterSwitch />} />
+          <Route path="/writing/games/letter-puzzle" element={<LetterPuzzle />} />
+          <Route path="/writing/games/fix-the-mistake" element={<FixTheMistake />} />
           <Route path="/writing/result/:attemptId" element={<Gate why="Log in to see your writing feedback."><WritingResult /></Gate>} />
           <Route path="/writing/:part/:id" element={<WritingTask />} />
           <Route path="/games" element={<Games />} />

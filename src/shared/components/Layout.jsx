@@ -12,17 +12,32 @@ import Logo from './Logo.jsx';
 import { AREAS, areaById, areaPath } from '../data/areas.js';
 import { useReturning } from '../lib/returning.js';
 
-const CEFR_LINKS = [
-  ['/cefr', '🏠', 'Home'],
-  ['/writing', '✍️', 'Writing'],
-  ['/games', '🎮', 'Games'],
-  ['/vocab', '📚', 'Words'],
-  ['/progress', '📈', 'Progress'],
-  ['/history', '🗂️', 'History'],
-];
+// CEFR has a hub page (/cefr) and one menu per section, so each section shows only its own pages.
+// The "CEFR" area button at the top always leads back to the hub.
+const CEFR_MENUS = {
+  hub: [['/cefr', '🏠', 'CEFR home']],
+  speaking: [
+    ['/speaking', '🎤', 'Speaking'],
+    ['/games', '🎮', 'Games'],
+    ['/vocab', '📚', 'Words'],
+    ['/progress', '📈', 'Progress'],
+    ['/history', '🗂️', 'History'],
+  ],
+  writing: [
+    ['/writing', '✍️', 'Writing'],
+    ['/writing/games', '🎮', 'Games'],
+  ],
+};
+/** Which CEFR section a page belongs to. Everything that is not the hub or writing is speaking. */
+export const cefrSection = (pathname) => (pathname === '/cefr' ? 'hub' : pathname === '/writing' || pathname.startsWith('/writing/') ? 'writing' : 'speaking');
 const GUEST_HIDDEN = ['/progress', '/history'];
 // Links that stay lit on their inner pages too (/games/quiz lights "Games").
-const SECTIONS = ['/games', '/vocab', '/teacher', '/writing'];
+const SECTIONS = ['/games', '/vocab', '/teacher', '/writing/games'];
+/** Is a menu link "on" for this page? "Writing" stays lit on tasks and results, but not on the writing games. */
+function isOn(to, pathname) {
+  if (to === '/writing') return pathname.startsWith('/writing') && !pathname.startsWith('/writing/games');
+  return SECTIONS.includes(to) ? pathname === to || pathname.startsWith(`${to}/`) : pathname === to;
+}
 const GENERAL = ['/my', '/profile', '/teacher', '/privacy', '/reset-password'];
 
 // Which area the open page belongs to: /ielts → IELTS; games, words, practice… → CEFR;
@@ -43,12 +58,19 @@ function useFitsOrIcons(ref, deps) {
     const nav = ref.current;
     if (!nav) return undefined;
     let widths = null; // [with labels, with labels + tight spacing], measured once per deps change
+    // Width the links really take: first link's left edge to last link's right edge. (Not scrollWidth:
+    // it is never smaller than the menu box, so a moment of extra room would be remembered as "needed".)
+    const contentWidth = () => {
+      const kids = nav.children;
+      if (!kids.length) return 0;
+      return Math.ceil(kids[kids.length - 1].getBoundingClientRect().right - kids[0].getBoundingClientRect().left);
+    };
     const measure = () => {
       const keep = nav.className;
       nav.classList.remove('topnav--icons', 'topnav--tight');
-      const full = nav.scrollWidth;
+      const full = contentWidth();
       nav.classList.add('topnav--tight');
-      const tight = nav.scrollWidth;
+      const tight = contentWidth();
       nav.className = keep;
       widths = [full, tight];
     };
@@ -84,11 +106,12 @@ export default function Layout() {
   const menuRef = useRef(null);
   const areaMenuRef = useRef(null);
   const routeArea = useRouteArea();
+  const { pathname } = useLocation();
   const current = routeArea && areaById(routeArea);
   const name = profile?.name || user?.name || '';
   // Games, words, progress… belong to CEFR practice; other areas get their own pages later.
   const isCefr = routeArea === 'cefr';
-  let links = isCefr ? CEFR_LINKS : current ? [[areaPath(current.id), current.emoji, 'Home']] : [];
+  let links = isCefr ? CEFR_MENUS[cefrSection(pathname)] : current ? [[areaPath(current.id), current.emoji, 'Home']] : [];
   if (!user) links = links.filter(([to]) => !GUEST_HIDDEN.includes(to));
   if (user) links = [...links, ['/my', '🧭', 'My learning']];
   if (profile?.role === 'teacher') links = [...links, ['/teacher', '🧑‍🏫', 'Class']];
@@ -138,7 +161,7 @@ export default function Layout() {
         </details>
         <nav className={`topnav ${navFit}`} ref={navRef}>
           {links.map(([to, icon, label]) => (
-            <NavLink key={to} to={to} end={!SECTIONS.includes(to)} title={t(label)}>
+            <NavLink key={to} to={to} className={() => (isOn(to, pathname) ? 'active' : '')} title={t(label)}>
               <span aria-hidden="true">{icon}</span>
               <span className="topnav__label">{t(label)}</span>
             </NavLink>
@@ -252,7 +275,7 @@ export default function Layout() {
 
       <nav className={`bottomnav ${links.length < 2 ? 'bottomnav--none' : ''}`}>
         {links.map(([to, icon, label]) => (
-          <NavLink key={to} to={to} end={!SECTIONS.includes(to)}>
+          <NavLink key={to} to={to} className={() => (isOn(to, pathname) ? 'active' : '')}>
             <span>{icon}</span>
             <small>{t(label)}</small>
           </NavLink>

@@ -935,4 +935,17 @@ export default {
   "Check answers": "Проверить ответы",
   "Reading band": "Балл за чтение",
   "The passage says nothing about it — don’t guess from your own knowledge.": "В тексте об этом ничего нет — не угадывайте по собственным знаниям.",
+
+  // CEFR hub (/cefr)
+  'CEFR home': 'Главная CEFR',
+  'Choose a section of the exam to practise.': 'Выберите раздел экзамена для практики.',
+  'Answers: {n}': 'Ответов: {n}',
+  'Texts checked: {n}': 'Проверено текстов: {n}',
+  '4 parts': '4 части',
+  'about 15 minutes': 'около 15 минут',
+  '3 tasks': '3 задания',
+  '60 minutes': '60 минут',
+  'score out of 75': 'балл из 75',
+  'A friendly email, a formal email and an online post, checked with the official criteria.': 'Письмо другу, официальное письмо и онлайн-пост — проверка по официальным критериям.',
+  'Open': 'Открыть',
 };

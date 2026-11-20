@@ -935,4 +935,17 @@ export default {
   "Check answers": "Javoblarni tekshirish",
   "Reading band": "Reading bali",
   "The passage says nothing about it — don’t guess from your own knowledge.": "Matnda bu haqda hech narsa yo‘q — o‘z bilimingizga qarab taxmin qilmang.",
+
+  // CEFR hub (/cefr)
+  'CEFR home': 'CEFR bosh sahifasi',
+  'Choose a section of the exam to practise.': 'Mashq qilish uchun imtihon bo‘limini tanlang.',
+  'Answers: {n}': 'Javoblar: {n}',
+  'Texts checked: {n}': 'Tekshirilgan matnlar: {n}',
+  '4 parts': '4 qism',
+  'about 15 minutes': 'taxminan 15 daqiqa',
+  '3 tasks': '3 topshiriq',
+  '60 minutes': '60 daqiqa',
+  'score out of 75': '75 ballik natija',
+  'A friendly email, a formal email and an online post, checked with the official criteria.': 'Do‘stga xat, rasmiy xat va onlayn post — rasmiy mezonlar bo‘yicha tekshiriladi.',
+  'Open': 'Ochish',
 };

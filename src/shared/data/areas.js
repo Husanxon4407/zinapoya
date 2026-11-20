@@ -21,7 +21,7 @@ export const AREAS = [
     theme: { bg: '#03161a', bg2: '#0b3d44', accent: '#2dd4bf', accent2: '#bef264', steps: ['#0f766e', '#0d9488', '#14b8a6', '#2dd4bf', '#5eead4', '#bef264'] },
     skills: [
       // `to`: where a ready skill's box leads.
-      { emoji: '🎤', name: 'Speaking', text: 'All four parts: short questions, picture comparison, a 2-minute talk and a discussion.', ready: true, to: '/cefr' },
+      { emoji: '🎤', name: 'Speaking', text: 'All four parts: short questions, picture comparison, a 2-minute talk and a discussion.', ready: true, to: '/speaking' },
       { emoji: '🎧', name: 'Listening', text: 'Exam-style audio with the same question types and timing.' },
       { emoji: '📖', name: 'Reading', text: 'Real passage types practised against the clock.' },
       { emoji: '✍️', name: 'Writing', text: 'Emails and posts checked with the official criteria: points, style, grammar and words.', ready: true, to: '/writing' },

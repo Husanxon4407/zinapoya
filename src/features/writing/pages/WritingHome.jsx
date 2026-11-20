@@ -8,6 +8,7 @@ import { PARTS, PART_KEYS, bandLabel } from '../rules.js';
 import { PART_COLORS } from '../components/TaskCard.jsx';
 import { typeName } from '../components/MarkedText.jsx';
 import { saveDoneFrom } from '../lib/done.js';
+import { WRITING_GAMES } from '../games/list.js';
 import '../writing.css';
 
 const FILTERS = [
@@ -67,6 +68,9 @@ export default function WritingHome() {
 
   return (
     <div className="w-page w-home">
+      <nav className="section-crumbs">
+        <Link to="/cefr">🗣️ CEFR</Link> <span aria-hidden="true">›</span> <span>✍️ {t('Writing')}</span>
+      </nav>
       <section className="card w-hero">
         <div>
           <small className="w-hero__kicker">CEFR Multilevel · {t('new format (2025)')}</small>
@@ -129,11 +133,30 @@ export default function WritingHome() {
                   </li>
                 ))}
               </ul>
-              <p className="muted small">{t('Every mistake is saved. Games built from your own mistakes are coming next.')}</p>
+              <Link className="w-topmistakes__play" to="/writing/games/fix-the-mistake">
+                🔧 {t('Practise them in Fix the Mistake')} →
+              </Link>
             </section>
           )}
         </div>
       )}
+
+      <section className="w-games">
+        <h2 className="w-section-title">🎮 {t('Writing games')}</h2>
+        <div className="w-games__list">
+          {WRITING_GAMES.map((g) => (
+            <Link key={g.id} to={g.to} className="card w-game" style={{ '--wc': g.color }}>
+              <span className="w-game__emoji" aria-hidden="true">
+                {g.emoji}
+              </span>
+              <span className="w-game__body">
+                <strong>{g.name}</strong>
+                <small className="muted">{t(g.tag)}</small>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <section className="w-library">
         <div className="w-library__head">

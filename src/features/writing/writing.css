@@ -828,3 +828,36 @@
     gap: 6px;
   }
 }
+
+/* Writing games row on the Writing home page */
+.w-games__list {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+.w-page .w-game {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  text-decoration: none;
+  color: var(--text);
+  border-left: 4px solid var(--wc);
+  transition: transform 0.15s;
+}
+.w-game:hover {
+  transform: translateY(-2px);
+}
+.w-game__emoji {
+  font-size: 1.7rem;
+}
+.w-game__body {
+  display: grid;
+}
+.w-topmistakes__play {
+  display: inline-block;
+  margin-top: 10px;
+  font-weight: 800;
+  color: var(--primary);
+  text-decoration: none;
+}

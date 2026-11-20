@@ -11,14 +11,14 @@ src/
 │   └── state.jsx        Login, profile, answers and stats shared by every page (useApp)
 │
 ├── features/            One folder per part of the site
-│   ├── home/            Main page, area pages (/learn/…), "My learning"
-│   │   ├── pages/       Landing, AreaLanding, AreaMain, MyLearning
+│   ├── home/            Main page, area pages (/learn/…), "My learning", the CEFR hub (/cefr)
+│   │   ├── pages/       Landing, AreaLanding, AreaMain, MyLearning, CefrHub
 │   │   ├── landing/     Main-page sections (Hero with the 3D staircase, FAQ, contacts…)
 │   │   ├── areas/       Animated scenes on the area pages
 │   │   └── lib/         Small helpers only these pages use
 │   ├── account/         Sign up / log in, first-time questions, profile, privacy
 │   ├── speaking/        CEFR Speaking: exam simulator, mock exam, try-it, AI feedback
-│   │   ├── pages/       SpeakingHome (/cefr), PartPage, Practice, MockExam, TryIt
+│   │   ├── pages/       SpeakingHome (/speaking), PartPage, Practice, MockExam, TryIt
 │   │   ├── components/  ExamRunner (the simulator), AnswerReview, microphone helpers…
 │   │   ├── data/        Exam questions (part1_1 … part3) and timings (parts.js)
 │   │   └── lib/         Recording, transcripts, speaking metrics, offline queue
@@ -28,6 +28,7 @@ src/
 │   │   ├── data/        Task bank: Part 1 emails and Part 2 posts (+ content tests)
 │   │   ├── pages/       WritingHome, WritingTask, WritingResult
 │   │   ├── components/  Task card, word bar, checklist, marked text, score card
+│   │   ├── games/       Writing games (/writing/games): Point Hunter, Register Switch, Letter Puzzle, Fix the Mistake
 │   │   └── i18n/        Uzbek and Russian text for the writing pages
 │   ├── games/           Quiz, Word Sprint, Roulette, Linker Bingo, Story Builder, Debate, Say It Right
 │   ├── words/           Topic vocabulary and the phrase bank
@@ -42,6 +43,12 @@ src/
 ├── styles/              Site-wide stylesheets (base, theme, games, areas, home)
 └── i18n/                Uzbek (uz.js) and Russian (ru.js) translations; index.js = the t() helper
 ```
+
+## CEFR pages and menus
+
+`/cefr` is the CEFR hub: one card per exam section. Each section has its own pages and its own top menu
+(see `CEFR_MENUS` in `shared/components/Layout.jsx`): Speaking = `/speaking`, games, words, progress, history;
+Writing = `/writing` and `/writing/games`. A new section (Listening, Reading) gets its own menu there.
 
 ## Rules of thumb
 

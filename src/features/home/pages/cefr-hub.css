@@ -1,0 +1,111 @@
+/* CEFR hub (/cefr): one card per exam section. --sc = the section's colour. */
+.cefr-hub {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+.cefr-hub__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.cefr-hub__head h1 {
+  margin: 4px 0;
+}
+.cefr-hub__head p {
+  margin: 0;
+}
+.cefr-hub__kicker {
+  color: var(--primary);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+}
+.cefr-hub__streak {
+  display: grid;
+  justify-items: center;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 1.2rem;
+}
+.cefr-hub__streak small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.cefr-hub__grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+.cefr-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 22px;
+  text-decoration: none;
+  color: var(--text);
+  border-top: 5px solid var(--sc, var(--line));
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+a.cefr-sec:hover {
+  transform: translateY(-3px);
+}
+.cefr-sec h2 {
+  margin: 4px 0 0;
+  font-size: 1.4rem;
+}
+.cefr-sec p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.cefr-sec__emoji {
+  font-size: 2.4rem;
+}
+.cefr-sec__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cefr-sec__facts span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--sc);
+  background: color-mix(in srgb, var(--sc) 14%, transparent);
+}
+.cefr-sec__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 12px;
+}
+.cefr-sec__foot small {
+  color: var(--muted);
+  font-weight: 700;
+}
+.cefr-sec__go {
+  font-weight: 800;
+  color: var(--sc);
+}
+.cefr-sec.is-soon {
+  opacity: 0.6;
+  border-top-color: var(--line);
+}
+.cefr-sec__soon {
+  margin-top: auto;
+  padding-top: 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

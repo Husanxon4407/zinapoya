@@ -79,6 +79,9 @@ export default function Home() {
     <div className="home">
       <div className="home__main">
         <JoinBar areaId="cefr" />
+        <nav className="section-crumbs">
+          <Link to="/cefr">🗣️ CEFR</Link> <span aria-hidden="true">›</span> <span>🎤 {t('Speaking')}</span>
+        </nav>
         <section className="welcome">
           <div>
             <h1>
@@ -137,13 +140,6 @@ export default function Home() {
             <div>
               <h3>{t('Full mock exam')}</h3>
               <p>{t('All four parts, real timing, about 15 minutes.')}</p>
-            </div>
-          </Link>
-          <Link to="/writing" className="quick__card quick__card--writing">
-            <span className="quick__emoji">✍️</span>
-            <div>
-              <h3>{t('Writing practice')}</h3>
-              <p>{t('Emails and posts, checked with the official criteria.')}</p>
             </div>
           </Link>
         </section>

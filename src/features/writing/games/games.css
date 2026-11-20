@@ -1,0 +1,454 @@
+/* Writing games (src/features/writing/games). Site colour tokens, so light and dark mode both work.
+   --gc = the game's own colour. */
+
+.wg-page {
+  max-width: 720px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+.wg-page .card {
+  padding: 18px;
+}
+
+/* Intro */
+.wg-intro {
+  text-align: center;
+  border-top: 5px solid var(--gc);
+}
+.wg-intro__emoji {
+  font-size: 3.2rem;
+  display: block;
+}
+.wg-intro__skill {
+  color: var(--gc);
+  font-weight: 800;
+}
+.wg-intro h1 {
+  margin: 6px 0 12px;
+}
+.wg-intro__rules {
+  text-align: left;
+  margin: 0 auto 16px;
+  max-width: 520px;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+  line-height: 1.5;
+}
+.wg-intro__start {
+  background: var(--gc);
+  min-width: 200px;
+}
+
+/* HUD */
+.wg-hud {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-weight: 800;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  position: sticky;
+  top: 72px;
+  z-index: 5;
+}
+.wg-hud__score {
+  font-size: 1.15rem;
+}
+.wg-hud__combo {
+  margin-left: 6px;
+  color: var(--amber);
+  font-size: 0.9rem;
+}
+.wg-hud__step {
+  color: var(--muted);
+}
+.wg-hud__time {
+  margin-left: auto;
+  display: grid;
+  gap: 3px;
+  justify-items: end;
+  font-variant-numeric: tabular-nums;
+}
+.wg-hud__time.is-low {
+  color: var(--bad);
+}
+.wg-hud__bar {
+  width: 110px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--track);
+  overflow: hidden;
+}
+.wg-hud__bar span {
+  display: block;
+  height: 100%;
+  background: var(--gc);
+  transition: width 0.25s linear;
+}
+.wg-ask {
+  margin: 4px 0 0;
+  font-weight: 800;
+  text-align: center;
+}
+.wg-feedback {
+  margin: 0;
+  line-height: 1.5;
+}
+.wg-next {
+  width: 100%;
+}
+.wg-mine {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--tint-amber);
+  color: var(--ink-warn);
+  font-size: 0.85rem;
+}
+
+/* Register Switch */
+.wg-swipe {
+  min-height: 170px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  text-align: center;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  transition: background 0.2s, border-color 0.2s;
+  border: 2px solid var(--line);
+}
+.wg-swipe:active {
+  cursor: grabbing;
+}
+.wg-swipe__text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.45;
+}
+.wg-swipe.is-right {
+  border-color: var(--good);
+  background: var(--tint-good-soft);
+}
+.wg-swipe.is-wrong {
+  border-color: var(--bad);
+  background: var(--tint-bad-soft);
+}
+.wg-choice {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.wg-choice__btn {
+  min-height: 56px;
+  border-radius: 14px;
+  border: 0;
+  font: inherit;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: #fff;
+  cursor: pointer;
+}
+.wg-choice__btn--informal {
+  background: #0d9488;
+}
+.wg-choice__btn--formal {
+  background: #7c3aed;
+}
+.wg-choice__btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Answer options (Register bonus, Fix the Mistake) */
+.wg-options {
+  display: grid;
+  gap: 10px;
+}
+.wg-option {
+  text-align: left;
+  padding: 14px 16px;
+  min-height: 52px;
+  border-radius: 14px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.wg-option:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+.wg-option.is-right {
+  border-color: var(--good);
+  background: var(--tint-good-soft);
+}
+.wg-option.is-wrong {
+  border-color: var(--bad);
+  background: var(--tint-bad-soft);
+}
+.wg-option.is-dim {
+  opacity: 0.5;
+}
+
+/* Letter Puzzle */
+.wg-letter {
+  display: grid;
+  gap: 8px;
+  min-height: 120px;
+}
+.wg-letter__block {
+  border-left: 4px solid var(--gc);
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 0 10px 10px 0;
+  animation: wg-in 0.25s ease;
+}
+.wg-letter__block small {
+  color: var(--gc);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+.wg-letter__block p {
+  margin: 2px 0 0;
+  white-space: pre-line;
+  line-height: 1.5;
+}
+.wg-letter__next {
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  color: var(--muted);
+}
+.wg-pool {
+  display: grid;
+  gap: 8px;
+}
+.wg-pool__block {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.45;
+  white-space: pre-line;
+  cursor: pointer;
+}
+.wg-pool__block:hover {
+  border-color: var(--gc);
+}
+.is-shake {
+  animation: wg-shake 0.4s;
+  border-color: var(--bad);
+}
+
+/* Fix the Mistake */
+.wg-sentence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+.wg-token {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+}
+.wg-token:hover:not(:disabled) {
+  border-color: var(--gc);
+}
+.wg-token:disabled {
+  cursor: default;
+}
+.wg-token.is-missed {
+  border-color: var(--bad);
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.wg-token.is-wrong-word {
+  border-color: var(--bad);
+  background: var(--tint-bad);
+  color: var(--ink-bad);
+  font-weight: 800;
+}
+
+/* Point Hunter */
+.wg-email .w-email {
+  margin-top: 6px;
+}
+.wg-email__body p {
+  margin: 0 0 8px;
+}
+.wg-email__frame {
+  font-weight: 700;
+}
+.wg-sent {
+  display: inline;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: 1.8;
+  padding: 2px 3px;
+  margin: 0 1px;
+  border-radius: 6px;
+  text-align: left;
+  cursor: pointer;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.wg-sent:hover:not(:disabled) {
+  background: var(--track);
+}
+.wg-sent:disabled {
+  cursor: default;
+}
+.wg-sent.is-on {
+  background: color-mix(in srgb, var(--gc) 22%, transparent);
+  box-shadow: inset 0 -2px 0 var(--gc);
+}
+.wg-sent.is-right {
+  background: color-mix(in srgb, var(--good) 22%, transparent);
+}
+.wg-sent.is-missed {
+  background: color-mix(in srgb, #f97316 25%, transparent);
+}
+.wg-sent.is-wrong {
+  background: color-mix(in srgb, var(--bad) 22%, transparent);
+  text-decoration: line-through;
+}
+.wg-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 10px;
+}
+.wg-card {
+  min-height: 70px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 2px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+.wg-card.is-on {
+  border-color: var(--gc);
+  background: color-mix(in srgb, var(--gc) 12%, var(--card));
+}
+.wg-card.is-right {
+  border-color: var(--good);
+  background: var(--tint-good-soft);
+}
+.wg-card.is-missed {
+  border-color: #f97316;
+  border-style: dashed;
+}
+.wg-card.is-wrong {
+  border-color: var(--bad);
+  background: var(--tint-bad-soft);
+}
+.wg-card.is-dim {
+  opacity: 0.5;
+}
+
+/* End screen */
+.wg-end__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.wg-review__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wg-review__head .w-section-title {
+  margin: 0;
+}
+.wg-review ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+.wg-review li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px;
+  line-height: 1.45;
+}
+.wg-review li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wg-review li small {
+  color: var(--muted);
+}
+
+/* Game cards on the Writing home and the Games page */
+.wg-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+}
+
+@keyframes wg-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+@keyframes wg-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-shake,
+  .wg-letter__block {
+    animation: none;
+  }
+}
