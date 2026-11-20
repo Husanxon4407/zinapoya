@@ -1,6 +1,5 @@
 // Data layer. Uses Supabase when it is configured (.env), otherwise a
 // "local demo mode" that keeps everything in this browser so the site still works.
-import { createClient } from '@supabase/supabase-js';
 import { blobToDataUrl } from './image.js';
 import { weeklyPoints } from './progress.js';
 
@@ -9,7 +8,15 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const isLocalMode = !URL || !KEY;
 // Set VITE_AI_ENABLED=true once the ANTHROPIC_API_KEY secret is added in Supabase.
 export const aiEnabled = !isLocalMode && import.meta.env.VITE_AI_ENABLED === 'true';
-const supabase = isLocalMode ? null : createClient(URL, KEY);
+// The Supabase library (~200 KB) is downloaded after the first screen is drawn, not before it:
+// the main page shows at once even on a slow network. Every remote call waits for it (see below).
+let supabase = null;
+let loading = null;
+const loadSupabase = () =>
+  (loading ||= import('@supabase/supabase-js').then(({ createClient }) => {
+    supabase = createClient(URL, KEY);
+    return supabase;
+  }));
 
 const MAX_RECORDINGS = 30;
 const uuid = () => crypto.randomUUID();
@@ -35,8 +42,17 @@ const remote = {
     return toUser(data.session?.user);
   },
   onAuthChange(cb) {
-    const { data } = supabase.auth.onAuthStateChange((event, session) => cb(toUser(session?.user), event));
-    return () => data.subscription.unsubscribe();
+    let unsub = null;
+    let stopped = false;
+    loadSupabase().then(() => {
+      if (stopped) return;
+      const { data } = supabase.auth.onAuthStateChange((event, session) => cb(toUser(session?.user), event));
+      unsub = () => data.subscription.unsubscribe();
+    });
+    return () => {
+      stopped = true;
+      unsub?.();
+    };
   },
   async signUp({ name, email, password, area }) {
     const { data, error } = await supabase.auth.signUp({
@@ -328,6 +344,16 @@ remote.teacher = {
     return data;
   },
 };
+
+// Every remote call first makes sure the Supabase library has arrived (instant after the first time).
+const whenLoaded = (obj) => {
+  for (const [k, f] of Object.entries(obj)) {
+    if (k === 'onAuthChange') continue;
+    if (typeof f === 'function') obj[k] = async (...args) => (await loadSupabase(), f(...args));
+    else if (f && typeof f === 'object') whenLoaded(f);
+  }
+};
+if (!isLocalMode) whenLoaded(remote);
 
 // The database is missing a table or function (a supabase/migrations file has not been run yet).
 const notSetUp = (error) => /schema cache|does not exist|Could not find/i.test(error?.message || '');
