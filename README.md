@@ -1,4 +1,4 @@
-# 🎤 SpeakUp — Multilevel Speaking Practice
+# 🎤 zinapoya
 
 A website where students practise the four parts of the Multilevel (CEFR) speaking exam
 with real exam questions, exam timers, their own recordings, an AI coach, games and a
